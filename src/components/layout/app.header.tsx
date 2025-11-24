@@ -1,112 +1,147 @@
-import { Dropdown, Input, MenuProps, Popover, Space } from "antd";
-import { DownOutlined } from "@ant-design/icons";
-import { FaShoppingCart, FaUser } from "react-icons/fa";
-import { FcDislike } from "react-icons/fc";
-import { Link, useNavigate } from "react-router-dom";
-import React, { useEffect, useState } from "react";
-import { useCurrentApp } from "../context/app.context";
-import { logoutAPI } from "@/services/api";
+import React, { useState } from "react";
+import {
+  FaPhoneAlt,
+  FaMapMarkerAlt,
+  FaFacebookF,
+  FaTwitter,
+  FaInstagram,
+  FaLinkedinIn,
+  FaBars,
+  FaTimes,
+} from "react-icons/fa";
 
-const AppHeader = () => {
-  const [showHeader, setShowHeader] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
-  const { user, isAuthenticated } = useCurrentApp();
-  const navigate = useNavigate();
+// --- TYPES & INTERFACES ---
+// Định nghĩa kiểu dữ liệu cho các Props để đảm bảo Type Safety
 
-  const handleLogout = async () => {
-    const res = await logoutAPI();
-    if (res) {
-      localStorage.removeItem("access_token");
-      navigate("/login");
-    }
+interface NavItemProps {
+  text: string;
+  href?: string;
+  isActive?: boolean;
+  isMobile?: boolean;
+  onClick?: () => void; // Thêm onClick để đóng menu khi chọn trên mobile
+}
+
+interface SocialIconProps {
+  icon: React.ReactNode;
+  href?: string;
+}
+
+const Header: React.FC = () => {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
+
+  const toggleMenu = () => {
+    setIsMobileMenuOpen((prev) => !prev);
   };
 
-  const userMenu: MenuProps["items"] = isAuthenticated
-    ? [
-        ...(user?.role === "ADMIN"
-          ? [{ key: "admin", label: <Link to="/admin">Admin</Link> }]
-          : []),
-        { key: "info", label: <Link to="/info">Change Info</Link> },
-        { key: "logout", label: <span onClick={handleLogout}>Logout</span> },
-      ]
-    : [
-        { key: "login", label: <Link to="/login">Login</Link> },
-        { key: "signup", label: <Link to="/register">Signup</Link> },
-      ];
-
-  const cartContent = (
-    <div className="text-center">
-      <p>Chưa có sản phẩm</p>
-    </div>
-  );
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      setShowHeader(currentScrollY <= lastScrollY || currentScrollY < 100);
-      setLastScrollY(currentScrollY);
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [lastScrollY]);
-
   return (
-    <div
-      className={`fixed top-0 left-0 w-full z-50 transition-transform duration-300 ${
-        showHeader ? "translate-y-0" : "-translate-y-full"
-      }`}
-    >
-      <div className="flex flex-row h-[10vh] shadow-md bg-[#001A2D] items-center px-10">
-        <div className="flex-1 flex items-center gap-2">
-          <FcDislike size={36} />
-          <Link to="/" className="text-2xl font-bold text-white">
-            Jushoes Shop
-          </Link>
-        </div>
-
-        <div className="flex-1 flex justify-center">
-          <Input.Search
-            placeholder="Tìm kiếm sản phẩm..."
-            allowClear
-            style={{ width: 400 }}
-          />
-        </div>
-
-        <div className="flex-1 flex items-center justify-end gap-8 text-white">
-          <Popover content={cartContent} title="Giỏ hàng">
-            <div className="relative cursor-pointer">
-              <FaShoppingCart size={24} />
-              <div className="absolute -top-2 -right-2 bg-red-500 rounded-full w-4 h-4 text-xs flex items-center justify-center">
-                0
-              </div>
+    <header className="app-header">
+      <div className="app-header__top-bar">
+        <div className="app-container app-header__top-bar-inner">
+          <div className="app-header__contact">
+            <div className="app-header__contact-item">
+              <FaPhoneAlt aria-hidden />
+              <span>(+01) 234 567 890</span>
             </div>
-          </Popover>
+            <div className="app-header__contact-item">
+              <FaMapMarkerAlt aria-hidden />
+              <span>New York, NY 10012, US</span>
+            </div>
+          </div>
 
-          <Dropdown menu={{ items: userMenu }}>
-            <Space className="cursor-pointer">
-              <FaUser size={24} />
-              <span>{isAuthenticated ? user?.fullName : "Tài khoản"}</span>
-              <DownOutlined />
-            </Space>
-          </Dropdown>
+          <div className="app-header__social">
+            <SocialIcon icon={<FaFacebookF />} />
+            <SocialIcon icon={<FaTwitter />} />
+            <SocialIcon icon={<FaInstagram />} />
+            <SocialIcon icon={<FaLinkedinIn />} />
+          </div>
         </div>
       </div>
 
-      <div className="flex flex-row h-[6vh] bg-white shadow-sm items-center justify-center gap-10 text-black font-semibold">
-        {["Adidas", "Nike", "Puma", "Bitis", "Jordan", "Converse"].map(
-          (brand) => (
-            <div
-              key={brand}
-              className="hover:text-blue-500 cursor-pointer transition-colors"
+      <nav className="app-header__nav">
+        <div className="app-container app-header__nav-inner">
+          <div className="app-header__logo">
+            <div className="app-header__logo-icon">C</div>
+            <span className="app-header__logo-text">Care</span>
+          </div>
+
+          <ul className="app-header__nav-list">
+            <NavItem text="Home" isActive />
+            <NavItem text="About" />
+            <NavItem text="Service" />
+            <NavItem text="Blog" />
+            <NavItem text="Contact" />
+          </ul>
+
+          <div className="app-header__cta">
+            <button className="app-header__cta-btn">Appointment</button>
+          </div>
+
+          <div className="app-header__toggle">
+            <button
+              onClick={toggleMenu}
+              className="app-header__toggle-btn"
+              aria-label="Toggle Menu"
             >
-              {brand}
+              {isMobileMenuOpen ? <FaTimes size={20} /> : <FaBars size={20} />}
+            </button>
+          </div>
+        </div>
+
+        <div
+          className={`app-header__mobile-menu ${
+            isMobileMenuOpen ? "open" : ""
+          }`}
+        >
+          <ul className="app-header__mobile-list">
+            <NavItem text="Home" isMobile isActive onClick={toggleMenu} />
+            <NavItem text="About" isMobile onClick={toggleMenu} />
+            <NavItem text="Service" isMobile onClick={toggleMenu} />
+            <NavItem text="Blog" isMobile onClick={toggleMenu} />
+            <NavItem text="Contact" isMobile onClick={toggleMenu} />
+            <div className="app-header__mobile-cta">
+              <button className="app-header__cta-btn app-header__cta-btn--full">
+                Appointment
+              </button>
             </div>
-          )
-        )}
-      </div>
-    </div>
+          </ul>
+        </div>
+      </nav>
+    </header>
   );
 };
 
-export default AppHeader;
+// --- HELPER COMPONENTS (Typed) ---
+
+const NavItem: React.FC<NavItemProps> = ({
+  text,
+  href = `#${text.toLowerCase()}`,
+  isActive = false,
+  isMobile = false,
+  onClick,
+}) => {
+  const classes = [
+    "app-header__link",
+    isMobile ? "app-header__link--mobile" : "",
+    isActive ? "app-header__link--active" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return (
+    <li className="app-header__nav-item">
+      <a href={href} onClick={onClick} className={classes}>
+        {text}
+      </a>
+    </li>
+  );
+};
+
+const SocialIcon: React.FC<SocialIconProps> = ({ icon, href = "#" }) => {
+  return (
+    <a href={href} className="app-header__social-icon">
+      <span aria-hidden>{icon}</span>
+    </a>
+  );
+};
+
+export default Header;
