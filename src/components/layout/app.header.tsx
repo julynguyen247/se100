@@ -66,14 +66,15 @@ const Header: React.FC = () => {
 
           <ul className="app-header__nav-list">
             <NavItem text="Home" isActive />
-            <NavItem text="About" />
-            <NavItem text="Service" />
+            <NavItem text="Services" />
+            <NavItem text="Dentist" />
             <NavItem text="Blog" />
-            <NavItem text="Contact" />
+            <NavItem text="About Us" />
+            <NavItem text="Contact Us" />
           </ul>
 
           <div className="app-header__cta">
-            <button className="app-header__cta-btn">Appointment</button>
+            <button className="app-header__cta-btn">Book Now</button>
           </div>
 
           <div className="app-header__toggle">

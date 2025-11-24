@@ -59,6 +59,8 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
+  margin-left: 1.5rem;
+  margin-right: 1.5rem;
   color: #ebf2ff;
   cursor: pointer;
   transition: color 0.2s ease;
@@ -76,6 +78,7 @@
 .app-header__social-icon {
   width: 28px;
   height: 28px;
+  font-size: 1.5rem;
   display: grid;
   place-items: center;
   border-radius: 999px;
@@ -590,32 +593,49 @@
   border-radius: var(--radius-lg);
   box-shadow: 0 25px 60px rgba(15, 23, 42, 0.12);
   padding: 1.5rem;
+  width: 100%;
+  margin: 0 auto;
 }
 
 @media (min-width: 1024px) {
   .home-booking__card {
+    width: fit-content;
     padding: 1.5rem 1rem;
   }
 }
 
 .home-booking__form {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 1.5rem;
-  align-items: flex-end;
+  align-items: stretch;
+  width: 100%;
+}
+
+@media (min-width: 1024px) {
+  .home-booking__form {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    width: fit-content;
+    justify-content: center;
+  }
 }
 
 .home-form-field {
-  flex: 1 1 220px;
+  width: 100%;
   border-bottom: 1px solid var(--border);
   padding-bottom: 0.4rem;
 }
 
 @media (min-width: 1024px) {
   .home-form-field {
+    flex: 0 1 auto;
+    width: auto;
     border-bottom: none;
     border-right: 1px solid var(--border);
     padding: 0 1rem;
+    min-width: 180px;
   }
 
   .home-form-field:last-of-type {
@@ -662,12 +682,12 @@
 
 .home-booking__button {
   width: 100%;
-  flex: 1 1 200px;
 }
 
 @media (min-width: 1024px) {
   .home-booking__button {
     flex: 0 0 auto;
+    width: auto;
     padding: 0 1rem;
   }
 }
@@ -973,14 +993,14 @@
 .why-choose-feature-icon {
   width: 3rem;
   height: 3rem;
+  font-size: 1.55rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 0.75rem;
+  border-radius: 50%;
   background: rgba(37, 99, 235, 0.1);
   color: var(--accent-blue);
   flex-shrink: 0;
-  font-size: 1.25rem;
   transition: all 0.3s ease;
 }
 
@@ -988,7 +1008,8 @@
   .why-choose-feature-icon {
     width: 4rem;
     height: 4rem;
-    font-size: 1.5rem;
+    font-size: 2.5rem;
+    border-radius: 0.75rem;
   }
 }
 
