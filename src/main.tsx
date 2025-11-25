@@ -2,9 +2,9 @@ import { createBrowserRouter, RouterProvider } from "react-router";
 import "./styles/global.css";
 import ReactDOM from "react-dom/client";
 import Layout from "./layout";
-import LoginPage from "./pages/client/login";
-import HomePage from "./pages/client/home";
-import RegisterPage from "./pages/client/register";
+import LoginPage from "./pages/patient/login";
+import HomePage from "./pages/patient/home";
+import RegisterPage from "./pages/patient/register";
 import { App, ConfigProvider } from "antd";
 import AdminLayout from "./components/layout/layout.admin";
 import Dashboard from "./pages/admin/dashboard";
@@ -12,6 +12,9 @@ import Users from "./pages/admin/users";
 import enUS from "antd/es/locale/en_US";
 import { AppProvider } from "./components/context/app.context";
 import Protected from "./components/auth";
+import StaffLayout from "./components/layout/layout.staff";
+import StaffAppointmentsPage from "./pages/staff/StaffAppointmentsPage";
+import WaitingQueuePage from "./pages/staff/StaffWaitingQueuePage";
 
 const router = createBrowserRouter([
   {
@@ -38,6 +41,20 @@ const router = createBrowserRouter([
             <Users />
           </Protected>
         ),
+      },
+    ],
+  },
+  {
+    path: "/staff",
+    Component: StaffLayout,
+    children: [
+      {
+        index: true,
+        element: <StaffAppointmentsPage />,
+      },
+      {
+        path: "waiting",
+        element: <WaitingQueuePage />,
       },
     ],
   },
