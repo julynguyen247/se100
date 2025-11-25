@@ -17,18 +17,36 @@ import {
 
 // Interface cho Props (nếu sau này bạn muốn truyền dữ liệu động)
 interface HeroProps {
-  doctorImageSrc?: 'src/assets/imgs/anhbacsicuoi.jpg'; // Bạn sẽ truyền link ảnh bác sĩ vào đây
+  doctorImageSrc?: 'src/assets/imgs/anhbacsicuoi.jpg';
+   doctorImageSrcHover?:'src/assets/imgs/cuoidep.jpg'; // Bạn sẽ truyền link ảnh bác sĩ vào đây
 }
 
 const HeroSection: React.FC<HeroProps> = ({
   doctorImageSrc = "src/assets/imgs/anhbacsicuoi.jpg",
+  // Thêm ảnh thứ 2 (bạn thay đường dẫn thật vào đây nhé)
+  doctorImageSrcHover = "src/assets/imgs/cuoidep.jpg", 
 }) => {
   return (
     <section className="relative w-full bg-[#f5f9ff] py-16 pb-24 font-['Inter','Segoe_UI',system-ui,-apple-system,BlinkMacSystemFont,sans-serif] overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(37,99,235,0.12),transparent_60%)] opacity-60 pointer-events-none" aria-hidden />
 
-      <div className="w-[min(1200px,100%)] mx-auto px-4 relative z-10 flex flex-col gap-10 lg:flex-row lg:items-center lg:justify-between lg:gap-12">
-        <div className="w-full max-w-[520px] text-center mx-auto lg:text-left">
+      <div className="w-[min(1200px,100%)] mx-auto px-4 relative z-10 flex flex-col-reverse gap-10 lg:flex-row-reverse lg:items-center lg:justify-between lg:gap-12">
+        <div className="peer w-full flex justify-center lg:justify-end">
+          <div className="group w-[min(80vw,450px)] aspect-square rounded-full bg-[#2563eb] relative overflow-hidden shadow-2xl transition-transform duration-700 group-hover:scale-105">
+            <img
+              src={doctorImageSrc}
+              alt="Doctor Default"
+              className="absolute bottom-0 left-1/2 w-full max-h-[110%] object-contain transition-all duration-700 ease-in-out -translate-x-1/2 opacity-100 group-hover:translate-x-1/2 group-hover:opacity-0"
+            />
+            <img
+              src={doctorImageSrcHover}
+              alt="Doctor Hover"
+              className="absolute bottom-0 left-1/2 w-full max-h-[110%] object-contain transition-all duration-700 ease-in-out -translate-x-[150%] opacity-0 group-hover:-translate-x-1/2 group-hover:opacity-100"
+            />
+          </div>
+        </div>
+
+        <div className="w-full max-w-[520px] text-center mx-auto lg:text-left transition-all duration-700 ease-out peer-hover:-translate-y-4 lg:peer-hover:translate-y-0 lg:peer-hover:-translate-x-12">
           <span className="inline-block px-5 py-1.5 bg-[rgba(37,99,235,0.15)] text-[#2563eb] rounded-full text-xs font-semibold tracking-[0.08em] mb-4">
             Dental Health Polyclinic
           </span>
@@ -46,46 +64,18 @@ const HeroSection: React.FC<HeroProps> = ({
             Contact Us
           </button>
         </div>
-
-        <div className="w-full flex justify-center">
-          <div className="w-[min(80vw,450px)] aspect-square rounded-full bg-[#2563eb] relative overflow-hidden">
-            <img
-              src={doctorImageSrc}
-              alt="Doctor"
-              className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-h-[110%] object-contain"
-            />
-          </div>
-        </div>
       </div>
 
-      <div className="relative z-10 mt-12">
+      {/* Form section - Giữ nguyên, có thể thêm z-index cao hơn để không bị ảnh hưởng */}
+      <div className="relative z-20 mt-12">
         <div className="w-[min(1200px,100%)] mx-auto px-4">
           <div className="bg-white rounded-2xl shadow-[0_25px_60px_rgba(15,23,42,0.12)] p-6 w-full mx-auto lg:w-fit lg:p-6 lg:px-4">
             <form className="flex flex-col gap-6 items-stretch w-full lg:flex-row lg:flex-nowrap lg:items-center lg:w-fit lg:justify-center">
-              <FormInput
-                icon={<FaUser />}
-                label="Name"
-                placeholder="Sofia Dark"
-                type="text"
-              />
-              <FormInput
-                icon={<FaPhoneAlt />}
-                label="Phone Number"
-                placeholder="Your Phone"
-                type="tel"
-              />
-              <FormInput
-                icon={<FaCalendarAlt />}
-                label="Preferred Date"
-                placeholder="dd/mm/yyyy"
-                type="date"
-              />
-              <FormInput
-                icon={<FaClock />}
-                label="Preferred Time"
-                placeholder="00:00"
-                type="time"
-              />
+                {/* Các input form của bạn giữ nguyên */}
+                <FormInput icon={<FaUser />} label="Name" placeholder="Sofia Dark" type="text" />
+                <FormInput icon={<FaPhoneAlt />} label="Phone" placeholder="Your Phone" type="tel" />
+                <FormInput icon={<FaCalendarAlt />} label="Date" placeholder="dd/mm/yyyy" type="date" />
+                <FormInput icon={<FaClock />} label="Time" placeholder="00:00" type="time" />
 
               <div className="w-full lg:flex-[0_0_auto] lg:w-auto lg:px-4">
                 <button type="submit" className="border-none bg-gradient-to-br from-[#2563eb] to-[#1d4ed8] text-white font-semibold py-3.5 px-10 rounded-xl cursor-pointer shadow-[0_20px_36px_rgba(37,99,235,0.35)] transition-all duration-200 w-full sm:w-auto hover:shadow-[0_25px_45px_rgba(37,99,235,0.4)] active:translate-y-[1px]">
