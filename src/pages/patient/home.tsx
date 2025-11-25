@@ -1,146 +1,465 @@
-import { getShoesAPI } from "@/services/api";
-import { Carousel, Spin } from "antd";
-import React, { useEffect, useState } from "react";
-import { useOutletContext } from "react-router-dom";
+import React from "react";
+import {
+  FaUser,
+  FaPhoneAlt,
+  FaCalendarAlt,
+  FaClock,
+  FaCheck,
+  FaTooth,
+  FaMicroscope,
+  FaUserMd,
+  FaCalendarCheck,
+  FaUserFriends,
+  FaFileMedical,
+  FaEnvelope,
+  FaMapMarkerAlt,
+} from "react-icons/fa";
 
-interface IShoesTable {
-  _id: string;
-  mainText: string;
-  brand: string;
-  price: number;
-  thumbnail: string;
+// Interface cho Props (nếu sau này bạn muốn truyền dữ liệu động)
+interface HeroProps {
+  doctorImageSrc?: 'src/assets/imgs/anhbacsicuoi.jpg'; // Bạn sẽ truyền link ảnh bác sĩ vào đây
 }
 
-const HomePage = () => {
-  const [shoes, setShoes] = useState<IShoesTable[]>([]);
-  const [current, setCurrent] = useState<number>(1);
-  const [pageSize, setPageSize] = useState<number>(10);
-  const [total, setTotal] = useState<number>(0);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [filter, setFilter] = useState<string>("");
-  const [sortQuery, setSortQuery] = useState<string>("sort=-sold");
+const HeroSection: React.FC<HeroProps> = ({
+  doctorImageSrc = "src/assets/imgs/anhbacsicuoi.jpg",
+}) => {
+  return (
+    <section className="home-hero">
+      <div className="home-hero__pattern" aria-hidden />
 
-  useEffect(() => {
-    fetchShoes();
-  }, [current, pageSize, filter, sortQuery]);
+      <div className="app-container home-hero__inner">
+        <div className="home-hero__content">
+          <span className="home-hero__badge">Dental Health Polyclinic</span>
 
-  const fetchShoes = async () => {
-    // setIsLoading(true);
-    let query = ``;
-    if (filter) {
-      query += `&${filter}`;
-    }
-    if (sortQuery) {
-      query += `&${sortQuery}`;
-    }
+          <h1 className="home-hero__title">
+            Your <span>Perfect Smile</span> Starts Here
+          </h1>
 
-    const res = await getShoesAPI(query);
+          <p className="home-hero__description">
+            Get expert dental care in a comfortable setting. Healthy, bright
+            smiles start with us — book your appointment today!
+          </p>
 
-    if (res && res.data) {
-      setShoes(res.data.result);
-      setTotal(res.data.meta.total);
-    }
-    setIsLoading(false);
-  };
-
-  const ProductCard = ({
-    image,
-    name,
-    colors,
-    price,
-    badge,
-  }: {
-    image: string;
-    name: string;
-    colors: string;
-    price: string;
-    badge?: string;
-  }) => (
-    <div className="flex flex-col">
-      <div className="h-96 rounded-lg bg-gray-50 text-center shadow hover:shadow-lg transition-transform transform hover:scale-105 hover:border hover:border-red-400 overflow-hidden cursor-pointer">
-        <img
-          src={image}
-          alt={name}
-          className="w-full h-60 object-cover mb-2 transition-all duration-300 hover:brightness-110"
-        />
-      </div>
-      <div className="p-4">
-        {badge && (
-          <div className="inline-block px-2 py-1 text-xs font-semibold text-white bg-red-500 rounded-full mb-2">
-            {badge}
-          </div>
-        )}
-        <div className="font-semibold text-xl mb-1">{name}</div>
-        <div className="text-gray-500 mb-1">{colors}</div>
-        <div className="font-semibold text-lg mb-2">{price}</div>
-        <div className="flex items-center gap-1 text-yellow-400">
-          {"\u2B50\u2B50\u2B50\u2B50\u2B50"}
+          <button className="home-hero__button">Contact Us</button>
         </div>
+
+        <div className="home-hero__media">
+          <div className="home-hero__circle">
+            <img
+              src={doctorImageSrc}
+              alt="Doctor"
+              className="home-hero__image"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="home-booking">
+        <div className="app-container">
+          <div className="home-booking__card">
+            <form className="home-booking__form">
+              <FormInput
+                icon={<FaUser />}
+                label="Name"
+                placeholder="Sofia Dark"
+                type="text"
+              />
+              <FormInput
+                icon={<FaPhoneAlt />}
+                label="Phone Number"
+                placeholder="Your Phone"
+                type="tel"
+              />
+              <FormInput
+                icon={<FaCalendarAlt />}
+                label="Preferred Date"
+                placeholder="dd/mm/yyyy"
+                type="date"
+              />
+              <FormInput
+                icon={<FaClock />}
+                label="Preferred Time"
+                placeholder="00:00"
+                type="time"
+              />
+
+              <div className="home-booking__button">
+                <button type="submit" className="home-hero__button">
+                  Contact Us
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+// --- HELPER COMPONENT: FORM INPUT ---
+// Giúp code gọn hơn và tái sử dụng style input
+interface FormInputProps {
+  label: string;
+  placeholder: string;
+  type: string;
+  icon: React.ReactNode;
+}
+
+const FormInput: React.FC<FormInputProps> = ({
+  label,
+  placeholder,
+  type,
+  icon,
+}) => {
+  return (
+    <div className="home-form-field">
+      <label className="home-form-field__label">{label}</label>
+      <div className="home-form-field__control">
+        <span className="home-form-field__icon">{icon}</span>
+        <input
+          type={type}
+          placeholder={placeholder}
+          className="home-form-field__input"
+        />
       </div>
     </div>
   );
+};
+ 
+// --- ABOUT SECTION COMPONENT ---
+interface AboutProps {
+  imageSrc?: "src/assets/imgs/heathySmile.jpg";
+}
 
-  const contentStyle: React.CSSProperties = {
-    height: "300px",
-    color: "#fff",
-    lineHeight: "300px",
-    textAlign: "center",
-    background: "#364d79",
-    borderRadius: "12px",
-    overflow: "hidden",
-  };
+const AboutSection: React.FC<AboutProps> = ({
+  imageSrc = "src/assets/imgs/heathySmile.jpg",
+}) => {
+  const features = [
+    "Premium Dental Services You Can Trust.",
+    "Advanced Technology for Healthier Smiles.",
+    "Expert Care, Personalized for You.",
+  ];
 
   return (
-    <div className="p-12 mt-28">
-      <Carousel autoplay>
-        {[1, 2, 3, 4].map((item) => (
-          <div key={item} style={{ height: "300px", width: "100%" }}>
+    <section className="about-section">
+      <div className="app-container">
+        <div className="about-grid">
+          <div className="about-image-col">
             <img
-              src={`${
-                import.meta.env.VITE_BACKEND_URL
-              }/images/banners/banner${item}.jpg`}
-              alt={`Banner ${item}`}
-              style={{
-                width: "100%",
-                height: "500px",
-                objectFit: "cover",
-                borderRadius: "12px",
-              }}
+              src={imageSrc}
+              alt="Doctor treating patient"
+              className="about-image-style"
             />
+            <div className="about-image-decor"></div>
           </div>
-        ))}
-      </Carousel>
 
-      <div className="flex-1 mt-16">
-        <h1 className="text-4xl p-4 font-bold mb-8 text-center">
-          Sản phẩm nổi bật
-        </h1>
+          <div className="about-content-col">
+            <span className="about-subtitle">Dental Health Polyclinic</span>
 
-        {isLoading ? (
-          <div className="flex justify-center items-center h-40">
-            <Spin size="large" />
+            <h2 className="about-heading">
+              We Are Here for Best <br className="about-heading-break" />
+              <span className="about-highlight">Healthy Smiles!</span>
+            </h2>
+
+            <p className="about-description">
+              At our clinic, we focus on your dental health with modern
+              technology and an expert team. Achieve a healthy smile with
+              personalized solutions—book your appointment today!
+            </p>
+
+            <ul className="about-list">
+              {features.map((item, index) => (
+                <li key={index} className="about-list-item">
+                  <FaCheck className="about-check-icon" />
+                  <span className="about-list-text">{item}</span>
+                </li>
+              ))}
+            </ul>
           </div>
-        ) : shoes.length === 0 ? (
-          <div className="text-center text-xl text-gray-500">
-            Không tìm thấy sản phẩm nào.
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-12">
-            {shoes.map((shoe) => (
-              <ProductCard
-                key={shoe._id}
-                image={`${import.meta.env.VITE_BACKEND_URL}/images/shoes/${
-                  shoe.thumbnail
-                }`}
-                name={shoe.mainText}
-                colors={shoe.brand}
-                price={Number(shoe.price).toLocaleString("vi-VN") + " đ"}
-              />
-            ))}
-          </div>
-        )}
+        </div>
       </div>
-    </div>
+    </section>
+  );
+};
+
+// --- WHY CHOOSE US SECTION COMPONENT ---
+interface FeatureItem {
+  icon: React.ReactNode;
+  title: string;
+  desc: string;
+}
+
+const WhyChooseUsSection: React.FC = () => {
+  const features: FeatureItem[] = [
+    {
+      icon: <FaTooth />,
+      title: "Quality Service",
+      desc: "We aim to preserve and enhance your healthy smile, supporting you every step of the way.",
+    },
+    {
+      icon: <FaMicroscope />,
+      title: "Modern Technology",
+      desc: "Using the latest technology, we detect issues early and provide effective treatment options.",
+    },
+    {
+      icon: <FaUserMd />,
+      title: "Experienced Experts",
+      desc: "Our expert team offers personalized treatment plans and supports you every step of the way.",
+    },
+  ];
+
+  return (
+    <section className="why-choose-section">
+      <div className="app-container">
+        <div className="why-choose-grid">
+          <div className="why-choose-content">
+            <span className="why-choose-subtitle">Why Choose Us?</span>
+
+            <h2 className="why-choose-heading">
+              Hit the Road with Us for{" "}
+              <br className="why-choose-heading-break" />
+              <span className="why-choose-highlight">Healthy Smiles!</span>
+            </h2>
+
+            <p className="why-choose-description">
+              Looking for a clinic that values healthy smiles? We offer modern,
+              expert care for your oral health.
+            </p>
+
+            <div className="why-choose-features">
+              {features.map((item, index) => (
+                <div key={index} className="why-choose-feature-item">
+                  <div className="why-choose-feature-icon">
+                    {item.icon}
+                  </div>
+                  <div className="why-choose-feature-content">
+                    <h3 className="why-choose-feature-title">{item.title}</h3>
+                    <p className="why-choose-feature-desc">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="why-choose-image-col">
+            <div className="why-choose-image-wrapper">
+              <img
+                src="src/assets/imgs/whychooseus.jpg"
+                alt="Male Dentist Smiling"
+                className="why-choose-image"
+              />
+              <div className="why-choose-image-overlay"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+// --- OUR TEAM SECTION COMPONENT ---
+interface TeamMember {
+  id: number;
+  name: string;
+  role: string;
+  image: string;
+}
+
+const OurTeamSection: React.FC = () => {
+  const teamMembers: TeamMember[] = [
+    {
+      id: 1,
+      name: "Dr. Thomas LucaLuca",
+      role: "General Dentistry",
+      image: "src/assets/imgs/bacsitocbac.jpg",
+    },
+    {
+      id: 2,
+      name: "Dr. James Hung",
+      role: "Orthodontics",
+      image: "src/assets/imgs/bacsichaua.jpg",  
+    },
+    {
+      id: 3,
+      name: "Dr. Sarah Williams",
+      role: "Cosmetic Dentist",
+      image: "src/assets/imgs/bacsidepgai.jpg",
+    },
+  ];
+
+  return (
+    <section className="our-team-section">
+      <div className="app-container">
+        <div className="our-team-header">
+          <span className="our-team-subtitle">Our Team</span>
+          <h2 className="our-team-heading">
+            Our <span className="our-team-highlight">Professional</span> Team
+          </h2>
+          <p className="our-team-description">
+            Lorem ipsum dolor sit amet consectetur. Nisi ultricies sed faucibus
+            porttitor mus nullam adipiscing.
+          </p>
+        </div>
+
+        <div className="our-team-grid">
+          {teamMembers.map((member) => (
+            <div key={member.id} className="our-team-card">
+              <div className="our-team-image-wrapper">
+                <img
+                  src={member.image}
+                  alt={member.name}
+                  className="our-team-image"
+                />
+              </div>
+              <div className="our-team-content">
+                <h3 className="our-team-name">{member.name}</h3>
+                <p className="our-team-role">{member.role}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+// --- HOW IT WORKS SECTION COMPONENT ---
+interface StepItem {
+  icon: React.ReactNode;
+  title: string;
+  desc: string;
+}
+
+const HowItWorkSection: React.FC = () => {
+  const steps: StepItem[] = [
+    {
+      icon: <FaCalendarCheck />,
+      title: "Book Your Appointment",
+      desc: "Get expert dental care and achieve your best smile.",
+    },
+    {
+      icon: <FaUserFriends />,
+      title: "Consultation & Examination",
+      desc: "Get a thorough exam and start your path to a healthier smile.",
+    },
+    {
+      icon: <FaFileMedical />,
+      title: "Personalized Treatment Plan",
+      desc: "Tailored care to achieve your healthiest, brightest smile.",
+    },
+    {
+      icon: <FaTooth />,
+      title: "Ongoing Care & Follow - Up",
+      desc: "Continued support to maintain your healthy, beautiful smile.",
+    },
+  ];
+
+  return (
+    <section className="how-it-works-section">
+      <div className="app-container">
+        <div className="how-it-works-header">
+          <span className="how-it-works-subtitle">How It Work</span>
+          <h2 className="how-it-works-heading">
+            Your Journey to the{" "}
+            <span className="how-it-works-highlight">Perfect Smile</span>
+          </h2>
+          <p className="how-it-works-description">
+            Achieve a healthier, brighter smile with expert care and
+            personalized treatments. We're here to help every step of the way.
+          </p>
+        </div>
+
+        <div className="how-it-works-grid">
+          {steps.map((step, index) => (
+            <div key={index} className="how-it-works-step">
+              <div className="how-it-works-icon-wrapper">
+                {step.icon}
+              </div>
+              <h3 className="how-it-works-step-title">{step.title}</h3>
+              <p className="how-it-works-step-desc">{step.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+// --- CONTACT US BOTTOM SECTION COMPONENT ---
+const ContactUsBottomSection: React.FC = () => {
+  return (
+    <section className="contact-us-bottom-section">
+      <div className="app-container">
+        <div className="contact-us-bottom-grid">
+          <div className="contact-us-bottom-image-col">
+            <div className="contact-us-bottom-image-wrapper">
+              <img
+                src="src/assets/imgs/contactus.jpg"
+                alt="Doctor consultation"
+                className="contact-us-bottom-image"
+              />
+            </div>
+          </div>
+
+          <div className="contact-us-bottom-content">
+            <span className="contact-us-bottom-subtitle">Contact Us</span>
+            <h2 className="contact-us-bottom-heading">
+              Start Your Journey to a{" "}
+              <br className="contact-us-bottom-heading-break" />
+              Healthy <span className="contact-us-bottom-highlight">Smile Today!</span>
+            </h2>
+            <p className="contact-us-bottom-description">
+              Book your appointment now to take the first step towards a healthy
+              smile! Our expert team is waiting for you. Take action now for a
+              healthier mouth and teeth.
+            </p>
+
+            <div className="contact-us-bottom-list">
+              <div className="contact-us-bottom-item">
+                <div className="contact-us-bottom-item-icon">
+                  <FaPhoneAlt />
+                </div>
+                <span className="contact-us-bottom-item-text">
+                  (000) 000-0000
+                </span>
+              </div>
+
+              <div className="contact-us-bottom-item">
+                <div className="contact-us-bottom-item-icon">
+                  <FaEnvelope />
+                </div>
+                <span className="contact-us-bottom-item-text">
+                  adress@gmail.com
+                </span>
+              </div>
+
+              <div className="contact-us-bottom-item">
+                <div className="contact-us-bottom-item-icon">
+                  <FaMapMarkerAlt />
+                </div>
+                <span className="contact-us-bottom-item-text">
+                  Address will be added here
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+// --- HOME PAGE COMPONENT (Combines all sections) ---
+const HomePage: React.FC = () => {
+  return (
+    <>
+      <HeroSection />
+      <AboutSection />
+      <WhyChooseUsSection />
+      <OurTeamSection />
+      <HowItWorkSection />
+      <ContactUsBottomSection />
+    </>
   );
 };
 
