@@ -13,6 +13,8 @@ import enUS from "antd/es/locale/en_US";
 import { AppProvider } from "./components/context/app.context";
 import Protected from "./components/auth";
 import StaffLayout from "./components/layout/layout.staff";
+import StaffAppointmentsPage from "./pages/staff/StaffAppointmentsPage";
+import WaitingQueuePage from "./pages/staff/StaffWaitingQueuePage";
 
 const router = createBrowserRouter([
   {
@@ -48,19 +50,11 @@ const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: (
-          <Protected>
-            <Dashboard />
-          </Protected>
-        ),
+        element: <StaffAppointmentsPage />,
       },
       {
-        path: "users",
-        element: (
-          <Protected>
-            <Users />
-          </Protected>
-        ),
+        path: "waiting",
+        element: <WaitingQueuePage />,
       },
     ],
   },
