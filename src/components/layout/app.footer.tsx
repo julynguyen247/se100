@@ -29,21 +29,23 @@ interface ContactItemProps {
 
 const Footer: React.FC = () => {
   return (
-    <footer className="site-footer">
-      <div className="app-container site-footer__inner">
-        <div className="site-footer__grid">
-          <div className="site-footer__column">
-            <div className="site-footer__logo">
-              <div className="site-footer__logo-icon">C</div>
-              <span className="site-footer__logo-text">Care</span>
+    <footer className="bg-white py-16 pb-10 border-t border-[#e5e7eb] font-['Inter','Segoe_UI',system-ui,-apple-system,BlinkMacSystemFont,sans-serif]">
+      <div className="w-[min(1200px,100%)] mx-auto px-4 flex flex-col gap-12">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
+          <div className="flex flex-col gap-6">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-[10px] bg-[#2563eb] text-white grid place-items-center font-bold text-xl shadow-[0_8px_16px_rgba(37,99,235,0.28)]">
+                C
+              </div>
+              <span className="text-2xl font-bold text-[#0f172a]">Care</span>
             </div>
 
-            <p className="site-footer__description">
+            <p className="text-[0.95rem] text-[#6b7280] leading-[1.6] max-w-[320px]">
               Our dental clinic services are dedicated to providing the most
               comfortable and efficient dental care possible.
             </p>
 
-            <div className="site-footer__social">
+            <div className="flex gap-3">
               <SocialIcon icon={<FaFacebookF />} />
               <SocialIcon icon={<FaTwitter />} />
               <SocialIcon icon={<FaInstagram />} />
@@ -51,9 +53,9 @@ const Footer: React.FC = () => {
             </div>
           </div>
 
-          <div className="site-footer__column">
-            <h3 className="site-footer__title">Company</h3>
-            <ul className="site-footer__list">
+          <div className="flex flex-col gap-6">
+            <h3 className="text-[1.1rem] font-bold text-[#0f172a]">Company</h3>
+            <ul className="list-none p-0 m-0 flex flex-col gap-3">
               <FooterLink text="About" />
               <FooterLink text="Services" />
               <FooterLink text="Team" />
@@ -61,9 +63,9 @@ const Footer: React.FC = () => {
             </ul>
           </div>
 
-          <div className="site-footer__column">
-            <h3 className="site-footer__title">Supports</h3>
-            <ul className="site-footer__list">
+          <div className="flex flex-col gap-6">
+            <h3 className="text-[1.1rem] font-bold text-[#0f172a]">Supports</h3>
+            <ul className="list-none p-0 m-0 flex flex-col gap-3">
               <FooterLink text="Privacy Policy" />
               <FooterLink text="Terms of Use" />
               <FooterLink text="FAQ's" />
@@ -71,9 +73,9 @@ const Footer: React.FC = () => {
             </ul>
           </div>
 
-          <div className="site-footer__column">
-            <h3 className="site-footer__title">Contact Us</h3>
-            <ul className="site-footer__list">
+          <div className="flex flex-col gap-6">
+            <h3 className="text-[1.1rem] font-bold text-[#0f172a]">Contact Us</h3>
+            <ul className="list-none p-0 m-0 flex flex-col gap-3">
               <ContactItem
                 icon={<FaPhoneAlt />}
                 text="(+01) 234 567 890"
@@ -92,12 +94,16 @@ const Footer: React.FC = () => {
           </div>
         </div>
 
-        <div className="site-footer__bottom">
+        <div className="border-t border-[#e5e7eb] pt-6 flex flex-col gap-4 text-sm text-[#6b7280] md:flex-row md:items-center md:justify-between">
           <p>© 2024 Care. All Rights Reserved.</p>
 
-          <div className="site-footer__legal">
-            <a href="#">Privacy Policy</a>
-            <a href="#">Terms & Conditions</a>
+          <div className="flex gap-6">
+            <a href="#" className="text-inherit no-underline transition-colors duration-200 hover:text-[#2563eb]">
+              Privacy Policy
+            </a>
+            <a href="#" className="text-inherit no-underline transition-colors duration-200 hover:text-[#2563eb]">
+              Terms & Conditions
+            </a>
           </div>
         </div>
       </div>
@@ -110,9 +116,9 @@ const Footer: React.FC = () => {
 // 1. Link Component
 const FooterLink: React.FC<FooterLinkProps> = ({ text, href = "#" }) => {
   return (
-    <li className="site-footer__list-item">
-      <a href={href} className="site-footer__link">
-        <span className="site-footer__link-dot">•</span>
+    <li>
+      <a href={href} className="text-[0.95rem] text-[#6b7280] no-underline inline-flex items-center gap-1 transition-all duration-200 hover:text-[#2563eb] hover:gap-2 group">
+        <span className="inline-block w-0 overflow-hidden text-[#2563eb] transition-[width] duration-200 group-hover:w-1.5">•</span>
         {text}
       </a>
     </li>
@@ -122,19 +128,29 @@ const FooterLink: React.FC<FooterLinkProps> = ({ text, href = "#" }) => {
 // 2. Contact Item Component
 const ContactItem: React.FC<ContactItemProps> = ({ icon, text, href }) => {
   const content = (
-    <div className="site-footer__contact">
-      <div className="site-footer__contact-icon">{icon}</div>
+    <div className="flex gap-3 text-[#6b7280] items-start transition-all duration-200 group-hover:text-[#2563eb] group-hover:translate-x-0.5">
+      <div className="text-[#2563eb] mt-0.5">{icon}</div>
       <span>{text}</span>
     </div>
   );
 
-  return <li>{href ? <a href={href}>{content}</a> : content}</li>;
+  return (
+    <li>
+      {href ? (
+        <a href={href} className="block group">
+          {content}
+        </a>
+      ) : (
+        content
+      )}
+    </li>
+  );
 };
 
 // 3. Social Icon Component
 const SocialIcon: React.FC<SocialIconProps> = ({ icon, href = "#" }) => {
   return (
-    <a href={href} className="site-footer__social-icon">
+    <a href={href} className="w-[34px] h-[34px] rounded-full border border-[#e5e7eb] text-[#2563eb] grid place-items-center transition-all duration-200 hover:bg-[#2563eb] hover:text-white hover:border-[#2563eb]">
       <span aria-hidden>{icon}</span>
     </a>
   );
