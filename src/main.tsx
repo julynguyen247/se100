@@ -15,6 +15,14 @@ import Protected from "./components/auth";
 import StaffLayout from "./components/layout/layout.staff";
 import StaffAppointmentsPage from "./pages/staff/StaffAppointmentsPage";
 import WaitingQueuePage from "./pages/staff/StaffWaitingQueuePage";
+import BookAppointmentPage from "./pages/patient/booking";
+import PatientDashboard from "./pages/patient/dashboard";
+import MyProfilePage from "./pages/patient/info";
+import MyAppointmentsPage from "./pages/patient/appointment";
+import MedicalHistoryPage from "./pages/patient/medicalHistory";
+import AdminReportsPage from "./pages/admin/report";
+import AdminSettingsPage from "./pages/admin/setting";
+import UserManagementPage from "./pages/admin/users";
 
 const router = createBrowserRouter([
   {
@@ -23,24 +31,47 @@ const router = createBrowserRouter([
     children: [{ index: true, Component: HomePage }],
   },
   {
+    path: "/patient",
+    Component: Layout,
+    children: [
+      {
+        index: true,
+        path: "dashboard",
+        element: <PatientDashboard />,
+      },
+      {
+        path: "appointments",
+        element: <MyAppointmentsPage />,
+      },
+      {
+        path: "medical-history",
+        element: <MedicalHistoryPage />,
+      },
+      {
+        path: "profile",
+        element: <MyProfilePage />,
+      },
+    ],
+  },
+  {
     path: "/admin",
     Component: AdminLayout,
     children: [
       {
         index: true,
-        element: (
-          <Protected>
-            <Dashboard />
-          </Protected>
-        ),
+        element: <Dashboard />,
       },
       {
         path: "users",
-        element: (
-          <Protected>
-            <Users />
-          </Protected>
-        ),
+        element: <UserManagementPage />,
+      },
+      {
+        path: "reports",
+        element: <AdminReportsPage />,
+      },
+      {
+        path: "settings",
+        element: <AdminSettingsPage />,
       },
     ],
   },

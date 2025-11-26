@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { App, Divider, Form, Input, Modal } from "antd";
 import type { FormProps } from "antd";
-import { updateUserAPI } from "@/services/api";
 
 interface IProps {
   openModalUpdate: boolean;
@@ -27,7 +26,6 @@ const UpdateUser = (props: IProps) => {
     dataUpdate,
   } = props;
   const [isSubmit, setIsSubmit] = useState<boolean>(false);
-  const { message, notification } = App.useApp();
 
   // https://ant.design/components/form#components-form-demo-control-hooks
   const [form] = Form.useForm();
@@ -43,24 +41,7 @@ const UpdateUser = (props: IProps) => {
     }
   }, [dataUpdate]);
 
-  const onFinish: FormProps<FieldType>["onFinish"] = async (values) => {
-    const { _id, fullName, phone } = values;
-    setIsSubmit(true);
-    const res = await updateUserAPI(_id, fullName, phone);
-    if (res && res.data) {
-      message.success("Cập nhật user thành công");
-      form.resetFields();
-      setOpenModalUpdate(false);
-      setDataUpdate(null);
-      refreshTable();
-    } else {
-      notification.error({
-        message: "Đã có lỗi xảy ra",
-        description: res.message,
-      });
-    }
-    setIsSubmit(false);
-  };
+  const onFinish: FormProps<FieldType>["onFinish"] = async (values) => {};
 
   return (
     <>

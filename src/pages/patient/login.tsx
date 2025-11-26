@@ -1,100 +1,89 @@
-import React, { useState } from "react";
-import type { FormProps } from "antd";
-import { App, Button, Checkbox, Form, Input } from "antd";
+import React, { useState, FormEvent } from "react";
+import { FiUser, FiRotateCcw } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
-import { loginAPI } from "@/services/api";
-import { useCurrentApp } from "@/components/context/app.context";
-type FieldType = {
-  username: string;
-  password: string;
-};
 
-const LoginPage = () => {
-  const [isSubmit, setIsSubmit] = useState(false);
-  const { message, notification } = App.useApp();
-  const { setIsAuthenticated, setUser } = useCurrentApp();
-  const onFinish: FormProps<FieldType>["onFinish"] = async (values) => {
-    const { username, password } = values;
-    setIsSubmit(true);
-    const res = await loginAPI(username, password);
-    setIsSubmit(false);
-    if (res?.data) {
-      setIsAuthenticated(true);
-      setUser(res.data.user);
-      localStorage.setItem("access_token", res.data.access_token);
-      message.success("Đăng nhập tài khoản thành công!");
-      navigate("/");
-    } else {
-      notification.error({
-        message: "Có lỗi xảy ra",
-        description:
-          res.message && Array.isArray(res.message)
-            ? res.message[0]
-            : res.message,
-        duration: 5,
-      });
-    }
-  };
-
-  const onFinishFailed: FormProps<FieldType>["onFinishFailed"] = (
-    errorInfo
-  ) => {
-    console.log("Failed:", errorInfo);
-  };
+const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    // TODO: sau này gắn loginAPI ở đây
+    console.log({ email, password });
+  };
+
   return (
-    <div className="flex justify-center items-center flex-1 h-[100vh] w-[100vw]">
-      <div className="bg-gray-200 rounded-2xl p-12 w-[30vw]">
-        <Form
-          name="basic"
-          initialValues={{ remember: true }}
-          onFinish={onFinish}
-          onFinishFailed={onFinishFailed}
-          autoComplete="off"
-          layout="vertical"
-          labelCol={{ span: 24 }}
-        >
-          <Form.Item<FieldType>
-            labelCol={{
-              span: 24,
-            }}
-            wrapperCol={{ span: 24 }}
-            label="Username"
-            name="username"
-            rules={[{ required: true, message: "Please input your username!" }]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item<FieldType>
-            labelCol={{
-              span: 24,
-            }}
-            wrapperCol={{ span: 24 }}
-            label="Password"
-            name="password"
-            rules={[{ required: true, message: "Please input your password!" }]}
-          >
-            <Input.Password />
-          </Form.Item>
-          <Form.Item
-            label={null}
-            wrapperCol={{ span: 24 }}
-            labelCol={{
-              span: 24,
-            }}
-          >
-            <Button type="primary" htmlType="submit" loading={isSubmit}>
-              Login
-            </Button>
-          </Form.Item>
-          Don't have an account?{" "}
-          <span
-            onClick={() => navigate("/register")}
-            className="text-blue-400 cursor-pointer"
-          >
-            Sign up
-          </span>
-        </Form>
+    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-[#E5F0FF] via-[#EFF4FF] to-[#DDEBFF] relative">
+      {/* Icon nhỏ góc trên phải */}
+      <button
+        type="button"
+        className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition"
+      >
+        <FiRotateCcw className="w-5 h-5" />
+      </button>
+
+      <div className="w-full max-w-md px-4">
+        <div className="bg-white rounded-2xl shadow-xl px-10 py-12">
+          {/* Header */}
+          <div className="flex flex-col items-center mb-8">
+            <div className="w-16 h-16 rounded-full bg-[#E0EDFF] flex items-center justify-center text-[#2563EB] mb-3">
+              <FiUser className="w-8 h-8" />
+            </div>
+            <h1 className="text-base font-semibold text-slate-800 text-center">
+              Hệ Thống Quản Lý Nha Khoa
+            </h1>
+            <p className="text-xs text-slate-500 mt-1">Đăng nhập để tiếp tục</p>
+          </div>
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-slate-700">
+                Email
+              </label>
+              <input
+                type="email"
+                placeholder="Nhập email của bạn"
+                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none transition focus:border-[#2563EB] focus:bg-white"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-slate-700">
+                Mật khẩu
+              </label>
+              <input
+                type="password"
+                placeholder="Nhập mật khẩu"
+                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none transition focus:border-[#2563EB] focus:bg-white"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="mt-2 w-full rounded-lg bg-[#2563EB] py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1D4ED8]"
+            >
+              Đăng nhập
+            </button>
+          </form>
+
+          {/* Footer */}
+          <div className="mt-6 text-center text-xs">
+            <span className="text-slate-500">Chưa có tài khoản? </span>
+            <button
+              type="button"
+              onClick={() => navigate("/register")}
+              className="text-[#2563EB] font-medium hover:underline"
+            >
+              Đăng ký tài khoản mới
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
