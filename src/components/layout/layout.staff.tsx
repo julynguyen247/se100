@@ -11,7 +11,7 @@ import {
 import { Dropdown, Layout, Menu, Space, message } from "antd";
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import { FaUserCircle } from "react-icons/fa";
-import { logoutAPI } from "@/services/api";
+
 import { Footer } from "antd/es/layout/layout";
 
 const StaffLayout: React.FC = () => {

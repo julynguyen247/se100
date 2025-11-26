@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { App, Divider, Form, Input, Modal } from "antd";
 import type { FormProps } from "antd";
-import { createUserAPI } from "@/services/api";
 
 interface IProps {
   openModalCreate: boolean;
@@ -19,28 +18,11 @@ type FieldType = {
 const CreateUser = (props: IProps) => {
   const { openModalCreate, setOpenModalCreate, refreshTable } = props;
   const [isSubmit, setIsSubmit] = useState<boolean>(false);
-  const { message, notification } = App.useApp();
 
   // https://ant.design/components/form#components-form-demo-control-hooks
   const [form] = Form.useForm();
 
-  const onFinish: FormProps<FieldType>["onFinish"] = async (values) => {
-    const { fullName, password, email, phone } = values;
-    setIsSubmit(true);
-    const res = await createUserAPI(fullName, email, password, phone);
-    if (res && res.data) {
-      message.success("Tạo mới user thành công");
-      form.resetFields();
-      setOpenModalCreate(false);
-      refreshTable();
-    } else {
-      notification.error({
-        message: "Đã có lỗi xảy ra",
-        description: res.message,
-      });
-    }
-    setIsSubmit(false);
-  };
+  const onFinish: FormProps<FieldType>["onFinish"] = async (values) => {};
 
   return (
     <>
