@@ -1,4 +1,3 @@
-import { deleteUserAPI, getAllUsersAPI } from "@/services/api";
 import { dateRangeValidate } from "@/services/helper";
 import {
   CloudUploadOutlined,
@@ -11,7 +10,6 @@ import { ProTable } from "@ant-design/pro-components";
 import { App, Button, message, notification, Popconfirm } from "antd";
 import { useEffect, useRef, useState } from "react";
 import CreateUser from "./create.user";
-import UpdateUser from "./update.user";
 
 type TSearch = {
   fullName: string;
@@ -35,16 +33,7 @@ const TableUser = () => {
   });
   const handleDeleteUser = async (_id: string) => {
     setIsDeleteUser(true);
-    const res = await deleteUserAPI(_id);
-    if (res && res.data) {
-      message.success("Xóa user thành công");
-      refreshTable();
-    } else {
-      notification.error({
-        message: "Đã có lỗi xảy ra",
-        description: res.message,
-      });
-    }
+
     setIsDeleteUser(false);
   };
   const columns: ProColumns<IUserTable>[] = [
@@ -164,17 +153,8 @@ const TableUser = () => {
               sort.createdAt === "ascend" ? "createdAt" : "-createdAt"
             }`;
           } else query += `&sort=-createdAt`;
-          const res = await getAllUsersAPI(query);
-          if (res && res.data) {
-            setUserTable(res.data.result);
-            setMeta(res.data.meta);
-          }
-          return {
-            data: res.data?.result,
-            page: 1,
-            success: true,
-            total: res.data?.meta.total,
-          };
+
+          return {};
         }}
         headerTitle="Table user"
         toolBarRender={() => [
@@ -204,13 +184,6 @@ const TableUser = () => {
         openModalCreate={openModalCreate}
         setOpenModalCreate={setOpenModalCreate}
         refreshTable={refreshTable}
-      />
-      <UpdateUser
-        openModalUpdate={openModalUpdate}
-        setOpenModalUpdate={setOpenModalUpdate}
-        refreshTable={refreshTable}
-        setDataUpdate={setDataUpdate}
-        dataUpdate={dataUpdate}
       />
     </>
   );
