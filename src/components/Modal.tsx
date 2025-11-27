@@ -1,93 +1,146 @@
-import React from "react";
+import React, {
+  useEffect,
+  useRef,
+  type ReactNode,
+  type RefObject,
+} from "react";
+import ReactDOM from "react-dom";
+import { FiX } from "react-icons/fi";
 
-interface StepModalProps {
+export interface ModalProps {
   open: boolean;
   onClose: () => void;
   title?: string;
-  subtitle: string;
-  icon?: React.ReactNode;
-  progress?: number;
-  primaryLabel?: string;
-  secondaryLabel?: string;
-  onPrimary?: () => void;
-  onSecondary?: () => void;
-  children: React.ReactNode;
+  children: ReactNode;
+  footer?: ReactNode;
+
+  showCloseButton?: boolean;
+
+  closeOnBackdrop?: boolean;
+
+  initialFocusRef?: RefObject<HTMLElement>;
+
+  preventScroll?: boolean;
+
+  className?: string;
 }
 
-export const StepModal: React.FC<StepModalProps> = ({
+const Modal: React.FC<ModalProps> = ({
   open,
   onClose,
-  title = "Appointment - modal",
-  subtitle,
-  icon,
-  progress = 0,
-  primaryLabel = "Next",
-  secondaryLabel = "Cancel",
-  onPrimary,
-  onSecondary,
+  title,
   children,
+  footer,
+  showCloseButton = true,
+  closeOnBackdrop = true,
+  initialFocusRef,
+  preventScroll = true,
+  className = "",
 }) => {
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const closeBtnRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    if (!preventScroll) return;
+    if (open) {
+      const original = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = original;
+      };
+    }
+  }, [open, preventScroll]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [open, onClose]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    if (initialFocusRef?.current) {
+      initialFocusRef.current.focus();
+      return;
+    }
+
+    if (showCloseButton && closeBtnRef.current) {
+      closeBtnRef.current.focus();
+      return;
+    }
+
+    if (panelRef.current) {
+      panelRef.current.focus();
+    }
+  }, [open, initialFocusRef, showCloseButton]);
+
   if (!open) return null;
+  if (typeof document === "undefined") return null; // phòng SSR
 
-  return (
+  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!closeOnBackdrop) return;
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
+  const panelClasses = [
+    "w-full max-w-lg",
+    "bg-white rounded-2xl shadow-xl",
+    "p-4 sm:p-5",
+    "focus:outline-none",
+    className,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return ReactDOM.createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-center justify-center px-4 sm:px-0 bg-black/40"
+      onClick={handleBackdropClick}
     >
-      <div
-        className="w-[380px] max-w-full rounded-2xl bg-white shadow-xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="px-6 pt-5 text-xs font-medium text-slate-400">
-          {title}
-        </div>
+      <div ref={panelRef} tabIndex={-1} className={panelClasses}>
+        {(title || showCloseButton) && (
+          <div className="flex items-start justify-between mb-3">
+            {title ? (
+              <h2 className="text-sm font-semibold text-slate-900">{title}</h2>
+            ) : (
+              <div />
+            )}
 
-        <div className="px-6 pb-5 pt-3">
-          <div className="mb-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500">
-                {icon ?? (
-                  <span className="text-lg" aria-hidden>
-                    👤
-                  </span>
-                )}
-              </div>
-              <div className="text-sm font-semibold text-slate-900">
-                {subtitle}
-              </div>
-            </div>
-
-            <div className="text-xs font-medium text-slate-400">
-              {progress}%
-            </div>
+            {showCloseButton && (
+              <button
+                type="button"
+                ref={closeBtnRef}
+                onClick={onClose}
+                className="p-1 rounded-full text-slate-500 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <FiX className="w-4 h-4" />
+              </button>
+            )}
           </div>
-          <div className="mb-5 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-            <div
-              className="h-full rounded-full bg-indigo-500 transition-all"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
+        )}
 
-          <div className="space-y-3">{children}</div>
+        <div className="text-xs sm:text-sm text-slate-700">{children}</div>
 
-          <div className="mt-6 flex gap-3">
-            <button
-              type="button"
-              onClick={onSecondary ?? onClose}
-              className="flex-1 rounded-lg border border-slate-200 bg-white py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-            >
-              {secondaryLabel}
-            </button>
-            <button
-              type="button"
-              onClick={onPrimary}
-              className="flex-1 rounded-lg bg-indigo-500 py-2.5 text-sm font-semibold text-white hover:bg-indigo-600 disabled:cursor-not-allowed disabled:bg-indigo-300"
-            >
-              {primaryLabel}
-            </button>
+        {footer && (
+          <div className="mt-4 pt-3 border-t border-slate-100 flex justify-end">
+            {footer}
           </div>
-        </div>
+        )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
+
+export default Modal;

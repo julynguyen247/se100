@@ -13,8 +13,7 @@ import enUS from "antd/es/locale/en_US";
 import { AppProvider } from "./components/context/app.context";
 import Protected from "./components/auth";
 import StaffLayout from "./components/layout/layout.staff";
-import StaffAppointmentsPage from "./pages/staff/StaffAppointmentsPage";
-import WaitingQueuePage from "./pages/staff/StaffWaitingQueuePage";
+
 import BookAppointmentPage from "./pages/patient/booking";
 import PatientDashboard from "./pages/patient/dashboard";
 import MyProfilePage from "./pages/patient/info";
@@ -23,6 +22,12 @@ import MedicalHistoryPage from "./pages/patient/medicalHistory";
 import AdminReportsPage from "./pages/admin/report";
 import AdminSettingsPage from "./pages/admin/setting";
 import UserManagementPage from "./pages/admin/users";
+import StaffHomePage from "./pages/staff/home";
+import StaffQueuePage from "./pages/staff/queue";
+import StaffPatientRecordsPage from "./pages/staff/report";
+import StaffExaminationPage from "./pages/staff/examination";
+import StaffMedicinePage from "./pages/staff/medicine";
+import StaffAppointmentPage from "./pages/staff/appointment";
 
 const router = createBrowserRouter([
   {
@@ -81,14 +86,36 @@ const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <StaffAppointmentsPage />,
+        element: <StaffHomePage />,
       },
+
       {
         path: "waiting",
-        element: <WaitingQueuePage />,
+        element: <StaffQueuePage />,
+      },
+
+      {
+        path: "patients",
+        element: <StaffPatientRecordsPage />,
+      },
+
+      {
+        path: "examination",
+        element: <StaffExaminationPage />,
+      },
+
+      {
+        path: "medicine",
+        element: <StaffMedicinePage />,
+      },
+
+      {
+        path: "appointments",
+        element: <StaffAppointmentPage />,
       },
     ],
   },
+
   {
     path: "/login",
     Component: LoginPage,
