@@ -23,13 +23,11 @@ interface HeroProps {
 }
 
 const HeroSection: React.FC<HeroProps> = ({
-  doctorImageSrc = "src/assets/imgs/anhbacsicuoi.jpg",
-  // Thêm ảnh thứ 2 (bạn thay đường dẫn thật vào đây nhé)
-  doctorImageSrcHover = "src/assets/imgs/cuoidep.jpg",
+
 }) => {
   return (
     <section className="relative h-screen w-full py-16 pb-24 font-['Inter','Segoe_UI',system-ui,-apple-system,BlinkMacSystemFont,sans-serif] overflow-hidden">
-      <video autoPlay loop muted playsInline className="back-video">
+      <video autoPlay loop muted playsInline className="back-video" style={{filter: "brightness(0.8)"}}>
         <source src={previewVideo} type="video/mp4" />
       </video>
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(37,99,235,0.12),transparent_60%)] opacity-60 pointer-events-none" aria-hidden />
@@ -50,20 +48,20 @@ const HeroSection: React.FC<HeroProps> = ({
           </div> */}
         </div>
 
-        <div className="w-full max-w-[520px] text-center mx-auto lg:text-left transition-all duration-700 ease-out peer-hover:-translate-y-4 lg:peer-hover:translate-y-0 lg:peer-hover:-translate-x-12">
-          <span className="inline-block px-5 py-1.5 bg-[rgba(37,99,235,0.15)] text-[#2563eb] rounded-full text-xs font-semibold tracking-[0.08em] mb-4">
+        <div className="w-full max-w-[520px] text-center mx-auto lg:text-left transition-all duration-700 ease-out peer-hover:-translate-y-4 lg:peer-hover:translate-y-0 lg:peer-hover:-translate-x-12  ">
+          <span className="inline-block px-5 py-1.5 bg-[rgba(255,255,255,0.15)] text-[#2563eb] rounded-full text-xs font-bold tracking-[0.08em] mb-4 shadow-lg">
             Dental Health Polyclinic
           </span>
-
-          <h1 className="text-[clamp(2.5rem,4vw,3.8rem)] font-bold text-[#0f172a] leading-[1.1] mb-4">
+         
+          <h1 className="text-[clamp(2.5rem,4vw,3.8rem)] font-bold text-white leading-[1.1] mb-4">
             Your <span className="text-[#2563eb]">Perfect Smile</span> Starts Here
           </h1>
 
-          <p className="text-[#6f94f8] font-semibold text-base leading-[1.7] mb-8">
+          <p className="text-[#5e6b84] font-semibold text-base leading-[1.7] mb-8 text-white">
             Get expert dental care in a comfortable setting. Healthy, bright
             smiles start with us — book your appointment today!
           </p>
-
+    
           <button className="border-none bg-gradient-to-br from-[#2563eb] to-[#1d4ed8] text-white font-semibold py-3.5 px-10 rounded-xl cursor-pointer shadow-[0_20px_36px_rgba(37,99,235,0.35)] transition-all duration-200 w-full sm:w-auto hover:shadow-[0_25px_45px_rgba(37,99,235,0.4)] active:translate-y-[1px]">
             Contact Us
           </button>
@@ -76,15 +74,14 @@ const HeroSection: React.FC<HeroProps> = ({
           <div
             className="rounded-2xl shadow-[0_25px_60px_rgba(15,23,42,0.12)] p-6 w-full mx-auto lg:w-fit lg:p-6 lg:px-4"
             style={{
-              background: "rgba(255,255,255,0.3)",
+              backgroundColor: "transparent", 
               backdropFilter: "blur(20px)",
-              WebkitBackdropFilter: "blur(20px)",
+              backgroundImage: "linear-gradient(120deg, rgba(255,255,255,0.3), rgba(37, 99, 235,0.2))",
               marginBottom: "50px",
               marginTop: "150px",
-              color: "#0f172a", // text màu đen
             }}
           >
-            <form className="flex flex-col gap-6 items-stretch w-full lg:flex-row lg:flex-nowrap lg:items-center lg:w-fit lg:justify-center" style={{color: "#0f172a"}}>
+            <form className="flex flex-col gap-6 items-stretch w-full lg:flex-row lg:flex-nowrap lg:items-center lg:w-fit lg:justify-center text-white">
                 {/* Các input form của bạn giữ nguyên */}
                 <FormInput icon={<FaUser />} label="Name" placeholder="Sofia Dark" type="text" />
                 <FormInput icon={<FaPhoneAlt />} label="Phone" placeholder="Your Phone" type="tel" />
@@ -121,13 +118,13 @@ const FormInput: React.FC<FormInputProps> = ({
 }) => {
   return (
     <div className="w-full border-b border-[#e5e7eb] pb-1.5 lg:flex-[0_1_auto] lg:w-auto lg:border-b-0 lg:border-r lg:border-[#e5e7eb] lg:px-4 lg:min-w-[180px] lg:last:border-r-0">
-      <label className="text-[0.7rem] font-bold text-[#6b7280] tracking-[0.08em] mb-0.5 uppercase inline-block">{label}</label>
+      <label className="text-[0.7rem] font-bold text-white tracking-[0.08em] mb-0.5 uppercase inline-block">{label}</label>
       <div className="flex items-center gap-2.5">
-        <span className="text-[#6b7280] text-sm">{icon}</span>
+        <span className="text-white text-sm">{icon}</span>
         <input
           type={type}
           placeholder={placeholder}
-          className="border-none bg-transparent text-sm font-semibold text-[#0f172a] w-full outline-none py-0.5 placeholder:text-[#94a3b8] placeholder:font-normal"
+          className="border-none bg-transparent text-sm font-semibold text-white w-full outline-none py-0.5 placeholder:text-white/70 placeholder:font-normal"
         />
       </div>
     </div>
