@@ -1,5 +1,8 @@
 import React from "react";
 import previewVideo from "../../assets/videos/4490548-uhd_3840_2160_25fps.mp4";
+import cuoidepImg from "../../assets/imgs/cuoidep.jpg";
+import cuoidepImg2 from "../../assets/imgs/anhbacsicuoi.jpg";
+import rangcuoiImg from "../../assets/imgs/pngchuanbg.png";
 import {
   FaUser,
   FaPhoneAlt,
@@ -22,9 +25,7 @@ interface HeroProps {
    doctorImageSrcHover?:'src/assets/imgs/cuoidep.jpg'; // Bạn sẽ truyền link ảnh bác sĩ vào đây
 }
 
-const HeroSection: React.FC<HeroProps> = ({
-
-}) => {
+const HeroSection: React.FC<HeroProps> = () => {
   return (
     <section className="relative h-screen w-full py-16 pb-24 font-['Inter','Segoe_UI',system-ui,-apple-system,BlinkMacSystemFont,sans-serif] overflow-hidden">
       <video autoPlay loop muted playsInline className="back-video" style={{filter: "brightness(0.8)"}}>
@@ -48,16 +49,16 @@ const HeroSection: React.FC<HeroProps> = ({
           </div> */}
         </div>
 
-        <div className="w-full max-w-[520px] text-center mx-auto lg:text-left transition-all duration-700 ease-out peer-hover:-translate-y-4 lg:peer-hover:translate-y-0 lg:peer-hover:-translate-x-12  ">
-          <span className="inline-block px-5 py-1.5 bg-[rgba(255,255,255,0.15)] text-[#2563eb] rounded-full text-xs font-bold tracking-[0.08em] mb-4 shadow-lg">
+        <div className=" w-full max-w-[520px] text-center mx-auto lg:text-left transition-all duration-700 ease-out peer-hover:-translate-y-4 lg:peer-hover:translate-y-0 lg:peer-hover:-translate-x-12  ">
+          <span className="inline-block px-5 py-1.5 bg-[rgba(255,255,255,0.15)] text-dark rounded-full text-xs font-bold tracking-[0.08em] mb-4 shadow-lg">
             Dental Health Polyclinic
           </span>
          
-          <h1 className="text-[clamp(2.5rem,4vw,3.8rem)] font-bold text-white leading-[1.1] mb-4">
+          <h1 className="autoShow text-[clamp(2.5rem,4vw,3.8rem)] font-bold text-white leading-[1.1] mb-4">
             Your <span className="text-[#2563eb]">Perfect Smile</span> Starts Here
           </h1>
 
-          <p className="text-[#5e6b84] font-semibold text-base leading-[1.7] mb-8 text-white">
+          <p className="text-white font-semibold text-base leading-[1.7] mb-8">
             Get expert dental care in a comfortable setting. Healthy, bright
             smiles start with us — book your appointment today!
           </p>
@@ -132,13 +133,7 @@ const FormInput: React.FC<FormInputProps> = ({
 };
  
 // --- ABOUT SECTION COMPONENT ---
-interface AboutProps {
-  imageSrc?: "src/assets/imgs/heathySmile.jpg";
-}
-
-const AboutSection: React.FC<AboutProps> = ({
-  imageSrc = "src/assets/imgs/heathySmile.jpg",
-}) => {
+const AboutSection: React.FC = () => {
   const features = [
     "Premium Dental Services You Can Trust.",
     "Advanced Technology for Healthier Smiles.",
@@ -146,35 +141,65 @@ const AboutSection: React.FC<AboutProps> = ({
   ];
 
   return (
-    <section className="w-full bg-white py-12 font-['Inter','Segoe_UI',system-ui,-apple-system,BlinkMacSystemFont,sans-serif] overflow-hidden lg:py-24">
+    <section className="h-screen w-full bg-white py-12 font-['Inter','Segoe_UI',system-ui,-apple-system,BlinkMacSystemFont,sans-serif] overflow-hidden lg:py-24 flex items-center">
       <div className="w-[min(1200px,100%)] mx-auto px-4">
         <div className="flex flex-col items-center gap-10 lg:flex-row lg:gap-20">
-          <div className="w-full relative lg:w-1/2">
+          {/* <div className="w-full relative lg:w-1/2">
             <img
               src={imageSrc}
               alt="Doctor treating patient"
               className="w-full h-auto object-cover rounded-2xl shadow-[0_20px_40px_rgba(15,23,42,0.1)]"
             />
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] h-[90%] bg-[rgba(37,99,235,0.05)] rounded-full opacity-50 blur-[60px] -z-10 pointer-events-none"></div>
+          </div> */}
+          <div className="banner w-full lg:w-1/2">
+            <div className="product">
+              <div 
+                className="tooth"
+                style={{
+                  "--tooth-bg": `url(${rangcuoiImg})`,
+                  "--tooth-overlay": `url(${cuoidepImg})`,
+                } as React.CSSProperties}
+              ></div>
+              <div 
+                className="tooth"
+                style={{
+                  "--tooth-bg": `url(${rangcuoiImg})`,
+                  "--tooth-overlay": `url(${cuoidepImg2})`,
+                } as React.CSSProperties}
+              ></div>
+              <div className="toothbase hidden lg:block">
+                <img src="src/assets/imgs/hamdethuongpng.png" alt="" />
+                <img src="src/assets/imgs/banchaipng.png" alt="" />
+                <img src="src/assets/imgs/kem.png" alt="" />
+                <img src="src/assets/imgs/rangicon.png" alt="" />
+              </div>
+            </div>
+            {/* Tạm thời comment rock images vì chưa có file */}
+            {/* <div className="rock">
+              <img src="images/rock1.png" alt="" />
+              <img src="images/rock2.png" alt="" />
+              <img src="images/rock3.png" alt="" />
+            </div> */}
           </div>
 
-          <div className="w-full flex flex-col lg:w-1/2">
-            <span className="text-[#6b7280] text-sm font-medium uppercase tracking-[0.1em] mb-3">
+          <div className="showright w-full flex flex-col lg:w-1/2">
+            <span className="autoShow text-[#6b7280] text-sm font-medium uppercase tracking-[0.1em] mb-3">
               Dental Health Polyclinic
             </span>
 
-            <h2 className="text-[clamp(1.875rem,3vw,2.625rem)] font-bold text-[#0f172a] leading-[1.2] mb-6">
+            <h2 className="autoShow text-[clamp(1.875rem,3vw,2.625rem)] font-bold text-[#0f172a] leading-[1.2] mb-6">
               We Are Here for Best <br className="hidden lg:block" />
               <span className="text-[#2563eb]">Healthy Smiles!</span>
             </h2>
 
-            <p className="text-[#6b7280] text-base leading-[1.7] mb-8 sm:text-lg">
+            <p className="autoShow text-[#6b7280] text-base leading-[1.7] mb-8 sm:text-lg">
               At our clinic, we focus on your dental health with modern
               technology and an expert team. Achieve a healthy smile with
               personalized solutions—book your appointment today!
             </p>
 
-            <ul className="list-none p-0 m-0 flex flex-col gap-4">
+            <ul className="autoShow list-none p-0 m-0 flex flex-col gap-4">
               {features.map((item, index) => (
                 <li key={index} className="flex items-center gap-3">
                   <FaCheck className="text-[#2563eb] text-lg flex-shrink-0" />

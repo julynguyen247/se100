@@ -1,5 +1,16 @@
 @import "tailwindcss";
 
+/* --- 1. THÊM ĐOẠN NÀY ĐỂ ĐẢM BẢO SCROLL CHUẨN --- */
+/* @layer base giúp nó không bị Tailwind ghi đè */
+@layer base {
+  html, body {
+    min-height: 100vh;      /* Đảm bảo trang luôn đủ cao */
+    overflow-x: hidden;     /* Ẩn thanh cuộn ngang thừa thãi */
+    scroll-behavior: smooth; /* Cuộn mượt khi click link neo */
+    /* Tuyệt đối KHÔNG thêm overflow-y: hidden ở đây */
+  }
+}
+
 :root {
   --brand-blue: #1e3a8a;
   --accent-blue: #2563eb;
@@ -19,6 +30,7 @@
   margin: 0 auto;
   padding: 0 1rem;
 }
+
 .back-video {
   position: absolute;
   top: 0;
@@ -28,6 +40,155 @@
   object-fit: cover;
   z-index: 0;
 }
+.banner {
+  margin-top: 0;
+  height: 500px;
+  overflow: visible;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 
+.product {
+  position: relative;
+  left: auto;
+  transform: none;
+  bottom: auto;
+  z-index: 2;
+  width: 500px;
+  height: 500px;
+  transition: 0.7s;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  --left: 0px;
+}
 
+.product .tooth {
+  background: 
+    var(--tooth-overlay) var(--left) 0,
+    var(--tooth-bg) ;
+  background-size: auto 100%;
+  mask-image: var(--tooth-bg);
+  mask-size: auto 100%;
+  width: 450px;
+  aspect-ratio: 1/1;
+  background-blend-mode: multiply;
+  transition: 0.8s;
+  position: absolute;
+  /* Tạm thời bỏ mask để dễ debug */
+  /* mask-image: var(--tooth-bg);
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center; */
+}
+.product:hover {
+  --left: -1000px;
+  transform: translateY(-120px);
+}
 
+/* Animation 3D cho phần văn bản khi hover product */
+.showright {
+  transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1),
+              opacity 0.6s ease,
+              filter 0.6s ease;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+/* Khi hover vào banner (container chứa product) thì showright sẽ di chuyển */
+.banner:hover ~ .showright {
+  transform: translateX(60px) translateZ(80px) rotateY(-8deg) scale(1.02);
+  opacity: 0.92;
+  filter: blur(1px) brightness(1.1);
+}
+
+/* Fallback cho trình duyệt không hỗ trợ :has() */
+section:has(.product:hover) .showright {
+  transform: translateX(60px) translateZ(80px) rotateY(-8deg) scale(1.02);
+  opacity: 0.92;
+  filter: blur(1px) brightness(1.1);
+}
+.product .tooth:nth-child(2) {
+  opacity: 0;
+}
+.product:hover .tooth:nth-child(2) {
+  opacity: 1;
+}
+.product .toothbase {
+  position: absolute;
+  inset:0 0 0 0 ;
+  pointer-events: none;
+}
+.product .toothbase img {
+  position: absolute;
+  transition: 0.8s;
+}
+.product .toothbase img:nth-child(1) {
+  width: 600px;
+  height: 400px;
+  bottom:-220px;
+  z-index: -10;
+
+}
+.product .toothbase img:nth-child(2) {
+  width: 100px;
+  right: -50px;
+  z-index: -10;
+}
+.product .toothbase img:nth-child(3) {
+  width: 100px;
+  left: -100px;
+  z-index: -10;
+  transform: translateY(200px);
+}
+.product .toothbase img:nth-child(4) {
+  width: 100px;
+  right: -50px;
+  transform: translateY(300px);
+  z-index: -10;
+  rotate: -5deg;
+}
+.product:hover .toothbase img:nth-child(1) {
+  transform: translateY(150px);
+}
+.product:hover .toothbase img:nth-child(2) {
+  transform: translateX(20px) translateZ(20px);
+  scale: 2.8;
+  rotate: 90deg;
+}
+.product:hover .toothbase img:nth-child(3) {
+  transform: translateX(-20px) translateY(400px) translateZ(40px) scale(2.8) rotate(-180deg);
+}
+.product:hover .toothbase img:nth-child(4) {
+  transform: translateX(20px) translateY(400px) translateZ(40px) scale(2.8) rotate(-20deg);
+}
+
+/* Vô hiệu hóa tất cả hiệu ứng hover trên mobile (dưới 1024px) */
+@media (max-width: 1023px) {
+  .product:hover {
+    --left: 0px;
+    transform: none;
+  }
+  
+  .product:hover .tooth:nth-child(2) {
+    opacity: 0;
+  }
+  
+  .banner:hover ~ .showright,
+  section:has(.product:hover) .showright {
+    transform: none;
+    opacity: 1;
+    filter: none;
+  }
+  
+  .product:hover .toothbase img:nth-child(1),
+  .product:hover .toothbase img:nth-child(2),
+  .product:hover .toothbase img:nth-child(3),
+  .product:hover .toothbase img:nth-child(4) {
+    transform: none;
+    scale: 1;
+    rotate: 0deg;
+  }
+}
