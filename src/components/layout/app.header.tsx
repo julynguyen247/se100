@@ -63,23 +63,23 @@ const Header: React.FC = () => {
   };
 
   return (
-    <header className="w-full bg-white shadow-sm">
+    <header className="relative z-[100] w-full   ">
       <div className="max-w-6xl mx-auto px-4 py-2 flex items-center justify-between">
         {/* Logo + tên phòng khám / bệnh nhân */}
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-[#2563EB] text-white flex items-center justify-center">
+          <div className="w-9 h-9 rounded-full bg-[#2563EB] text-white flex items-center justify-center shadow-md shadow-black/30">
             <FiUsers className="w-5 h-5" />
           </div>
           <div className="leading-tight">
-            <p className="text-sm font-semibold text-slate-900">
+            <p className="text-sm font-bold text-white">
               Nha Khoa Dental Care
             </p>
-            <p className="text-xs text-slate-400">Bệnh nhân</p>
-          </div>
+            <p className="text-xs text-slate-200/80">Bệnh nhân</p>
+          </div>  
         </div>
 
         {/* Nav bên phải */}
-        <div className="flex items-center gap-2 text-xs sm:text-sm">
+        <div className="flex items-center gap-2 text-xs sm:text-sm text-white font-bold">
           {TABS.map((tab) => {
             const Icon = tab.icon;
             const active = isActive(tab);
@@ -90,8 +90,8 @@ const Header: React.FC = () => {
                 onClick={() => handleTabClick(tab)}
                 className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 transition ${
                   active
-                    ? "bg-[#EEF2FF] text-[#2563EB]"
-                    : "text-slate-600 hover:bg-slate-50"
+                    ? "bg-white/25 text-white shadow-sm shadow-black/30"
+                    : "text-white/75 hover:bg-white/10"
                 }`}
               >
                 <Icon className="w-4 h-4" />
@@ -103,7 +103,7 @@ const Header: React.FC = () => {
           {/* Dark mode (dummy) */}
           <button
             type="button"
-            className="ml-1 p-1 rounded-full text-slate-500 hover:bg-slate-50"
+            className="ml-1 p-1 rounded-full text-white/80 hover:bg-white/10"
           >
             <FiMoon className="w-4 h-4" />
           </button>
@@ -112,7 +112,7 @@ const Header: React.FC = () => {
           <button
             type="button"
             onClick={handleLogout}
-            className="ml-1 inline-flex items-center gap-1.5 text-red-500 hover:text-red-600"
+            className="ml-1 inline-flex items-center gap-1.5 text-red-300 hover:text-red-200"
           >
             <FiLogOut className="w-4 h-4" />
             <span>Đăng xuất</span>

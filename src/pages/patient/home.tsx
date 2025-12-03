@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import previewVideo from "../../assets/videos/4490548-uhd_3840_2160_25fps.mp4";
 import cuoidepImg from "../../assets/imgs/cuoidep.jpg";
 import cuoidepImg2 from "../../assets/imgs/anhbacsicuoi.jpg";
@@ -27,7 +27,7 @@ interface HeroProps {
 
 const HeroSection: React.FC<HeroProps> = () => {
   return (
-    <section className="relative h-screen w-full py-16 pb-24 font-['Inter','Segoe_UI',system-ui,-apple-system,BlinkMacSystemFont,sans-serif] overflow-hidden">
+    <section className="relative -mt-16 min-h-screen w-full py-16 pb-24 font-['Inter','Segoe_UI',system-ui,-apple-system,BlinkMacSystemFont,sans-serif] overflow-hidden">
       <video autoPlay loop muted playsInline className="back-video" style={{filter: "brightness(0.8)"}}>
         <source src={previewVideo} type="video/mp4" />
       </video>
@@ -141,7 +141,7 @@ const AboutSection: React.FC = () => {
   ];
 
   return (
-    <section className="h-screen w-full bg-white py-12 font-['Inter','Segoe_UI',system-ui,-apple-system,BlinkMacSystemFont,sans-serif] overflow-hidden lg:py-24 flex items-center">
+    <section className="min-h-screen w-full bg-white py-12 font-['Inter','Segoe_UI',system-ui,-apple-system,BlinkMacSystemFont,sans-serif] overflow-hidden lg:py-24 flex items-center">
       <div className="w-[min(1200px,100%)] mx-auto px-4">
         <div className="flex flex-col items-center gap-10 lg:flex-row lg:gap-20">
           {/* <div className="w-full relative lg:w-1/2">
@@ -489,6 +489,216 @@ const ContactUsBottomSection: React.FC = () => {
   );
 };
 
+// --- HERO CAROUSEL SECTION COMPONENT ---
+const HeroCarouselSection: React.FC = () => {
+  useEffect(() => {
+    const nextDom = document.getElementById("next") as HTMLButtonElement | null;
+    const prevDom = document.getElementById("prev") as HTMLButtonElement | null;
+    const carouselDom = document.querySelector(".carousel") as HTMLElement | null;
+
+    if (!nextDom || !prevDom || !carouselDom) return;
+
+    const sliderDom = carouselDom.querySelector(".carousel .list") as HTMLElement | null;
+    const thumbnailBorderDom = carouselDom.querySelector(".carousel .thumbnail") as HTMLElement | null;
+    const timeDom = carouselDom.querySelector(".carousel .time") as HTMLElement | null;
+
+    if (!sliderDom || !thumbnailBorderDom || !timeDom) return;
+
+    const thumbnailItemsDom = thumbnailBorderDom.querySelectorAll(".item");
+    if (thumbnailItemsDom.length > 0) {
+      thumbnailBorderDom.appendChild(thumbnailItemsDom[0]);
+    }
+
+    const timeRunning = 3000;
+    const timeAutoNext = 7000;
+
+    let runTimeOut: number | undefined;
+    let runNextAuto: number | undefined;
+
+    const showSlider = (type: "next" | "prev") => {
+      const sliderItemsDom = sliderDom.querySelectorAll(".carousel .list .item");
+      const thumbnailItems = thumbnailBorderDom.querySelectorAll(".carousel .thumbnail .item");
+
+      if (sliderItemsDom.length === 0 || thumbnailItems.length === 0) return;
+
+      if (type === "next") {
+        sliderDom.appendChild(sliderItemsDom[0]);
+        thumbnailBorderDom.appendChild(thumbnailItems[0]);
+        carouselDom.classList.add("next");
+      } else {
+        sliderDom.prepend(sliderItemsDom[sliderItemsDom.length - 1]);
+        thumbnailBorderDom.prepend(thumbnailItems[thumbnailItems.length - 1]);
+        carouselDom.classList.add("prev");
+      }
+
+      clearTimeout(runTimeOut);
+      runTimeOut = window.setTimeout(() => {
+        carouselDom.classList.remove("next");
+        carouselDom.classList.remove("prev");
+      }, timeRunning);
+
+      clearTimeout(runNextAuto);
+      runNextAuto = window.setTimeout(() => {
+        nextDom.click();
+      }, timeAutoNext);
+    };
+
+    const handleNextClick = () => showSlider("next");
+    const handlePrevClick = () => showSlider("prev");
+
+    nextDom.addEventListener("click", handleNextClick);
+    prevDom.addEventListener("click", handlePrevClick);
+
+    // Auto run first time
+    runNextAuto = window.setTimeout(() => {
+      nextDom.click();
+    }, timeAutoNext);
+
+    return () => {
+      nextDom.removeEventListener("click", handleNextClick);
+      prevDom.removeEventListener("click", handlePrevClick);
+      clearTimeout(runTimeOut);
+      clearTimeout(runNextAuto);
+    };
+  }, []);
+
+  return (
+    <section className="w-screen bg-white py-12">
+      <div className="w-full mx-auto px-0">
+        <div className="carousel">
+          {/* list item */}
+          <div className="list">
+            <div className="item">
+              <img src="src/assets/imgs/anh11.jpg" alt="carousel 1" />
+              <div className="content">
+                <div className="author">DENTAL CARE</div>
+                <div className="title">DESIGN SLIDER</div>
+                <div className="topic">DENTAL CARE</div>
+                <div className="des">
+                  Lorem ipsum dolor, sit amet consectetur adipisicing elit. Ut
+                  sequi, rem magnam nesciunt minima placeat, itaque eum neque
+                  officiis unde, eaque optio ratione aliquid assumenda facere ab
+                  et quasi ducimus aut doloribus non numquam. Explicabo,
+                  laboriosam nisi reprehenderit tempora at laborum natus unde.
+                  Ut, exercitationem eum aperiam illo illum laudantium?
+                </div>
+                <div className="buttons">
+                  <button>READ MORE</button>
+                </div>
+              </div>
+            </div>
+
+            <div className="item">
+              <img src="src/assets/imgs/anh4.jpg" alt="carousel 2" />
+              <div className="content">
+                <div className="author">DENTAL CARE</div>
+                <div className="title">DESIGN SLIDER</div>
+                <div className="topic">DENTAL CARE</div>
+                <div className="des">
+                  Lorem ipsum dolor, sit amet consectetur adipisicing elit. Ut
+                  sequi, rem magnam nesciunt minima placeat, itaque eum neque
+                  officiis unde, eaque optio ratione aliquid assumenda facere ab
+                  et quasi ducimus aut doloribus non numquam. Explicabo,
+                  laboriosam nisi reprehenderit tempora at laborum natus unde.
+                  Ut, exercitationem eum aperiam illo illum laudantium?
+                </div>
+                <div className="buttons">
+                  <button>READ MORE</button>  
+                </div>
+              </div>
+            </div>
+
+            <div className="item">
+              <img src="src/assets/imgs/anh5.jpg" alt="carousel 3" />
+              <div className="content">
+                <div className="author">DENTAL CARE</div>
+                <div className="title">DESIGN SLIDER</div>
+                  <div className="topic">DENTAL CARE</div>
+                <div className="des">
+                  Lorem ipsum dolor, sit amet consectetur adipisicing elit. Ut
+                  sequi, rem magnam nesciunt minima placeat, itaque eum neque
+                  officiis unde, eaque optio ratione aliquid assumenda facere ab
+                  et quasi ducimus aut doloribus non numquam. Explicabo,
+                  laboriosam nisi reprehenderit tempora at laborum natus unde.
+                  Ut, exercitationem eum aperiam illo illum laudantium?
+                </div>
+                <div className="buttons">
+                  <button>READ MORE</button>
+                </div>
+              </div>
+            </div>
+
+            <div className="item">
+              <img src="src/assets/imgs/anh6.jpg" alt="carousel 4" />
+              <div className="content">
+                <div className="author">DENTAL CARE</div>
+                <div className="title">DESIGN SLIDER</div>
+                <div className="topic">DENTAL CARE</div>
+                <div className="des">
+                  Lorem ipsum dolor, sit amet consectetur adipisicing elit. Ut
+                  sequi, rem magnam nesciunt minima placeat, itaque eum neque
+                  officiis unde, eaque optio ratione aliquid assumenda facere ab
+                  et quasi ducimus aut doloribus non numquam. Explicabo,
+                  laboriosam nisi reprehenderit tempora at laborum natus unde.
+                  Ut, exercitationem eum aperiam illo illum laudantium?
+                </div>
+                <div className="buttons">
+                  <button>READ MORE</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* list thumbnail */}
+          <div className="thumbnail">
+            <div className="item">
+              <img src="src/assets/imgs/anh11.jpg" alt="thumb 1" />
+              <div className="content">
+                <div className="title">Name Slider</div>
+                <div className="description">Description</div>
+              </div>
+            </div>
+
+            <div className="item">
+              <img src="src/assets/imgs/anh4.jpg" alt="thumb 2" />
+              <div className="content">
+                <div className="title">Name Slider</div>
+                <div className="description">Description</div>
+              </div>
+            </div>
+
+            <div className="item">
+              <img src="src/assets/imgs/anh5.jpg" alt="thumb 3" />
+              <div className="content">
+                <div className="title">Name Slider</div>
+                <div className="description">Description</div>
+              </div>
+            </div>
+
+            <div className="item">
+              <img src="src/assets/imgs/anh6.jpg" alt="thumb 4" />
+              <div className="content">
+                <div className="title">Name Slider</div>
+                <div className="description">Description</div>
+              </div>
+            </div>
+          </div>
+
+          {/* next prev */}
+          <div className="arrows">
+            <button id="prev">&lt;</button>
+            <button id="next">&gt;</button>
+          </div>
+
+          {/* time running */}
+          <div className="time" />
+        </div>
+      </div>
+    </section>
+  );
+};
+
+
 // --- HOME PAGE COMPONENT (Combines all sections) ---
 const HomePage: React.FC = () => {
   return (
@@ -499,6 +709,7 @@ const HomePage: React.FC = () => {
       <OurTeamSection />
       <HowItWorkSection />
       <ContactUsBottomSection />
+      <HeroCarouselSection />
     </>
   );
 };
