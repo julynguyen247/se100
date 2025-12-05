@@ -62,6 +62,9 @@ const Header: React.FC = () => {
     console.log("logout");
   };
 
+  // Kiểm tra xem có đang ở trang home với video không (chỉ /)
+  const isHomePage = location.pathname === "/";
+
   return (
     <header className="relative z-[100] w-full   ">
       <div className="max-w-6xl mx-auto px-4 py-2 flex items-center justify-between">
@@ -71,15 +74,15 @@ const Header: React.FC = () => {
             <FiUsers className="w-5 h-5" />
           </div>
           <div className="leading-tight">
-            <p className="text-sm font-bold text-white">
+            <p className={`text-sm font-bold ${isHomePage ? "text-white" : "text-[#0f172a]"}`}>
               Nha Khoa Dental Care
             </p>
-            <p className="text-xs text-slate-200/80">Bệnh nhân</p>
+            <p className={`text-xs ${isHomePage ? "text-slate-200/80" : "text-[#6b7280]"}`}>Bệnh nhân</p>
           </div>  
         </div>
 
         {/* Nav bên phải */}
-        <div className="flex items-center gap-2 text-xs sm:text-sm text-white font-bold">
+        <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm font-bold overflow-x-auto">
           {TABS.map((tab) => {
             const Icon = tab.icon;
             const active = isActive(tab);
@@ -88,14 +91,18 @@ const Header: React.FC = () => {
                 key={tab.id}
                 type="button"
                 onClick={() => handleTabClick(tab)}
-                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 transition ${
+                className={`inline-flex items-center gap-1 sm:gap-1.5 rounded-full px-2 sm:px-3 py-1 transition flex-shrink-0 ${
                   active
-                    ? "bg-white/25 text-white shadow-sm shadow-black/30"
-                    : "text-white/75 hover:bg-white/10"
+                    ? isHomePage
+                      ? "bg-white/25 !text-white shadow-sm shadow-black/30"
+                      : "bg-white/90 text-[#0f172a] shadow-sm shadow-black/30"
+                    : isHomePage
+                    ? "!text-white hover:bg-white/10"
+                    : "text-[#0f172a] hover:bg-white/10"
                 }`}
               >
-                <Icon className="w-4 h-4" />
-                <span>{tab.label}</span>
+                <Icon className={`w-4 h-4 ${isHomePage ? "!text-white" : ""}`} />
+                <span className={`hidden sm:inline ${isHomePage ? "!text-white" : ""}`}>{tab.label}</span>
               </button>
             );
           })}
@@ -103,19 +110,19 @@ const Header: React.FC = () => {
           {/* Dark mode (dummy) */}
           <button
             type="button"
-            className="ml-1 p-1 rounded-full text-white/80 hover:bg-white/10"
+            className={`ml-1 p-1 rounded-full hover:bg-white/10 flex-shrink-0 ${isHomePage ? "!text-white" : "text-[#0f172a]"}`}
           >
-            <FiMoon className="w-4 h-4" />
+            <FiMoon className={`w-4 h-4 ${isHomePage ? "!text-white" : ""}`} />
           </button>
 
           {/* Đăng xuất */}
           <button
             type="button"
             onClick={handleLogout}
-            className="ml-1 inline-flex items-center gap-1.5 text-red-300 hover:text-red-200"
+            className="ml-1 inline-flex items-center gap-1 sm:gap-1.5 text-red-500 hover:text-red-600 flex-shrink-0"
           >
             <FiLogOut className="w-4 h-4" />
-            <span>Đăng xuất</span>
+            <span className="hidden sm:inline">Đăng xuất</span>
           </button>
         </div>
       </div>

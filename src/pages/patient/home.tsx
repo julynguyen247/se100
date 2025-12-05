@@ -27,13 +27,13 @@ interface HeroProps {
 
 const HeroSection: React.FC<HeroProps> = () => {
   return (
-    <section className="relative -mt-16 min-h-screen w-full py-16 pb-24 font-['Inter','Segoe_UI',system-ui,-apple-system,BlinkMacSystemFont,sans-serif] overflow-hidden">
-      <video autoPlay loop muted playsInline className="back-video" style={{filter: "brightness(0.8)"}}>
+    <section className="relative -mt-16 min-h-screen w-full pb-24 font-['Inter','Segoe_UI',system-ui,-apple-system,BlinkMacSystemFont,sans-serif] overflow-hidden">
+      <video autoPlay loop muted playsInline className="back-video" style={{filter: "brightness(0.8)", top: "-4rem", left: 0, right: 0, width: "100%", height: "calc(100vh + 4rem)", minHeight: "calc(100% + 4rem)", objectFit: "cover"}}>
         <source src={previewVideo} type="video/mp4" />
       </video>
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(37,99,235,0.12),transparent_60%)] opacity-60 pointer-events-none" aria-hidden />
 
-      <div className="w-[min(1200px,100%)] mx-auto px-4 relative z-10 flex flex-col-reverse gap-10 lg:flex-row-reverse lg:items-center lg:justify-between lg:gap-12">
+      <div className="w-[min(1200px,100%)] mx-auto px-4 pt-16 relative z-10 flex flex-col-reverse gap-10 lg:flex-row-reverse lg:items-center lg:justify-between lg:gap-12">
         <div className="peer w-full flex justify-center lg:justify-end">
           {/* <div className="group w-[min(80vw,450px)] aspect-square rounded-full bg-[#2563eb] relative overflow-hidden shadow-2xl transition-transform duration-700 group-hover:scale-105">
             <img
@@ -695,9 +695,49 @@ const HeroCarouselSection: React.FC = () => {
         </div>
       </div>
     </section>
+    
   );
 };
 
+
+// --- NEWSLETTER SECTION COMPONENT ---
+const NewsletterSection: React.FC = () => {
+  return (
+    <section className="w-full bg-[#F2F9FF] py-16 px-4 md:px-8 relative overflow-hidden font-['Inter','Segoe_UI',system-ui,-apple-system,BlinkMacSystemFont,sans-serif]">
+      <div 
+        className="absolute inset-0 opacity-10 pointer-events-none bg-[url('https://www.svgrepo.com/show/305809/tooth.svg')] bg-repeat space w-full h-full" 
+        style={{ backgroundSize: '100px' }}
+      ></div>
+
+      <div className="max-w-4xl mx-auto text-center relative z-10">
+        <p className="text-[#6b7280] text-sm font-medium uppercase tracking-[0.1em] mb-2">
+          Our Newsletter
+        </p>
+        <h2 className="text-[clamp(1.875rem,3vw,2.625rem)] font-bold text-[#0f172a] leading-[1.2] mb-8">
+          Sign Up for Our Newsletter to Get the <br className="hidden md:block" />
+          <span className="text-[#2563eb]">Latest News and Exclusive Offers</span>
+        </h2>
+        <div className="flex flex-col sm:flex-row justify-center items-stretch sm:items-center gap-4 max-w-xl mx-auto">
+          <div className="relative flex-grow w-full">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <svg className="w-5 h-5 text-[#2563eb]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+              </svg>
+            </div>
+            <input 
+              type="email" 
+              className="block w-full pl-12 pr-4 py-3.5 bg-white border border-transparent rounded-lg text-[#0f172a] placeholder-[#6b7280] focus:outline-none focus:ring-2 focus:ring-[#2563eb] focus:bg-white shadow-sm transition duration-200" 
+              placeholder="Enter Email Address"
+            />
+          </div>
+          <button className="bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-semibold py-3.5 px-8 rounded-lg shadow-md transition duration-200 whitespace-nowrap">
+            Subscribe
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+};
 
 // --- HOME PAGE COMPONENT (Combines all sections) ---
 const HomePage: React.FC = () => {
@@ -710,6 +750,7 @@ const HomePage: React.FC = () => {
       <HowItWorkSection />
       <ContactUsBottomSection />
       <HeroCarouselSection />
+      <NewsletterSection />
     </>
   );
 };
