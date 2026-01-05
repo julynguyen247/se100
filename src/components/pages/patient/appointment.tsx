@@ -1,5 +1,8 @@
 import React, { useState } from "react";
 import { FiCalendar, FiClock, FiSearch, FiPlus } from "react-icons/fi";
+import BookingModal from "../../patient/BookingModal";
+import AppointmentDetailModal from "../../patient/AppointmentDetailModal";
+import CancelAppointmentModal from "../../patient/CancelAppointmentModal";
 
 type AppointmentStatus = "confirmed" | "pending" | "completed" | "cancelled";
 
@@ -13,7 +16,7 @@ type Appointment = {
   status: AppointmentStatus;
 };
 
-const APPOINTMENTS: Appointment[] = [
+const INITIAL_APPOINTMENTS: Appointment[] = [
   {
     id: 1,
     title: "Khám định kỳ",
@@ -84,11 +87,54 @@ const statusMap: Record<
 };
 
 const MyAppointmentsPage: React.FC = () => {
+  const [appointments, setAppointments] = useState<Appointment[]>(INITIAL_APPOINTMENTS);
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [query, setQuery] = useState("");
 
-  const filtered = APPOINTMENTS.filter((a) =>
+  const filtered = appointments.filter((a) =>
     a.title.toLowerCase().includes(query.toLowerCase())
   );
+
+  const handleViewDetail = (appointment: Appointment) => {
+    setSelectedAppointment(appointment);
+    setIsDetailModalOpen(true);
+  };
+
+  const handleOpenCancelModal = (appointment: Appointment) => {
+    setSelectedAppointment(appointment);
+    setIsCancelModalOpen(true);
+  };
+
+  const handleCancelFromDetail = (id: number) => {
+    const apt = appointments.find((a) => a.id === id);
+    if (apt) {
+      setIsDetailModalOpen(false);
+      setTimeout(() => {
+        setSelectedAppointment(apt);
+        setIsCancelModalOpen(true);
+      }, 200);
+    }
+  };
+
+  const handleConfirmCancel = (reason: string) => {
+    if (selectedAppointment) {
+      console.log("Cancelled appointment:", selectedAppointment.id, "Reason:", reason);
+      // Update appointment status to cancelled
+      setAppointments((prev) =>
+        prev.map((a) =>
+          a.id === selectedAppointment.id
+            ? { ...a, status: "cancelled" as AppointmentStatus, note: reason || a.note }
+            : a
+        )
+      );
+      setIsCancelModalOpen(false);
+      setSelectedAppointment(null);
+      alert("Đã huỷ lịch hẹn thành công!");
+    }
+  };
 
   return (
     <div className="min-h-[calc(100vh-64px)] bg-[#F5F7FB] px-6 py-8 sm:px-10 lg:px-20">
@@ -118,7 +164,10 @@ const MyAppointmentsPage: React.FC = () => {
               onChange={(e) => setQuery(e.target.value)}
             />
           </div>
-          <button className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#2563EB] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#1D4ED8]">
+          <button
+            onClick={() => setIsBookingModalOpen(true)}
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#2563EB] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#1D4ED8]"
+          >
             <FiPlus className="w-4 h-4" />
             <span>Đặt lịch mới</span>
           </button>
@@ -126,11 +175,48 @@ const MyAppointmentsPage: React.FC = () => {
 
         {/* List appointments */}
         <div className="space-y-4">
-          {filtered.map((a) => (
-            <AppointmentCard key={a.id} appointment={a} />
-          ))}
+          {filtered.length === 0 ? (
+            <div className="text-center py-10 text-slate-500">
+              Không tìm thấy lịch hẹn nào
+            </div>
+          ) : (
+            filtered.map((a) => (
+              <AppointmentCard
+                key={a.id}
+                appointment={a}
+                onViewDetail={() => handleViewDetail(a)}
+                onCancel={() => handleOpenCancelModal(a)}
+              />
+            ))
+          )}
         </div>
       </div>
+
+      {/* Modals */}
+      <BookingModal
+        isOpen={isBookingModalOpen}
+        onClose={() => setIsBookingModalOpen(false)}
+        onSubmit={(data) => {
+          console.log("Booking data:", data);
+        }}
+      />
+
+      <AppointmentDetailModal
+        isOpen={isDetailModalOpen}
+        onClose={() => setIsDetailModalOpen(false)}
+        appointment={selectedAppointment}
+        onCancel={handleCancelFromDetail}
+      />
+
+      <CancelAppointmentModal
+        isOpen={isCancelModalOpen}
+        onClose={() => {
+          setIsCancelModalOpen(false);
+          setSelectedAppointment(null);
+        }}
+        onConfirm={handleConfirmCancel}
+        appointmentTitle={selectedAppointment?.title}
+      />
     </div>
   );
 };
@@ -139,21 +225,22 @@ export default MyAppointmentsPage;
 
 /* ----- Card từng lịch hẹn ----- */
 
-const AppointmentCard: React.FC<{ appointment: Appointment }> = ({
+interface AppointmentCardProps {
+  appointment: Appointment;
+  onViewDetail: () => void;
+  onCancel: () => void;
+}
+
+const AppointmentCard: React.FC<AppointmentCardProps> = ({
   appointment,
+  onViewDetail,
+  onCancel,
 }) => {
   const status = statusMap[appointment.status];
-
-  const handleDetail = () => {
-    console.log("Xem chi tiết", appointment.id);
-  };
-
-  const handleCancel = () => {
-    console.log("Huỷ lịch", appointment.id);
-  };
+  const canCancel = appointment.status === "confirmed" || appointment.status === "pending";
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 px-5 py-4 flex gap-4 items-stretch">
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 px-5 py-4 flex gap-4 items-stretch hover:shadow-md transition-shadow">
       {/* Icon lịch bên trái */}
       <div className="flex-shrink-0">
         <div className="w-10 h-10 rounded-full bg-[#E0ECFF] text-[#2563EB] flex items-center justify-center">
@@ -179,20 +266,16 @@ const AppointmentCard: React.FC<{ appointment: Appointment }> = ({
             </span>
             <div className="flex gap-4 text-xs">
               <button
-                className="text-[#2563EB] hover:underline"
-                onClick={handleDetail}
+                className="text-[#2563EB] hover:underline font-medium"
+                onClick={onViewDetail}
               >
-                {appointment.status === "confirmed" ||
-                appointment.status === "pending"
-                  ? "Chi tiết"
-                  : "Xem chi tiết"}
+                {canCancel ? "Chi tiết" : "Xem chi tiết"}
               </button>
 
-              {(appointment.status === "confirmed" ||
-                appointment.status === "pending") && (
+              {canCancel && (
                 <button
-                  className="text-[#DC2626] hover:underline"
-                  onClick={handleCancel}
+                  className="text-[#DC2626] hover:underline font-medium"
+                  onClick={onCancel}
                 >
                   Huỷ lịch
                 </button>
@@ -215,7 +298,7 @@ const AppointmentCard: React.FC<{ appointment: Appointment }> = ({
           </div>
 
           {appointment.note && (
-            <p className="text-[11px] text-slate-500">{appointment.note}</p>
+            <p className="text-[11px] text-slate-500 line-clamp-1">{appointment.note}</p>
           )}
         </div>
       </div>

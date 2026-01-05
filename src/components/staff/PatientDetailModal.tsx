@@ -1,7 +1,7 @@
 // src/components/staff/PatientDetailModal.tsx
 import React from "react";
 import { FiCalendar, FiMail, FiPhone } from "react-icons/fi";
-import Modal from "@/components/Modal";
+import Modal from "../ui/Modal";
 
 type PatientInfo = {
   name: string;

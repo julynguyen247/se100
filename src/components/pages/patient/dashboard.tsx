@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   FiCalendar,
   FiClipboard,
@@ -7,8 +7,10 @@ import {
   FiChevronRight,
   FiPhone,
 } from "react-icons/fi";
+import BookingModal from "../../patient/BookingModal";
 
 const PatientDashboard: React.FC = () => {
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const upcomingAppointments = [
     {
       id: 1,
@@ -137,7 +139,10 @@ const PatientDashboard: React.FC = () => {
               ))}
             </div>
 
-            <button className="mt-2 w-full rounded-lg bg-[#2563EB] py-3 text-sm lg:text-base font-semibold text-white shadow-sm hover:bg-[#1D4ED8]">
+            <button
+              onClick={() => setIsBookingModalOpen(true)}
+              className="mt-2 w-full rounded-lg bg-[#2563EB] py-3 text-sm lg:text-base font-semibold text-white shadow-sm hover:bg-[#1D4ED8]"
+            >
               Đặt lịch mới
             </button>
           </div>
@@ -196,6 +201,15 @@ const PatientDashboard: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Booking Modal */}
+      <BookingModal
+        isOpen={isBookingModalOpen}
+        onClose={() => setIsBookingModalOpen(false)}
+        onSubmit={(data) => {
+          console.log("Booking data:", data);
+        }}
+      />
     </div>
   );
 };

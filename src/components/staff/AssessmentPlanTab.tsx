@@ -1,10 +1,10 @@
-import PatientHeader from "@/pages/staff/PatientHeader";
+// import PatientHeader from "@/pages/staff/PatientHeader";
 import { HiOutlineCheckCircle } from "react-icons/hi";
 
 const AssessmentPlanTab: React.FC = () => {
   return (
     <div className="bg-white rounded-2xl shadow-md border border-slate-200 px-8 py-6">
-      <PatientHeader />
+      {/* <PatientHeader /> */}
       <div className="border border-slate-300 rounded-xl overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-300 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-slate-900">

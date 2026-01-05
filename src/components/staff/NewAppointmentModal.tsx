@@ -1,6 +1,6 @@
 // src/components/staff/NewAppointmentModal.tsx
 import React, { useState } from "react";
-import Modal from "@/components/Modal";
+import Modal from "../ui/Modal";
 
 type NewAppointmentModalProps = {
   open: boolean;

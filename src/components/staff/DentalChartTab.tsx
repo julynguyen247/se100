@@ -1,10 +1,10 @@
-import PatientHeader from "@/pages/staff/PatientHeader";
+// import PatientHeader from "@/pages/staff/PatientHeader";
 import { FiSearch } from "react-icons/fi";
 
 const DentalChartTab: React.FC = () => {
   return (
     <div className="bg-white rounded-2xl shadow-md border border-slate-200 px-8 py-6">
-      <PatientHeader />
+      {/* <PatientHeader /> */}
       <div className="border border-slate-300 rounded-xl overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-300 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-slate-900">
@@ -36,9 +36,8 @@ const DentalChartTab: React.FC = () => {
                   (t, idx) => (
                     <div
                       key={t}
-                      className={`grid grid-cols-4 px-4 py-2 border-b border-slate-100 text-slate-700 ${
-                        idx === 2 ? "bg-blue-50" : ""
-                      }`}
+                      className={`grid grid-cols-4 px-4 py-2 border-b border-slate-100 text-slate-700 ${idx === 2 ? "bg-blue-50" : ""
+                        }`}
                     >
                       <span>{t}</span>
                       <span>Sensitivity</span>

@@ -1,7 +1,6 @@
 import React from "react";
-
-import { Link, Outlet, useNavigate } from "react-router-dom";
-import AdminHeader from "./admin.header";
+import { Outlet } from "react-router-dom";
+import AdminHeader from "./AdminHeader";
 
 const AdminLayout: React.FC = () => {
   return (
