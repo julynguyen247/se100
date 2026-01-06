@@ -1,4 +1,5 @@
-import React, { useState, FormEvent } from "react";
+import React, { useState, FormEvent, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 
 type Step = 1 | 2 | 3;
 
@@ -6,27 +7,64 @@ type AppointmentData = {
   fullName: string;
   phone: string;
   email: string;
+  date: string;
+  time: string;
   service: string;
   doctor: string;
-  note: string; // Ghi chú ở bước 2
-  date: string;
-  time: string; // Giờ hẹn (chọn từ grid)
-  bookingNote: string; // Thông tin đặt lịch ở bước 3
+  note: string;
 };
 
+// Interface for booking data passed from HomePage
+interface BookingDataFromHome {
+  name: string;
+  phone: string;
+  date: string;
+  time: string;
+}
+
 const BookAppointmentPage: React.FC = () => {
+  const location = useLocation();
   const [step, setStep] = useState<Step>(1);
   const [data, setData] = useState<AppointmentData>({
     fullName: "",
     phone: "",
     email: "",
+    date: "",
+    time: "",
     service: "",
     doctor: "",
     note: "",
-    date: "",
-    time: "",
-    bookingNote: "",
   });
+
+  // Pre-fill data from HomePage if available
+  useEffect(() => {
+    const state = location.state as { bookingData?: BookingDataFromHome } | null;
+    if (state?.bookingData) {
+      const { name, phone, date, time } = state.bookingData;
+      setData((prev) => ({
+        ...prev,
+        fullName: name || "",
+        phone: phone || "",
+        date: date || "",
+        time: time || "",
+      }));
+
+      // Determine which step to go to based on missing info
+      const hasPersonalInfo = name && phone;
+      const hasTimeInfo = date && time;
+
+      if (!hasPersonalInfo) {
+        // Missing personal info -> go to step 1
+        setStep(1);
+      } else if (!hasTimeInfo) {
+        // Has personal info but missing time -> go to step 2
+        setStep(2);
+      } else {
+        // Has all info -> go to step 3 (Service selection)
+        setStep(3);
+      }
+    }
+  }, [location.state]);
 
   const updateField = <K extends keyof AppointmentData>(
     key: K,
@@ -39,6 +77,7 @@ const BookAppointmentPage: React.FC = () => {
     e.preventDefault();
     console.log("Submit full appointment:", data);
     // TODO: call API đặt lịch
+    alert("Đặt lịch thành công!");
   };
 
   return (
@@ -56,7 +95,7 @@ const BookAppointmentPage: React.FC = () => {
           )}
 
           {step === 2 && (
-            <StepService
+            <StepTime
               data={data}
               onChange={updateField}
               onPrev={() => setStep(1)}
@@ -65,7 +104,7 @@ const BookAppointmentPage: React.FC = () => {
           )}
 
           {step === 3 && (
-            <StepTime
+            <StepService
               data={data}
               onChange={updateField}
               onPrev={() => setStep(2)}
@@ -99,9 +138,9 @@ const HeaderStepper: React.FC<{ step: Step }> = ({ step }) => {
       <div className="mt-6 w-full max-w-lg flex items-center">
         <StepCircle index={1} current={step} label="Thông tin" />
         <div className="flex-1 h-px bg-slate-200 mx-3" />
-        <StepCircle index={2} current={step} label="Dịch vụ" />
+        <StepCircle index={2} current={step} label="Thời gian" />
         <div className="flex-1 h-px bg-slate-200 mx-3" />
-        <StepCircle index={3} current={step} label="Thời gian" />
+        <StepCircle index={3} current={step} label="Dịch vụ" />
       </div>
     </div>
   );
@@ -118,14 +157,14 @@ const StepCircle: React.FC<{
   const circleClass = isActive
     ? "bg-[#2563EB] text-white"
     : isDone
-    ? "bg-emerald-500 text-white"
-    : "bg-slate-100 text-slate-400 border border-slate-200";
+      ? "bg-emerald-500 text-white"
+      : "bg-slate-100 text-slate-400 border border-slate-200";
 
   const textClass = isActive
     ? "text-[#2563EB]"
     : isDone
-    ? "text-emerald-600"
-    : "text-slate-400";
+      ? "text-emerald-600"
+      : "text-slate-400";
 
   return (
     <div className="flex flex-col items-center">
@@ -139,7 +178,7 @@ const StepCircle: React.FC<{
   );
 };
 
-/* ---------- STEP 1: THÔNG TIN ---------- */
+/* ---------- STEP 1: THÔNG TIN CÁ NHÂN ---------- */
 
 type StepProps = {
   data: AppointmentData;
@@ -175,6 +214,7 @@ const StepInfo: React.FC<
             className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none transition focus:border-[#2563EB] focus:bg-white"
             value={data.fullName}
             onChange={(e) => onChange("fullName", e.target.value)}
+            required
           />
         </div>
 
@@ -188,6 +228,7 @@ const StepInfo: React.FC<
             className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none transition focus:border-[#2563EB] focus:bg-white"
             value={data.phone}
             onChange={(e) => onChange("phone", e.target.value)}
+            required
           />
         </div>
 
@@ -215,95 +256,7 @@ const StepInfo: React.FC<
   );
 };
 
-/* ---------- STEP 2: DỊCH VỤ + BÁC SĨ ---------- */
-
-const StepService: React.FC<
-  StepProps & {
-    onPrev: () => void;
-    onNext: () => void;
-  }
-> = ({ data, onChange, onPrev, onNext }) => {
-  const handleNext = (e: FormEvent) => {
-    e.preventDefault();
-    onNext();
-  };
-
-  return (
-    <>
-      <h2 className="text-sm font-semibold text-slate-900 mb-5">
-        Chọn dịch vụ và bác sĩ
-      </h2>
-
-      <form className="space-y-4" onSubmit={handleNext}>
-        {/* Dịch vụ */}
-        <div className="space-y-1">
-          <label className="block text-xs font-medium text-slate-700">
-            Dịch vụ <span className="text-red-500">*</span>
-          </label>
-          <select
-            className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none transition focus:border-[#2563EB] focus:bg-white"
-            value={data.service}
-            onChange={(e) => onChange("service", e.target.value)}
-          >
-            <option value="">Chọn dịch vụ</option>
-            <option value="kham-tong-quat">Khám tổng quát</option>
-            <option value="tay-trang">Tẩy trắng răng</option>
-            <option value="nieng-rang">Niềng răng</option>
-          </select>
-        </div>
-
-        {/* Bác sĩ */}
-        <div className="space-y-1">
-          <label className="block text-xs font-medium text-slate-700">
-            Bác sĩ <span className="text-red-500">*</span>
-          </label>
-          <select
-            className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none transition focus:border-[#2563EB] focus:bg-white"
-            value={data.doctor}
-            onChange={(e) => onChange("doctor", e.target.value)}
-          >
-            <option value="">Chọn bác sĩ</option>
-            <option value="bs-a">BS. A</option>
-            <option value="bs-b">BS. B</option>
-            <option value="bs-c">BS. C</option>
-          </select>
-        </div>
-
-        {/* Ghi chú */}
-        <div className="space-y-1">
-          <label className="block text-xs font-medium text-slate-700">
-            Ghi chú
-          </label>
-          <textarea
-            rows={3}
-            className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none transition focus:border-[#2563EB] focus:bg-white resize-none"
-            placeholder="Chỉ định thêm (không bắt buộc)"
-            value={data.note}
-            onChange={(e) => onChange("note", e.target.value)}
-          />
-        </div>
-
-        <div className="flex justify-between gap-3 pt-2">
-          <button
-            type="button"
-            onClick={onPrev}
-            className="w-1/2 rounded-lg border border-slate-200 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
-          >
-            Quay lại
-          </button>
-          <button
-            type="submit"
-            className="w-1/2 rounded-lg bg-[#2563EB] py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1D4ED8]"
-          >
-            Tiếp tục
-          </button>
-        </div>
-      </form>
-    </>
-  );
-};
-
-/* ---------- STEP 3: THỜI GIAN + Ô GIỜ ---------- */
+/* ---------- STEP 2: THỜI GIAN ---------- */
 
 const timeSlots = [
   "08:00",
@@ -327,11 +280,16 @@ const timeSlots = [
 const StepTime: React.FC<
   StepProps & {
     onPrev: () => void;
-    onSubmit: (e: FormEvent) => void;
+    onNext: () => void;
   }
-> = ({ data, onChange, onPrev, onSubmit }) => {
+> = ({ data, onChange, onPrev, onNext }) => {
   const handleSelectTime = (slot: string) => {
     onChange("time", slot);
+  };
+
+  const handleNext = (e: FormEvent) => {
+    e.preventDefault();
+    onNext();
   };
 
   return (
@@ -340,7 +298,7 @@ const StepTime: React.FC<
         Chọn ngày và giờ
       </h2>
 
-      <form className="space-y-4" onSubmit={onSubmit}>
+      <form className="space-y-4" onSubmit={handleNext}>
         {/* Ngày hẹn */}
         <div className="space-y-1">
           <label className="block text-xs font-medium text-slate-700">
@@ -351,6 +309,7 @@ const StepTime: React.FC<
             className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none transition focus:border-[#2563EB] focus:bg-white"
             value={data.date}
             onChange={(e) => onChange("date", e.target.value)}
+            required
           />
         </div>
 
@@ -368,11 +327,10 @@ const StepTime: React.FC<
                   type="button"
                   onClick={() => handleSelectTime(slot)}
                   className={`rounded-md border text-xs py-2 text-center transition
-                  ${
-                    selected
+                  ${selected
                       ? "bg-[#2563EB] border-[#2563EB] text-white"
                       : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
-                  }`}
+                    }`}
                 >
                   {slot}
                 </button>
@@ -381,18 +339,103 @@ const StepTime: React.FC<
           </div>
         </div>
 
-        {/* Thông tin đặt lịch */}
+        <div className="flex justify-between gap-3 pt-2">
+          <button
+            type="button"
+            onClick={onPrev}
+            className="w-1/2 rounded-lg border border-slate-200 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
+          >
+            Quay lại
+          </button>
+          <button
+            type="submit"
+            className="w-1/2 rounded-lg bg-[#2563EB] py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1D4ED8]"
+          >
+            Tiếp tục
+          </button>
+        </div>
+      </form>
+    </>
+  );
+};
+
+/* ---------- STEP 3: DỊCH VỤ + XÁC NHẬN ---------- */
+
+const StepService: React.FC<
+  StepProps & {
+    onPrev: () => void;
+    onSubmit: (e: FormEvent) => void;
+  }
+> = ({ data, onChange, onPrev, onSubmit }) => {
+  return (
+    <>
+      <h2 className="text-sm font-semibold text-slate-900 mb-5">
+        Chọn dịch vụ và xác nhận
+      </h2>
+
+      <form className="space-y-4" onSubmit={onSubmit}>
+        {/* Dịch vụ */}
         <div className="space-y-1">
           <label className="block text-xs font-medium text-slate-700">
-            Thông tin đặt lịch
+            Dịch vụ <span className="text-red-500">*</span>
+          </label>
+          <select
+            className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none transition focus:border-[#2563EB] focus:bg-white"
+            value={data.service}
+            onChange={(e) => onChange("service", e.target.value)}
+            required
+          >
+            <option value="">Chọn dịch vụ</option>
+            <option value="kham-tong-quat">Khám tổng quát</option>
+            <option value="tay-trang">Tẩy trắng răng</option>
+            <option value="nieng-rang">Niềng răng</option>
+            <option value="trong-rang">Trồng răng Implant</option>
+            <option value="nho-rang">Nhổ răng</option>
+            <option value="cham-soc">Chăm sóc nướu</option>
+          </select>
+        </div>
+
+        {/* Bác sĩ */}
+        <div className="space-y-1">
+          <label className="block text-xs font-medium text-slate-700">
+            Bác sĩ <span className="text-red-500">*</span>
+          </label>
+          <select
+            className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none transition focus:border-[#2563EB] focus:bg-white"
+            value={data.doctor}
+            onChange={(e) => onChange("doctor", e.target.value)}
+            required
+          >
+            <option value="">Chọn bác sĩ</option>
+            <option value="bs-nguyen-van-a">BS. Nguyễn Văn A</option>
+            <option value="bs-tran-thi-b">BS. Trần Thị B</option>
+            <option value="bs-le-van-c">BS. Lê Văn C</option>
+          </select>
+        </div>
+
+        {/* Ghi chú */}
+        <div className="space-y-1">
+          <label className="block text-xs font-medium text-slate-700">
+            Ghi chú
           </label>
           <textarea
-            rows={4}
+            rows={3}
             className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none transition focus:border-[#2563EB] focus:bg-white resize-none"
-            placeholder={"A.\nB.\nC."}
-            value={data.bookingNote}
-            onChange={(e) => onChange("bookingNote", e.target.value)}
+            placeholder="Triệu chứng, yêu cầu đặc biệt... (không bắt buộc)"
+            value={data.note}
+            onChange={(e) => onChange("note", e.target.value)}
           />
+        </div>
+
+        {/* Tóm tắt thông tin */}
+        <div className="bg-slate-50 rounded-lg p-4 mt-4">
+          <h3 className="text-xs font-semibold text-slate-700 mb-3">Tóm tắt thông tin đặt lịch:</h3>
+          <div className="grid grid-cols-2 gap-2 text-xs text-slate-600">
+            <div><span className="font-medium">Họ tên:</span> {data.fullName || "-"}</div>
+            <div><span className="font-medium">SĐT:</span> {data.phone || "-"}</div>
+            <div><span className="font-medium">Ngày:</span> {data.date || "-"}</div>
+            <div><span className="font-medium">Giờ:</span> {data.time || "-"}</div>
+          </div>
         </div>
 
         <div className="flex justify-between gap-3 pt-2">
