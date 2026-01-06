@@ -6,36 +6,36 @@ import DoctorLayout from "./components/layouts/DoctorLayout";
 import ReceptionistLayout from "./components/layouts/ReceptionistLayout";
 
 // Guest Pages
-import HomePage from "./components/pages/guest/HomePage";
-import LoginPage from "./components/pages/guest/LoginPage";
-import RegisterPage from "./components/pages/guest/RegisterPage";
-import BookingPage from "./components/pages/patient/booking";
+import HomePage from "./pages/guest/HomePage";
+import LoginPage from "./pages/guest/LoginPage";
+import RegisterPage from "./pages/guest/RegisterPage";
+import BookingPage from "./pages/patient/booking";
 
 // Patient Pages
-import PatientDashboard from "./components/pages/patient/dashboard";
-import MyProfilePage from "./components/pages/patient/info";
-import MyAppointmentsPage from "./components/pages/patient/appointment";
-import MedicalHistoryPage from "./components/pages/patient/medicalHistory";
+import PatientDashboard from "./pages/patient/dashboard";
+import MyProfilePage from "./pages/patient/info";
+import MyAppointmentsPage from "./pages/patient/appointment";
+import MedicalHistoryPage from "./pages/patient/medicalHistory";
 
 // Admin Pages
-import Dashboard from "./components/pages/admin/dashboard";
-import UserManagementPage from "./components/pages/admin/users";
-import AdminReportsPage from "./components/pages/admin/report";
-import AdminSettingsPage from "./components/pages/admin/setting";
+import Dashboard from "./pages/admin/dashboard";
+import UserManagementPage from "./pages/admin/users";
+import AdminReportsPage from "./pages/admin/report";
+import AdminSettingsPage from "./pages/admin/setting";
 
 // Doctor Pages
-import DoctorDashboard from "./components/pages/doctor/dashboard";
-import DoctorQueue from "./components/pages/doctor/queue";
-import DoctorPatients from "./components/pages/doctor/patients";
-import DoctorTreatment from "./components/pages/doctor/treatment";
-import DoctorPrescription from "./components/pages/doctor/prescription";
+import DoctorDashboard from "./pages/doctor/dashboard";
+import DoctorQueue from "./pages/doctor/queue";
+import DoctorPatients from "./pages/doctor/patients";
+import DoctorTreatment from "./pages/doctor/treatment";
+import DoctorPrescription from "./pages/doctor/prescription";
 
 // Receptionist Pages
-import ReceptionistDashboard from "./components/pages/receptionist/dashboard";
-import ReceptionistQueue from "./components/pages/receptionist/queue";
-import ReceptionistAppointments from "./components/pages/receptionist/appointments";
-import ReceptionistPatients from "./components/pages/receptionist/patients";
-import ReceptionistBilling from "./components/pages/receptionist/billing";
+import ReceptionistDashboard from "./pages/receptionist/dashboard";
+import ReceptionistQueue from "./pages/receptionist/queue";
+import ReceptionistAppointments from "./pages/receptionist/appointments";
+import ReceptionistPatients from "./pages/receptionist/patients";
+import ReceptionistBilling from "./pages/receptionist/billing";
 
 const router = createBrowserRouter([
     {
@@ -54,7 +54,6 @@ const router = createBrowserRouter([
         children: [
             {
                 index: true,
-                path: "dashboard",
                 element: <PatientDashboard />,
             },
             {

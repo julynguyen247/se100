@@ -4,8 +4,6 @@ import {
     FiPlus,
     FiCalendar,
     FiClock,
-    FiUser,
-    FiCheck,
     FiX,
     FiList,
     FiGrid,
@@ -230,8 +228,8 @@ const ReceptionistAppointments: React.FC = () => {
                             <button
                                 onClick={() => setViewMode("list")}
                                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition ${viewMode === "list"
-                                        ? "bg-white text-slate-900 shadow-sm"
-                                        : "text-slate-500 hover:text-slate-700"
+                                    ? "bg-white text-slate-900 shadow-sm"
+                                    : "text-slate-500 hover:text-slate-700"
                                     }`}
                             >
                                 <FiList className="w-4 h-4" />
@@ -240,8 +238,8 @@ const ReceptionistAppointments: React.FC = () => {
                             <button
                                 onClick={() => setViewMode("calendar")}
                                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition ${viewMode === "calendar"
-                                        ? "bg-white text-slate-900 shadow-sm"
-                                        : "text-slate-500 hover:text-slate-700"
+                                    ? "bg-white text-slate-900 shadow-sm"
+                                    : "text-slate-500 hover:text-slate-700"
                                     }`}
                             >
                                 <FiGrid className="w-4 h-4" />

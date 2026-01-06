@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { fetchAccountAPI } from "../../services/api";
+import { fetchAccountAPI } from "../services/api";
 
 interface IAppContext {
   isAuthenticated: boolean;

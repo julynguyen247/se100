@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
 import { FiSearch, FiUser, FiDollarSign, FiCheck, FiPrinter, FiFileText, FiCreditCard, FiCalendar, FiPhone, FiMail } from "react-icons/fi";
-import Modal from "../../ui/Modal";
+import Modal from "../../components/ui/Modal";
 
 type BillingStatus = "pending" | "paid";
 

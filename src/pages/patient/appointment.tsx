@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { FiCalendar, FiClock, FiSearch, FiPlus } from "react-icons/fi";
-import BookingModal from "../../patient/BookingModal";
-import AppointmentDetailModal from "../../patient/AppointmentDetailModal";
-import CancelAppointmentModal from "../../patient/CancelAppointmentModal";
+import BookingModal from "../../components/patient/BookingModal";
+import AppointmentDetailModal from "../../components/patient/AppointmentDetailModal";
+import CancelAppointmentModal from "../../components/patient/CancelAppointmentModal";
 
 type AppointmentStatus = "confirmed" | "pending" | "completed" | "cancelled";
 

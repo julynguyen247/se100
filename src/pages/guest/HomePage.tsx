@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import previewVideo from "../../../assets/videos/4490548-uhd_3840_2160_25fps.mp4";
-import cuoidepImg from "../../../assets/imgs/cuoidep.jpg";
-import cuoidepImg2 from "../../../assets/imgs/anhbacsicuoi.jpg";
-import rangcuoiImg from "../../../assets/imgs/pngchuanbg.png";
+import previewVideo from "../../assets/videos/4490548-uhd_3840_2160_25fps.mp4";
+import cuoidepImg from "../../assets/imgs/cuoidep.jpg";
+import cuoidepImg2 from "../../assets/imgs/anhbacsicuoi.jpg";
+import rangcuoiImg from "../../assets/imgs/pngchuanbg.png";
 import {
   FaUser,
   FaPhoneAlt,

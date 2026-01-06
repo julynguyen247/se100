@@ -1,5 +1,5 @@
 import React, { useState, FormEvent } from "react";
-import { FiUser, FiRotateCcw } from "react-icons/fi";
+import { FiUser } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 
 const LoginPage: React.FC = () => {
@@ -15,13 +15,6 @@ const LoginPage: React.FC = () => {
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-[#E5F0FF] via-[#EFF4FF] to-[#DDEBFF] relative">
-      {/* Icon nhỏ góc trên phải */}
-      <button
-        type="button"
-        className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition"
-      >
-        <FiRotateCcw className="w-5 h-5" />
-      </button>
 
       <div className="w-full max-w-md px-4">
         <div className="bg-white rounded-2xl shadow-xl px-10 py-12">

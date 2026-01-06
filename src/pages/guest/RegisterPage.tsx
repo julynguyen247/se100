@@ -4,7 +4,6 @@ import {
   FiUser,
   FiEye,
   FiEyeOff,
-  FiRotateCcw,
 } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 
@@ -28,13 +27,6 @@ const RegisterPage: React.FC = () => {
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-[#E5F0FF] via-[#EFF4FF] to-[#DDEBFF] relative">
-      {/* Icon góc phải trên */}
-      <button
-        type="button"
-        className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition"
-      >
-        <FiRotateCcw className="w-5 h-5" />
-      </button>
 
       <div className="w-full max-w-lg px-4">
         <div className="bg-white rounded-2xl shadow-xl px-8 py-8 sm:px-10 sm:py-10">

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { FiUser, FiSave, FiClipboard, FiClock, FiArrowLeft, FiPlay, FiPlus, FiDollarSign, FiTrash2 } from "react-icons/fi";
 import { FaPills } from "react-icons/fa";
-import Modal from "../../ui/Modal";
+import Modal from "../../components/ui/Modal";
 
 type Patient = {
     id: number;

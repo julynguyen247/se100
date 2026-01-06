@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { FiSearch, FiUser, FiCalendar, FiFileText, FiEye, FiPlus } from "react-icons/fi";
-import PatientDetailModal from "../../shared/PatientDetailModal";
+import PatientDetailModal from "../../components/shared/PatientDetailModal";
 
 type Patient = {
     id: number;
