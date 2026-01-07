@@ -1,11 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { FiSearch, FiClock, FiUser, FiCheck, FiArrowRight } from "react-icons/fi";
-import { getTodayAppointments } from "@/services/apiReceptionist";
-import type { ReceptionistAppointment } from "@/services/apiReceptionist";
+import { getQueue, checkinAppointment, callPatient, type QueueItem } from "@/services/apiReceptionist";
+import { toast } from "sonner";
 
-type QueueStatus = "waiting" | "checked-in" | "in-progress" | "completed";
-
-const statusConfig: Record<QueueStatus, { label: string; bg: string; text: string }> = {
+const statusConfig: Record<QueueItem['status'], { label: string; bg: string; text: string }> = {
     waiting: { label: "Chờ check-in", bg: "bg-slate-100", text: "text-slate-600" },
     "checked-in": { label: "Đã check-in", bg: "bg-amber-100", text: "text-amber-700" },
     "in-progress": { label: "Đang khám", bg: "bg-blue-100", text: "text-blue-700" },
@@ -14,9 +12,10 @@ const statusConfig: Record<QueueStatus, { label: string; bg: string; text: strin
 
 const ReceptionistQueue: React.FC = () => {
     const [search, setSearch] = useState("");
-    const [queue, setQueue] = useState<ReceptionistAppointment[]>([]);
+    const [queue, setQueue] = useState<QueueItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [actionLoading, setActionLoading] = useState<string | null>(null);
 
     useEffect(() => {
         fetchQueue();
@@ -27,15 +26,13 @@ const ReceptionistQueue: React.FC = () => {
             setLoading(true);
             setError(null);
 
-            // Fetch today's appointments (no limit - get all)
-            const result = await getTodayAppointments(undefined, 100);
+            // Fetch queue (backend uses DD-MM-YYYY format, undefined = today)
+            const result = await getQueue(undefined, undefined, undefined);
 
             if (result.isSuccess && result.data) {
-                // Filter to only show confirmed and checked-in appointments (active queue)
-                const queueItems = result.data.filter(
-                    apt => apt.status === 'confirmed' || apt.status === 'checked-in'
-                );
-                setQueue(queueItems);
+                setQueue(result.data);
+            } else {
+                setError(result.message || 'Có lỗi xảy ra khi tải danh sách hàng đợi');
             }
         } catch (err: any) {
             console.error('Error fetching queue:', err);
@@ -45,21 +42,47 @@ const ReceptionistQueue: React.FC = () => {
         }
     };
 
-    const filtered = queue.filter((item) =>
-        item.patientName.toLowerCase().includes(search.toLowerCase())
-    );
+    const handleCheckin = async (id: string) => {
+        try {
+            setActionLoading(id);
+            const result = await checkinAppointment(id);
 
-    // Map appointment status to queue status
-    const getQueueStatus = (aptStatus: string): QueueStatus => {
-        switch (aptStatus) {
-            case 'confirmed':
-                return 'waiting';
-            case 'checked-in':
-                return 'checked-in';
-            default:
-                return 'waiting';
+            if (result.isSuccess) {
+                toast.success("Đã check-in bệnh nhân thành công");
+                await fetchQueue(); // Refresh queue
+            } else {
+                toast.error(result.message || "Không thể check-in bệnh nhân");
+            }
+        } catch (err: any) {
+            console.error('Error checking in patient:', err);
+            toast.error("Có lỗi xảy ra khi check-in bệnh nhân");
+        } finally {
+            setActionLoading(null);
         }
     };
+
+    const handleCallPatient = async (id: string) => {
+        try {
+            setActionLoading(id);
+            const result = await callPatient(id);
+
+            if (result.isSuccess) {
+                toast.success("Đã gọi bệnh nhân vào khám");
+                await fetchQueue(); // Refresh queue
+            } else {
+                toast.error(result.message || "Không thể gọi bệnh nhân");
+            }
+        } catch (err: any) {
+            console.error('Error calling patient:', err);
+            toast.error("Có lỗi xảy ra khi gọi bệnh nhân");
+        } finally {
+            setActionLoading(null);
+        }
+    };
+
+    const filtered = queue.filter((item) =>
+        item.name.toLowerCase().includes(search.toLowerCase())
+    );
 
     if (loading) {
         return (
@@ -141,21 +164,21 @@ const ReceptionistQueue: React.FC = () => {
                                     <th className="text-left text-xs font-semibold text-slate-600 px-6 py-4">STT</th>
                                     <th className="text-left text-xs font-semibold text-slate-600 px-6 py-4">Bệnh nhân</th>
                                     <th className="text-left text-xs font-semibold text-slate-600 px-6 py-4">Dịch vụ</th>
-                                    <th className="text-left text-xs font-semibold text-slate-600 px-6 py-4">Bác sĩ</th>
                                     <th className="text-left text-xs font-semibold text-slate-600 px-6 py-4">Giờ hẹn</th>
                                     <th className="text-left text-xs font-semibold text-slate-600 px-6 py-4">Trạng thái</th>
                                     <th className="text-left text-xs font-semibold text-slate-600 px-6 py-4">Thao tác</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {filtered.map((item, index) => {
-                                    const queueStatus = getQueueStatus(item.status);
-                                    const status = statusConfig[queueStatus];
+                                {filtered.map((item) => {
+                                    const status = statusConfig[item.status];
+                                    const isLoading = actionLoading === item.id;
+
                                     return (
                                         <tr key={item.id} className="border-b border-slate-50 hover:bg-slate-50">
                                             <td className="px-6 py-4">
                                                 <div className="w-8 h-8 bg-[#E0ECFF] rounded-full flex items-center justify-center text-[#2563EB] font-semibold text-sm">
-                                                    {index + 1}
+                                                    {item.number}
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
@@ -163,11 +186,10 @@ const ReceptionistQueue: React.FC = () => {
                                                     <div className="w-9 h-9 bg-slate-100 rounded-full flex items-center justify-center">
                                                         <FiUser className="w-4 h-4 text-slate-500" />
                                                     </div>
-                                                    <span className="text-sm font-medium text-slate-900">{item.patientName}</span>
+                                                    <span className="text-sm font-medium text-slate-900">{item.name}</span>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 text-sm text-slate-600">{item.service}</td>
-                                            <td className="px-6 py-4 text-sm text-slate-600">{item.doctor}</td>
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-1.5 text-sm text-slate-600">
                                                     <FiClock className="w-4 h-4" />
@@ -180,19 +202,27 @@ const ReceptionistQueue: React.FC = () => {
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4">
-                                                {queueStatus === "waiting" && (
-                                                    <button className="flex items-center gap-1.5 px-3 py-1.5 bg-[#2563EB] text-white text-xs font-medium rounded-lg hover:bg-[#1D4ED8]">
+                                                {item.status === "waiting" && (
+                                                    <button
+                                                        onClick={() => handleCheckin(item.id)}
+                                                        disabled={isLoading}
+                                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-[#2563EB] text-white text-xs font-medium rounded-lg hover:bg-[#1D4ED8] disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    >
                                                         <FiCheck className="w-3.5 h-3.5" />
-                                                        Check-in
+                                                        {isLoading ? 'Đang xử lý...' : 'Check-in'}
                                                     </button>
                                                 )}
-                                                {queueStatus === "checked-in" && (
-                                                    <button className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 text-white text-xs font-medium rounded-lg hover:bg-amber-600">
+                                                {item.status === "checked-in" && (
+                                                    <button
+                                                        onClick={() => handleCallPatient(item.id)}
+                                                        disabled={isLoading}
+                                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 text-white text-xs font-medium rounded-lg hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    >
                                                         <FiArrowRight className="w-3.5 h-3.5" />
-                                                        Gọi khám
+                                                        {isLoading ? 'Đang xử lý...' : 'Gọi khám'}
                                                     </button>
                                                 )}
-                                                {(queueStatus === "in-progress" || queueStatus === "completed") && (
+                                                {(item.status === "in-progress" || item.status === "completed") && (
                                                     <span className="text-xs text-slate-400">--</span>
                                                 )}
                                             </td>

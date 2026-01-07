@@ -5,6 +5,8 @@ import {
     ClinicDto, ServiceDto, DoctorDto, SlotDto
 } from "@/services/apiPatient";
 import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+dayjs.extend(utc);
 
 type Step = 1 | 2 | 3 | 4;
 
@@ -156,7 +158,6 @@ const BookingModal: React.FC<BookingModalProps> = ({
                 clinicId: selectedClinic.clinicId,
                 doctorId: selectedDoctor.doctorId,
                 serviceId: selectedService?.serviceId,
-                patientId: localStorage.getItem("id") || undefined,
                 startAt: selectedSlot.startAt,
                 endAt: selectedSlot.endAt,
                 fullName: patientInfo.fullName,
@@ -329,7 +330,8 @@ const BookingModal: React.FC<BookingModalProps> = ({
                                     ) : (
                                         <div className="grid grid-cols-4 gap-2">
                                             {slots.map((slot, idx) => {
-                                                const timeLabel = dayjs(slot.startAt).format("HH:mm");
+                                                // Display time as-is (UTC = clinic local time)
+                                                const timeLabel = dayjs.utc(slot.startAt).format("HH:mm");
                                                 const isSelected = selectedSlot?.startAt === slot.startAt;
                                                 return (
                                                     <button
@@ -371,7 +373,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
                                 <div className="flex justify-between">
                                     <span className="text-slate-500">Thời gian:</span>
                                     <span className="font-medium text-slate-900">
-                                        {selectedSlot && dayjs(selectedSlot.startAt).format("HH:mm DD/MM/YYYY")}
+                                        {selectedSlot && dayjs.utc(selectedSlot.startAt).format("HH:mm DD/MM/YYYY")}
                                     </span>
                                 </div>
                             </div>

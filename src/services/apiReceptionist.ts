@@ -50,6 +50,60 @@ export interface ActionResult {
     id: string;
 }
 
+// ============ PATIENT MANAGEMENT TYPES ============
+
+export interface PatientListItem {
+    id: string;
+    name: string;
+    phone: string;
+    email: string | null;
+    lastVisit: string | null; // "DD/MM/YYYY"
+    totalVisits: number;
+}
+
+export interface MedicalHistoryItem {
+    id: string;
+    date: string; // "DD/MM/YYYY"
+    doctor: string;
+    service: string;
+    diagnosis: string | null;
+    notes: string | null;
+}
+
+export interface RecentAppointmentItem {
+    id: string;
+    date: string; // "DD/MM/YYYY"
+    time: string; // "HH:mm"
+    doctor: string;
+    service: string;
+    status: string;
+}
+
+export interface PatientDetail {
+    id: string;
+    name: string;
+    phone: string;
+    email: string | null;
+    lastVisit: string | null;
+    totalVisits: number;
+    dob: string | null; // "DD/MM/YYYY"
+    address: string | null;
+    medicalHistory: MedicalHistoryItem[];
+    appointments: RecentAppointmentItem[];
+}
+
+export interface CreatePatientRequest {
+    clinicId: string; // GUID
+    patientCode: string;
+    fullName: string;
+    gender: 'Male' | 'Female' | 'Other';
+    primaryPhone: string | null;
+    email: string | null;
+    addressLine1: string | null;
+    dob: string | null; // ISO date string
+    note: string | null;
+}
+
 // ============ DASHBOARD APIs ============
 
 /**
@@ -137,6 +191,96 @@ export const cancelAppointment = (id: string, reason?: string) => {
  */
 export const checkinAppointment = (id: string) => {
     return axios.put<IBackendRes<ActionResult>>(`/api/receptionist/appointments/${id}/checkin`) as unknown as Promise<IBackendRes<ActionResult>>;
+};
+
+// ============ QUEUE MANAGEMENT APIs ============
+
+export interface QueueItem {
+    id: string;
+    number: number;
+    name: string;
+    service: string;
+    time: string; // "HH:mm"
+    status: 'waiting' | 'checked-in' | 'in-progress' | 'completed';
+}
+
+/**
+ * Get today's queue
+ * @param date Optional date in "DD-MM-YYYY" format (defaults to today)
+ * @param search Optional search term (patient name or phone)
+ * @param clinicId Optional clinic ID filter
+ */
+export const getQueue = (date?: string, search?: string, clinicId?: string) => {
+    let url = "/api/receptionist/queue";
+    const params = new URLSearchParams();
+
+    if (date) params.append('date', date);
+    if (search) params.append('search', search);
+    if (clinicId) params.append('clinicId', clinicId);
+
+    if (params.toString()) url += `?${params.toString()}`;
+
+    return axios.get<IBackendRes<QueueItem[]>>(url) as unknown as Promise<IBackendRes<QueueItem[]>>;
+};
+
+/**
+ * Call a patient (move from checked-in to in-progress)
+ * @param id Appointment ID (GUID)
+ */
+export const callPatient = (id: string) => {
+    return axios.put<IBackendRes<ActionResult>>(`/api/receptionist/queue/${id}/call`) as unknown as Promise<IBackendRes<ActionResult>>;
+};
+
+/**
+ * Complete an appointment (move from in-progress to completed)
+ * @param id Appointment ID (GUID)
+ */
+export const completeAppointment = (id: string) => {
+    return axios.put<IBackendRes<ActionResult>>(`/api/receptionist/queue/${id}/complete`) as unknown as Promise<IBackendRes<ActionResult>>;
+};
+
+// ============ PATIENT MANAGEMENT APIs ============
+
+/**
+ * Get patients list for receptionist
+ * @param search Optional search term (name, phone, email, patient code)
+ * @param clinicId Optional clinic ID filter
+ */
+export const getPatients = (search?: string, clinicId?: string) => {
+    let url = "/api/receptionist/patients";
+    const params = new URLSearchParams();
+
+    if (search) params.append('search', search);
+    if (clinicId) params.append('clinicId', clinicId);
+
+    if (params.toString()) url += `?${params.toString()}`;
+
+    return axios.get<IBackendRes<PatientListItem[]>>(url) as unknown as Promise<IBackendRes<PatientListItem[]>>;
+};
+
+/**
+ * Get patient detail for receptionist
+ * @param id Patient ID (GUID)
+ */
+export const getPatientDetail = (id: string) => {
+    return axios.get<IBackendRes<PatientDetail>>(`/api/receptionist/patients/${id}`) as unknown as Promise<IBackendRes<PatientDetail>>;
+};
+
+/**
+ * Create a new patient
+ * @param data Patient information
+ */
+export const createPatient = (data: CreatePatientRequest) => {
+    return axios.post<IBackendRes<{ id: string }>>("/api/receptionist/patients", data) as unknown as Promise<IBackendRes<{ id: string }>>;
+};
+
+/**
+ * Update an existing patient
+ * @param patientId Patient ID (GUID)
+ * @param data Updated patient information
+ */
+export const updatePatient = (patientId: string, data: CreatePatientRequest) => {
+    return axios.put<IBackendRes<{ success: boolean }>>(`/api/receptionist/patients/${patientId}`, data) as unknown as Promise<IBackendRes<{ success: boolean }>>;
 };
 
 // ============ RE-EXPORT BOOKING APIs FOR RECEPTIONIST USE ============
