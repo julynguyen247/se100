@@ -6,23 +6,74 @@ import {
   FiEyeOff,
 } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
+import { registerAPI } from "../../services/api";
+import ErrorModal from "../../components/ErrorModal";
 
 const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
 
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  // Error modal state
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorType, setErrorType] = useState<"REGISTER_FAILED" | "VALIDATION_ERROR" | "SERVER_ERROR" | "NETWORK_ERROR" | "GENERIC">("GENERIC");
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // TODO: sau này gắn registerAPI ở đây
-    console.log({ fullName, email, phone, password, confirmPassword });
+
+    // Validate password match
+    if (password !== confirmPassword) {
+      setErrorType("VALIDATION_ERROR");
+      setErrorMessage("Mật khẩu và xác nhận mật khẩu không khớp!");
+      setShowErrorModal(true);
+      return;
+    }
+
+    // Validate password length
+    if (password.length < 6) {
+      setErrorType("VALIDATION_ERROR");
+      setErrorMessage("Mật khẩu phải có ít nhất 6 ký tự!");
+      setShowErrorModal(true);
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await registerAPI(username, password);
+
+      if (response?.isSuccess) {
+        // Navigate to login page directly without notification
+        navigate("/login");
+      } else {
+        // Show error modal
+        setErrorType("REGISTER_FAILED");
+        setErrorMessage(typeof response === 'string' ? response : "Tên đăng nhập đã tồn tại hoặc không hợp lệ");
+        setShowErrorModal(true);
+      }
+    } catch (error: any) {
+      // Determine error type based on error details
+      if (error?.code === "ERR_NETWORK") {
+        setErrorType("NETWORK_ERROR");
+        setErrorMessage("Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng.");
+      } else if (error?.response?.status >= 500) {
+        setErrorType("SERVER_ERROR");
+        setErrorMessage("Máy chủ đang gặp sự cố. Vui lòng thử lại sau.");
+      } else {
+        setErrorType("REGISTER_FAILED");
+        setErrorMessage(error?.response?.data || error?.message || "Không thể tạo tài khoản. Vui lòng thử lại.");
+      }
+      setShowErrorModal(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -49,51 +100,24 @@ const RegisterPage: React.FC = () => {
               Đăng ký tài khoản
             </h1>
             <p className="text-xs text-slate-500 mt-1">
-              Tạo tài khoản bệnh nhân mới
+              Điền thông tin để tạo tài khoản mới
             </p>
           </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Họ và tên */}
+            {/* Username */}
             <div className="space-y-1">
               <label className="block text-xs font-medium text-slate-700">
-                Họ và tên <span className="text-red-500">*</span>
+                Tên đăng nhập <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
-                placeholder="Nguyễn Văn A"
+                placeholder="Nhập tên đăng nhập"
                 className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none transition focus:border-[#2563EB] focus:bg-white"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-              />
-            </div>
-
-            {/* Email */}
-            <div className="space-y-1">
-              <label className="block text-xs font-medium text-slate-700">
-                Email <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="email"
-                placeholder="example@email.com"
-                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none transition focus:border-[#2563EB] focus:bg-white"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-
-            {/* Số điện thoại */}
-            <div className="space-y-1">
-              <label className="block text-xs font-medium text-slate-700">
-                Số điện thoại <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="tel"
-                placeholder="0123456789"
-                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none transition focus:border-[#2563EB] focus:bg-white"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
               />
             </div>
 
@@ -109,6 +133,7 @@ const RegisterPage: React.FC = () => {
                   className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 pr-10 text-sm outline-none transition focus:border-[#2563EB] focus:bg-white"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  required
                 />
                 <button
                   type="button"
@@ -136,6 +161,7 @@ const RegisterPage: React.FC = () => {
                   className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 pr-10 text-sm outline-none transition focus:border-[#2563EB] focus:bg-white"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
                 />
                 <button
                   type="button"
@@ -154,9 +180,10 @@ const RegisterPage: React.FC = () => {
             {/* Button đăng ký */}
             <button
               type="submit"
-              className="mt-2 w-full rounded-lg bg-[#2563EB] py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1D4ED8]"
+              disabled={loading}
+              className="mt-2 w-full rounded-lg bg-[#2563EB] py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1D4ED8] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Đăng ký
+              {loading ? "Đang đăng ký..." : "Đăng ký"}
             </button>
           </form>
 
@@ -173,6 +200,14 @@ const RegisterPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Error Modal */}
+      <ErrorModal
+        isOpen={showErrorModal}
+        onClose={() => setShowErrorModal(false)}
+        errorType={errorType}
+        customMessage={errorMessage}
+      />
     </div>
   );
 };

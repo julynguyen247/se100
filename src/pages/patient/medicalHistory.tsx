@@ -1,77 +1,45 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FiSearch, FiCalendar, FiFileText, FiDownload, FiChevronDown, FiChevronUp } from "react-icons/fi";
+import { getMedicalRecords, type MedicalRecordDto } from "../../services/apiPatient";
 
-type MedicalRecord = {
-  id: number;
-  title: string;
-  doctor: string;
-  date: string;
-  diagnosis: string;
-  treatment: string;
-  prescription: string;
-  notes: string;
-  attachments: string[];
-};
 
-const RECORDS: MedicalRecord[] = [
-  {
-    id: 1,
-    title: "Trám răng",
-    doctor: "BS. Lê Văn C",
-    date: "10/12/2024",
-    diagnosis: "Sâu răng hàm số 6 bên phải",
-    treatment: "Trám răng composite",
-    prescription: "Thuốc giảm đau Paracetamol 500mg, uống 3 lần/ngày sau ăn",
-    notes: "Theo dõi sau 1 tuần. Hạn chế ăn đồ cứng trong 24h đầu.",
-    attachments: ["Phim X-quang", "Đơn thuốc"],
-  },
-  {
-    id: 2,
-    title: "Khám tổng quát",
-    doctor: "BS. Nguyễn Văn A",
-    date: "22/11/2024",
-    diagnosis: "Răng miệng khỏe mạnh, có cao răng nhẹ",
-    treatment: "Vệ sinh răng miệng, lấy cao răng",
-    prescription: "",
-    notes: "Nên đánh răng 2 lần/ngày. Tái khám sau 6 tháng.",
-    attachments: [],
-  },
-  {
-    id: 3,
-    title: "Tư vấn niềng răng",
-    doctor: "BS. Trần Thị B",
-    date: "15/10/2024",
-    diagnosis: "Răng khấp khểnh nhẹ, cần chỉnh nha",
-    treatment: "Tư vấn phương án niềng răng mắc cài",
-    prescription: "",
-    notes: "Bệnh nhân sẽ suy nghĩ và quay lại sau 1 tháng",
-    attachments: ["Báo giá", "Phim panorama"],
-  },
-  {
-    id: 4,
-    title: "Nhổ răng khôn",
-    doctor: "BS. Lê Văn C",
-    date: "5/9/2024",
-    diagnosis: "Răng khôn hàm dưới bên trái mọc lệch",
-    treatment: "Nhổ răng khôn dưới hướng dẫn",
-    prescription: "Kháng sinh Amoxicillin 500mg, giảm đau, súc miệng Chlorhexidine",
-    notes: "Kiêng ăn cứng 3-5 ngày. Tái khám sau 7 ngày để tháo chỉ.",
-    attachments: ["Phim X-quang", "Đơn thuốc", "Hướng dẫn chăm sóc"],
-  },
-];
 
 const MedicalHistoryPage: React.FC = () => {
   const [query, setQuery] = useState("");
-  const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [records, setRecords] = useState<MedicalRecordDto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const filtered = RECORDS.filter(
+  // Fetch medical records on mount
+  useEffect(() => {
+    const fetchRecords = async () => {
+      try {
+        setLoading(true);
+        const response = await getMedicalRecords();
+
+        if (response && response.data) {
+          setRecords(response.data);
+        }
+      } catch (err: any) {
+        console.error("Failed to fetch medical records:", err);
+        setError("Không thể tải hồ sơ bệnh án. Vui lòng thử lại sau.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRecords();
+  }, []);
+
+  const filtered = records.filter(
     (r) =>
       r.title.toLowerCase().includes(query.toLowerCase()) ||
-      r.diagnosis.toLowerCase().includes(query.toLowerCase()) ||
+      (r.diagnosis?.toLowerCase() || "").includes(query.toLowerCase()) ||
       r.doctor.toLowerCase().includes(query.toLowerCase())
   );
 
-  const toggleExpand = (id: number) => {
+  const toggleExpand = (id: string) => {
     setExpandedId(expandedId === id ? null : id);
   };
 
@@ -104,26 +72,51 @@ const MedicalHistoryPage: React.FC = () => {
         </div>
 
         {/* List records */}
-        <div className="space-y-4">
-          {filtered.length === 0 ? (
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-12 text-center">
-              <FiFileText className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-              <h3 className="text-sm font-semibold text-slate-900 mb-1">Không tìm thấy hồ sơ</h3>
-              <p className="text-xs text-slate-500">
-                Không có hồ sơ bệnh án nào phù hợp với tìm kiếm của bạn
-              </p>
-            </div>
-          ) : (
-            filtered.map((record) => (
+        {loading ? (
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-12 text-center">
+            <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-sm text-slate-600">Đang tải hồ sơ bệnh án...</p>
+          </div>
+        ) : error ? (
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-12 text-center">
+            <FiFileText className="w-12 h-12 text-red-300 mx-auto mb-4" />
+            <h3 className="text-sm font-semibold text-slate-900 mb-1">Lỗi tải dữ liệu</h3>
+            <p className="text-xs text-slate-500 mb-4">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+            >
+              Thử lại
+            </button>
+          </div>
+        ) : records.length === 0 ? (
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-12 text-center">
+            <FiFileText className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+            <h3 className="text-sm font-semibold text-slate-900 mb-1">Chưa có bệnh sử</h3>
+            <p className="text-xs text-slate-500">
+              Bạn chưa có hồ sơ bệnh án nào trong hệ thống
+            </p>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-12 text-center">
+            <FiFileText className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+            <h3 className="text-sm font-semibold text-slate-900 mb-1">Không tìm thấy hồ sơ</h3>
+            <p className="text-xs text-slate-500">
+              Không có hồ sơ bệnh án nào phù hợp với tìm kiếm của bạn
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {filtered.map((record) => (
               <MedicalRecordCard
                 key={record.id}
                 record={record}
                 isExpanded={expandedId === record.id}
                 onToggle={() => toggleExpand(record.id)}
               />
-            ))
-          )}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -134,7 +127,7 @@ export default MedicalHistoryPage;
 /* -------- Card từng hồ sơ -------- */
 
 interface MedicalRecordCardProps {
-  record: MedicalRecord;
+  record: MedicalRecordDto;
   isExpanded: boolean;
   onToggle: () => void;
 }
@@ -178,10 +171,12 @@ const MedicalRecordCard: React.FC<MedicalRecordCardProps> = ({ record, isExpande
             </div>
 
             {/* Chẩn đoán */}
-            <div className="mt-3 rounded-xl bg-[#EFF6FF] px-4 py-2.5 text-xs text-slate-700">
-              <span className="font-semibold text-slate-900">Chẩn đoán: </span>
-              <span>{record.diagnosis}</span>
-            </div>
+            {record.diagnosis && (
+              <div className="mt-3 rounded-xl bg-[#EFF6FF] px-4 py-2.5 text-xs text-slate-700">
+                <span className="font-semibold text-slate-900">Chẩn đoán: </span>
+                <span>{record.diagnosis}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -191,10 +186,12 @@ const MedicalRecordCard: React.FC<MedicalRecordCardProps> = ({ record, isExpande
         <div className="border-t border-slate-100 bg-slate-50 px-5 py-5">
           <div className="ml-15 space-y-4">
             {/* Điều trị */}
-            <div>
-              <h4 className="text-xs font-semibold text-slate-900 mb-1.5">Điều trị</h4>
-              <p className="text-xs text-slate-600">{record.treatment}</p>
-            </div>
+            {record.treatment && (
+              <div>
+                <h4 className="text-xs font-semibold text-slate-900 mb-1.5">Điều trị</h4>
+                <p className="text-xs text-slate-600">{record.treatment}</p>
+              </div>
+            )}
 
             {/* Đơn thuốc */}
             {record.prescription && (

@@ -1,9 +1,10 @@
-export {};
+export { };
 declare global {
   interface IBackendRes<T> {
+    isSuccess: boolean;
     error?: string | string[];
     message: string;
-    statusCode: number | string;
+    statusCode?: number | string;
     data?: T;
   }
   interface IModelPaginate<T> {
@@ -58,5 +59,49 @@ declare global {
   }
   interface IFetchAccount {
     user: IUser;
+  }
+
+  // ============ RECEPTIONIST TYPES ============
+  interface DashboardStats {
+    patientsWaiting: number;
+    todayAppointments: number;
+    pendingConfirmation: number;
+    pendingPayment: number;
+  }
+
+  interface ReceptionistAppointment {
+    id: string;
+    patientName: string;
+    phone: string;
+    service: string;
+    doctor: string;
+    date: string; // "YYYY-MM-DD"
+    time: string; // "HH:mm"
+    duration: number;
+    status: 'confirmed' | 'pending' | 'checked-in' | 'cancelled';
+    notes?: string;
+  }
+
+  interface CreateAppointmentRequest {
+    patientName: string;
+    phone: string;
+    serviceId: string;
+    doctorId: string;
+    clinicId: string;
+    date: string;
+    time: string;
+    duration: number;
+    notes?: string;
+  }
+
+  interface UpdateAppointmentRequest {
+    patientName: string;
+    phone: string;
+    serviceId: string;
+    doctorId: string;
+    date: string;
+    time: string;
+    duration: number;
+    notes?: string;
   }
 }

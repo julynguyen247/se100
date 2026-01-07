@@ -1,27 +1,20 @@
 import axios from "@/services/api.customize";
 
 export const loginAPI = (username: string, password: string) => {
-  const urlBackend = "/api/v1/auth/login";
-  return axios.post<IBackendRes<ILogin>>(
+  const urlBackend = "/api/auth/login";
+  return axios.post(
     urlBackend,
-    { username, password },
-    {
-      headers: {
-        delay: 1000,
-      },
-    }
+    { username, password }
   );
 };
 export const registerAPI = (
-  email: string,
-  password: string,
-  fullName: string
+  username: string,
+  password: string
 ) => {
-  const urlBackend = "/api/v1/users";
-  return axios.post<IBackendRes<IRegister>>(urlBackend, {
-    email,
+  const urlBackend = "/api/auth/register";
+  return axios.post(urlBackend, {
+    username,
     password,
-    fullName,
   });
 };
 export const fetchAccountAPI = () => {

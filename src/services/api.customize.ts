@@ -30,7 +30,21 @@ instance.interceptors.response.use(
   },
   function (error) {
     // Any status codes that falls outside the range of 2xx cause this function to trigger
-    // Do something with response error
+
+    // Handle 401 Unauthorized - token expired or invalid
+    if (error?.response?.status === 401) {
+      // Clear auth data from localStorage
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("user");
+      localStorage.removeItem("id");
+
+      // Redirect to login page if not already there
+      if (!window.location.pathname.includes("/login")) {
+        window.location.href = "/login";
+      }
+    }
+
+    // Return error data if available, otherwise reject
     if (error && error.response && error.response.data) {
       return error.response.data;
     }

@@ -1,30 +1,21 @@
 import React from "react";
 import { FiX, FiCalendar, FiClock, FiUser, FiFileText } from "react-icons/fi";
-
-type AppointmentStatus = "confirmed" | "pending" | "completed" | "cancelled";
-
-type Appointment = {
-    id: number;
-    title: string;
-    doctor: string;
-    date: string;
-    time: string;
-    note: string;
-    status: AppointmentStatus;
-};
+import { AppointmentDto, AppointmentStatus } from "@/services/apiPatient";
 
 interface AppointmentDetailModalProps {
     isOpen: boolean;
     onClose: () => void;
-    appointment: Appointment | null;
-    onCancel?: (id: number) => void;
+    appointment: AppointmentDto | null;
+    onCancel?: (id: string) => void;
 }
 
 const statusMap: Record<AppointmentStatus, { label: string; className: string }> = {
+    booked: { label: "Đã đặt lịch", className: "bg-[#FEF3C7] text-[#92400E]" },
     confirmed: { label: "Đã xác nhận", className: "bg-[#E0ECFF] text-[#2563EB]" },
     pending: { label: "Chờ xác nhận", className: "bg-[#FEF3C7] text-[#92400E]" },
     completed: { label: "Hoàn thành", className: "bg-[#DCFCE7] text-[#15803D]" },
     cancelled: { label: "Đã huỷ", className: "bg-[#FEE2E2] text-[#B91C1C]" },
+    noshow: { label: "Không đến", className: "bg-[#FEE2E2] text-[#DC2626]" },
 };
 
 const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
@@ -35,8 +26,11 @@ const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
 }) => {
     if (!isOpen || !appointment) return null;
 
-    const status = statusMap[appointment.status];
-    const canCancel = appointment.status === "confirmed" || appointment.status === "pending";
+    const status = statusMap[appointment.status as AppointmentStatus] || {
+        label: appointment.status,
+        className: "bg-gray-100 text-gray-600",
+    };
+    const canCancel = appointment.status === "confirmed" || appointment.status === "pending" || appointment.status === "booked";
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
