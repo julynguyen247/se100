@@ -1,324 +1,463 @@
-import React, { useState, FormEvent } from "react";
-import { FiX, FiCalendar, FiUser, FiPhone, FiMail } from "react-icons/fi";
+import React, { useState, useEffect } from "react";
+import { FiX, FiCalendar, FiUser, FiPhone, FiMail, FiMapPin } from "react-icons/fi";
+import {
+    getClinics, getServices, getDoctors, getSlots, createBooking,
+    ClinicDto, ServiceDto, DoctorDto, SlotDto
+} from "@/services/apiPatient";
+import dayjs from "dayjs";
 
-type Step = 1 | 2 | 3;
-
-type BookingData = {
-    fullName: string;
-    phone: string;
-    email: string;
-    date: string;
-    time: string;
-    service: string;
-    doctor: string;
-    note: string;
-};
+type Step = 1 | 2 | 3 | 4;
 
 interface BookingModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit?: (data: BookingData) => void;
-    initialData?: Partial<BookingData>;
+    onSubmit?: (data: any) => void;
 }
-
-const timeSlots = [
-    "08:00", "08:30", "09:00", "09:30", "10:00", "10:30",
-    "11:00", "11:30", "13:30", "14:00", "14:30", "15:00",
-    "15:30", "16:00", "16:30", "17:00",
-];
 
 const BookingModal: React.FC<BookingModalProps> = ({
     isOpen,
     onClose,
     onSubmit,
-    initialData,
 }) => {
     const [step, setStep] = useState<Step>(1);
-    const [data, setData] = useState<BookingData>({
-        fullName: initialData?.fullName || "",
-        phone: initialData?.phone || "",
+    const [isLoading, setIsLoading] = useState(false);
+
+    // Data & Selection State
+    const [clinics, setClinics] = useState<ClinicDto[]>([]);
+    const [services, setServices] = useState<ServiceDto[]>([]);
+    const [doctors, setDoctors] = useState<DoctorDto[]>([]);
+    const [slots, setSlots] = useState<SlotDto[]>([]);
+
+    const [selectedClinic, setSelectedClinic] = useState<ClinicDto | null>(null);
+    const [selectedService, setSelectedService] = useState<ServiceDto | null>(null);
+    const [selectedDoctor, setSelectedDoctor] = useState<DoctorDto | null>(null);
+    const [selectedDate, setSelectedDate] = useState<string>("");
+    const [selectedSlot, setSelectedSlot] = useState<SlotDto | null>(null);
+
+    const [patientInfo, setPatientInfo] = useState({
+        fullName: "",
+        phone: "",
         email: "",
-        date: initialData?.date || "",
-        time: initialData?.time || "",
-        service: initialData?.service || "",
-        doctor: initialData?.doctor || "",
-        note: initialData?.note || "",
+        note: ""
     });
 
-    const updateField = <K extends keyof BookingData>(key: K, value: BookingData[K]) => {
-        setData((prev) => ({ ...prev, [key]: value }));
+    // Reset flow when opening
+    useEffect(() => {
+        if (isOpen) {
+            setStep(1);
+            fetchClinics();
+            // Reset selections
+            setSelectedClinic(null);
+            setSelectedService(null);
+            setSelectedDoctor(null);
+            setSelectedDate("");
+            setSelectedSlot(null);
+            setSlots([]);
+        }
+    }, [isOpen]);
+
+    // Cleanup when clinic changes
+    useEffect(() => {
+        setSelectedService(null);
+        setSelectedDoctor(null);
+        setSelectedDate("");
+        setSelectedSlot(null);
+        setSlots([]);
+        setDoctors([]); // Clear doctors too
+    }, [selectedClinic]);
+
+    // Refetch doctors when service changes
+    useEffect(() => {
+        if (selectedClinic && selectedService) {
+            fetchDoctorsForService(selectedClinic.clinicId, selectedService.serviceId);
+        }
+        // Clear doctor selection when service changes
+        setSelectedDoctor(null);
+    }, [selectedService]);
+
+    const fetchClinics = async () => {
+        try {
+            const res = await getClinics();
+            if (res.isSuccess) {
+                setClinics(res.data || []);
+            }
+        } catch (error) {
+            console.error(error);
+        }
     };
 
-    const handleSubmit = (e: FormEvent) => {
-        e.preventDefault();
-        onSubmit?.(data);
-        alert("Đặt lịch thành công!");
-        onClose();
-        // Reset
-        setStep(1);
+    const fetchServicesAndDoctors = async (clinicId: string) => {
+        setIsLoading(true);
+        try {
+            const sRes = await getServices(clinicId);
+            if (sRes.isSuccess) setServices(sRes.data || []);
+            // Don't fetch doctors yet - wait for service selection
+            setDoctors([]);
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
-    const handleClose = () => {
-        setStep(1);
-        onClose();
+    const fetchDoctorsForService = async (clinicId: string, serviceId: string) => {
+        setIsLoading(true);
+        try {
+            const dRes = await getDoctors(clinicId, serviceId);
+            if (dRes.isSuccess) setDoctors(dRes.data || []);
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const fetchSlots = async () => {
+        if (!selectedClinic || !selectedDoctor || !selectedDate) return;
+        setIsLoading(true);
+        try {
+            const res = await getSlots(
+                selectedClinic.clinicId,
+                selectedDoctor.doctorId,
+                dayjs(selectedDate).format("YYYY-MM-DD"),
+                selectedService?.serviceId
+            );
+            if (res.isSuccess) {
+                setSlots(res.data || []);
+            }
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Effect to fetch services/doctors when clinic is selected
+    useEffect(() => {
+        if (selectedClinic) {
+            fetchServicesAndDoctors(selectedClinic.clinicId);
+        }
+    }, [selectedClinic]);
+
+    // Effect to fetch slots when doctor/date changes
+    useEffect(() => {
+        if (selectedDate && selectedDoctor) {
+            fetchSlots();
+        }
+    }, [selectedDate, selectedDoctor]);
+
+
+    const handleConfirmBooking = async () => {
+        if (!selectedClinic || !selectedDoctor || !selectedSlot) return;
+
+        setIsLoading(true);
+        try {
+            const response = await createBooking({
+                clinicId: selectedClinic.clinicId,
+                doctorId: selectedDoctor.doctorId,
+                serviceId: selectedService?.serviceId,
+                patientId: localStorage.getItem("id") || undefined,
+                startAt: selectedSlot.startAt,
+                endAt: selectedSlot.endAt,
+                fullName: patientInfo.fullName,
+                phone: patientInfo.phone,
+                email: patientInfo.email,
+                notes: patientInfo.note
+            });
+
+            if (response.isSuccess) {
+                alert("Đặt lịch thành công! Vui lòng kiểm tra email.");
+                onSubmit?.(response.data);
+                onClose();
+            } else {
+                alert(response.message || "Đặt lịch thất bại");
+            }
+        } catch (error: any) {
+            console.error(error);
+            alert(error.response?.data?.message || "Đã xảy ra lỗi");
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     if (!isOpen) return null;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-            {/* Overlay */}
-            <div
-                className="absolute inset-0 bg-black/50"
-                onClick={handleClose}
-            />
+            <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
-            {/* Modal */}
-            <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto flex flex-col">
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b">
+                <div className="flex items-center justify-between px-6 py-4 border-b shrink-0">
                     <div>
-                        <h2 className="text-lg font-semibold text-slate-900">Đặt lịch hẹn</h2>
-                        <p className="text-xs text-slate-500">Bước {step}/3</p>
+                        <h2 className="text-lg font-semibold text-slate-900">Đặt lịch khám</h2>
+                        <div className="flex items-center gap-2 mt-1">
+                            <span className={`text-xs px-2 py-0.5 rounded-full ${step >= 1 ? 'bg-blue-100 text-blue-700 font-medium' : 'bg-slate-100 text-slate-500'}`}>1. Cơ sở</span>
+                            <span className="text-slate-300">/</span>
+                            <span className={`text-xs px-2 py-0.5 rounded-full ${step >= 2 ? 'bg-blue-100 text-blue-700 font-medium' : 'bg-slate-100 text-slate-500'}`}>2. Dịch vụ</span>
+                            <span className="text-slate-300">/</span>
+                            <span className={`text-xs px-2 py-0.5 rounded-full ${step >= 3 ? 'bg-blue-100 text-blue-700 font-medium' : 'bg-slate-100 text-slate-500'}`}>3. Thời gian</span>
+                            <span className="text-slate-300">/</span>
+                            <span className={`text-xs px-2 py-0.5 rounded-full ${step >= 4 ? 'bg-blue-100 text-blue-700 font-medium' : 'bg-slate-100 text-slate-500'}`}>4. Thông tin</span>
+                        </div>
                     </div>
-                    <button
-                        onClick={handleClose}
-                        className="p-2 hover:bg-slate-100 rounded-lg transition"
-                    >
+                    <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-lg transition">
                         <FiX className="w-5 h-5 text-slate-500" />
                     </button>
                 </div>
 
-                {/* Stepper */}
-                <div className="px-6 py-3 flex items-center justify-center gap-2">
-                    {[1, 2, 3].map((s) => (
-                        <div key={s} className="flex items-center">
-                            <div
-                                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${step === s
-                                    ? "bg-[#2563EB] text-white"
-                                    : step > s
-                                        ? "bg-emerald-500 text-white"
-                                        : "bg-slate-100 text-slate-400"
-                                    }`}
-                            >
-                                {s}
-                            </div>
-                            {s < 3 && <div className="w-8 h-px bg-slate-200 mx-1" />}
-                        </div>
-                    ))}
-                </div>
-
-                {/* Content */}
-                <div className="px-6 py-4">
+                {/* Body */}
+                <div className="p-6 grow space-y-6">
+                    {/* STEP 1: Select Clinic */}
                     {step === 1 && (
-                        <form
-                            className="space-y-4"
-                            onSubmit={(e) => {
-                                e.preventDefault();
-                                setStep(2);
-                            }}
-                        >
-                            <div className="space-y-1.5">
-                                <label className="block text-xs font-medium text-slate-700">
-                                    Họ và tên <span className="text-red-500">*</span>
-                                </label>
-                                <div className="relative">
-                                    <FiUser className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-                                    <input
-                                        type="text"
-                                        placeholder="Nhập họ và tên"
-                                        className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:border-[#2563EB] focus:bg-white focus:ring-2 focus:ring-[#2563EB]/20 outline-none transition-all"
-                                        value={data.fullName}
-                                        onChange={(e) => updateField("fullName", e.target.value)}
-                                        required
-                                    />
-                                </div>
+                        <div className="space-y-4">
+                            <h3 className="font-semibold text-slate-800">Chọn phòng khám</h3>
+                            <div className="grid sm:grid-cols-2 gap-3">
+                                {clinics.map(clinic => (
+                                    <div
+                                        key={clinic.clinicId}
+                                        onClick={() => setSelectedClinic(clinic)}
+                                        className={`p-4 rounded-xl border text-left cursor-pointer transition-all hover:shadow-md ${selectedClinic?.clinicId === clinic.clinicId
+                                            ? 'border-blue-500 bg-blue-50/50 ring-1 ring-blue-500'
+                                            : 'border-slate-200 hover:border-blue-300'
+                                            }`}
+                                    >
+                                        <div className="font-medium text-slate-900">{clinic.name}</div>
+                                        <div className="text-xs text-slate-500 mt-1 flex items-center gap-1">
+                                            <FiMapPin className="w-3 h-3" /> {clinic.email || "Đang cập nhật"}
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
-
-                            <div className="space-y-1.5">
-                                <label className="block text-xs font-medium text-slate-700">
-                                    Số điện thoại <span className="text-red-500">*</span>
-                                </label>
-                                <div className="relative">
-                                    <FiPhone className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-                                    <input
-                                        type="tel"
-                                        placeholder="Nhập số điện thoại"
-                                        className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:border-[#2563EB] focus:bg-white focus:ring-2 focus:ring-[#2563EB]/20 outline-none transition-all"
-                                        value={data.phone}
-                                        onChange={(e) => updateField("phone", e.target.value)}
-                                        required
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="space-y-1.5">
-                                <label className="block text-xs font-medium text-slate-700">
-                                    Email <span className="text-slate-400 font-normal">(không bắt buộc)</span>
-                                </label>
-                                <div className="relative">
-                                    <FiMail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-                                    <input
-                                        type="email"
-                                        placeholder="example@email.com"
-                                        className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:border-[#2563EB] focus:bg-white focus:ring-2 focus:ring-[#2563EB]/20 outline-none transition-all"
-                                        value={data.email}
-                                        onChange={(e) => updateField("email", e.target.value)}
-                                    />
-                                </div>
-                            </div>
-
-                            <button
-                                type="submit"
-                                className="w-full py-3 rounded-xl bg-[#2563EB] text-white text-sm font-semibold hover:bg-[#1D4ED8] transition-colors shadow-sm"
-                            >
-                                Tiếp tục
-                            </button>
-                        </form>
+                        </div>
                     )}
 
+                    {/* STEP 2: Select Service & Doctor */}
                     {step === 2 && (
-                        <form
-                            className="space-y-4"
-                            onSubmit={(e) => {
-                                e.preventDefault();
-                                setStep(3);
-                            }}
-                        >
-                            <div className="space-y-1">
-                                <label className="block text-xs font-medium text-slate-700">
-                                    Ngày hẹn <span className="text-red-500">*</span>
-                                </label>
-                                <div className="relative">
-                                    <FiCalendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-                                    <input
-                                        type="date"
-                                        className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:border-[#2563EB] focus:bg-white outline-none"
-                                        value={data.date}
-                                        onChange={(e) => updateField("date", e.target.value)}
-                                        required
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="space-y-2">
-                                <label className="block text-xs font-medium text-slate-700">
-                                    Giờ hẹn <span className="text-red-500">*</span>
-                                </label>
-                                <div className="grid grid-cols-4 gap-2">
-                                    {timeSlots.map((slot) => (
-                                        <button
-                                            key={slot}
-                                            type="button"
-                                            onClick={() => updateField("time", slot)}
-                                            className={`py-2 text-xs rounded-md border transition ${data.time === slot
-                                                ? "bg-[#2563EB] border-[#2563EB] text-white"
-                                                : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
+                        <div className="space-y-6">
+                            {/* Services */}
+                            <div className="space-y-3">
+                                <h3 className="font-semibold text-slate-800">Chọn dịch vụ</h3>
+                                <div className="grid sm:grid-cols-2 gap-3">
+                                    {services.map(svc => (
+                                        <div
+                                            key={svc.serviceId}
+                                            onClick={() => setSelectedService(svc)}
+                                            className={`p-3 rounded-xl border text-left cursor-pointer transition-all ${selectedService?.serviceId === svc.serviceId
+                                                ? 'border-blue-500 bg-blue-50/50 ring-1 ring-blue-500'
+                                                : 'border-slate-200 hover:border-blue-300'
                                                 }`}
                                         >
-                                            {slot}
-                                        </button>
+                                            <div className="text-sm font-medium text-slate-900">{svc.name}</div>
+                                            <div className="text-xs text-slate-500 mt-1">
+                                                {svc.defaultPrice?.toLocaleString()} đ • {svc.defaultDurationMin} phút
+                                            </div>
+                                        </div>
                                     ))}
                                 </div>
                             </div>
 
-                            <div className="flex gap-3 pt-2">
-                                <button
-                                    type="button"
-                                    onClick={() => setStep(1)}
-                                    className="flex-1 py-2.5 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50"
-                                >
-                                    Quay lại
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="flex-1 py-2.5 rounded-lg bg-[#2563EB] text-white text-sm font-semibold hover:bg-[#1D4ED8]"
-                                >
-                                    Tiếp tục
-                                </button>
+                            {/* Doctors */}
+                            <div className="space-y-3">
+                                <h3 className="font-semibold text-slate-800">Chọn bác sĩ</h3>
+                                {!selectedService ? (
+                                    <div className="text-center py-6 bg-slate-50 rounded-xl">
+                                        <p className="text-sm text-slate-500">Vui lòng chọn dịch vụ trước</p>
+                                    </div>
+                                ) : isLoading ? (
+                                    <div className="text-center py-6">
+                                        <p className="text-sm text-slate-500">Đang tải danh sách bác sĩ...</p>
+                                    </div>
+                                ) : doctors.length === 0 ? (
+                                    <div className="text-center py-6 bg-amber-50 rounded-xl">
+                                        <p className="text-sm text-amber-700">Không có bác sĩ nào cung cấp dịch vụ này</p>
+                                    </div>
+                                ) : (
+                                    <div className="grid sm:grid-cols-2 gap-3">
+                                        {doctors.map(doc => (
+                                            <div
+                                                key={doc.doctorId}
+                                                onClick={() => setSelectedDoctor(doc)}
+                                                className={`p-3 rounded-xl border text-left cursor-pointer transition-all ${selectedDoctor?.doctorId === doc.doctorId
+                                                    ? 'border-blue-500 bg-blue-50/50 ring-1 ring-blue-500'
+                                                    : 'border-slate-200 hover:border-blue-300'
+                                                    }`}
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
+                                                        <FiUser />
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-sm font-medium text-slate-900">{doc.fullName}</div>
+                                                        <div className="text-xs text-slate-500">{doc.specialty || "Bác sĩ"}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
-                        </form>
+                        </div>
                     )}
 
+                    {/* STEP 3: Time Selection */}
                     {step === 3 && (
-                        <form className="space-y-4" onSubmit={handleSubmit}>
-                            <div className="space-y-1">
-                                <label className="block text-xs font-medium text-slate-700">
-                                    Dịch vụ <span className="text-red-500">*</span>
-                                </label>
-                                <select
-                                    className="w-full px-4 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:border-[#2563EB] focus:bg-white outline-none"
-                                    value={data.service}
-                                    onChange={(e) => updateField("service", e.target.value)}
-                                    required
-                                >
-                                    <option value="">Chọn dịch vụ</option>
-                                    <option value="kham-tong-quat">Khám tổng quát</option>
-                                    <option value="tay-trang">Tẩy trắng răng</option>
-                                    <option value="nieng-rang">Niềng răng</option>
-                                    <option value="trong-rang">Trồng răng Implant</option>
-                                    <option value="nho-rang">Nhổ răng</option>
-                                </select>
-                            </div>
-
-                            <div className="space-y-1">
-                                <label className="block text-xs font-medium text-slate-700">
-                                    Bác sĩ <span className="text-red-500">*</span>
-                                </label>
-                                <select
-                                    className="w-full px-4 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:border-[#2563EB] focus:bg-white outline-none"
-                                    value={data.doctor}
-                                    onChange={(e) => updateField("doctor", e.target.value)}
-                                    required
-                                >
-                                    <option value="">Chọn bác sĩ</option>
-                                    <option value="bs-nguyen-van-a">BS. Nguyễn Văn A</option>
-                                    <option value="bs-tran-thi-b">BS. Trần Thị B</option>
-                                    <option value="bs-le-van-c">BS. Lê Văn C</option>
-                                </select>
-                            </div>
-
-                            <div className="space-y-1">
-                                <label className="block text-xs font-medium text-slate-700">
-                                    Ghi chú
-                                </label>
-                                <textarea
-                                    rows={2}
-                                    className="w-full px-4 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:border-[#2563EB] focus:bg-white outline-none resize-none"
-                                    placeholder="Triệu chứng, yêu cầu..."
-                                    value={data.note}
-                                    onChange={(e) => updateField("note", e.target.value)}
-                                />
-                            </div>
-
-                            {/* Summary */}
-                            <div className="bg-slate-50 rounded-lg p-3 text-xs text-slate-600">
-                                <p className="font-semibold text-slate-700 mb-2">Thông tin đặt lịch:</p>
-                                <div className="grid grid-cols-2 gap-1">
-                                    <span>Họ tên: {data.fullName}</span>
-                                    <span>SĐT: {data.phone}</span>
-                                    <span>Ngày: {data.date}</span>
-                                    <span>Giờ: {data.time}</span>
+                        <div className="space-y-6">
+                            {/* Date Picker */}
+                            <div className="space-y-2">
+                                <label className="block text-sm font-medium text-slate-700">Ngày khám</label>
+                                <div className="relative">
+                                    <FiCalendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                    <input
+                                        type="date"
+                                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
+                                        min={new Date().toISOString().split('T')[0]}
+                                        value={selectedDate}
+                                        onChange={(e) => setSelectedDate(e.target.value)}
+                                    />
                                 </div>
                             </div>
 
-                            <div className="flex gap-3 pt-2">
-                                <button
-                                    type="button"
-                                    onClick={() => setStep(2)}
-                                    className="flex-1 py-2.5 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50"
-                                >
-                                    Quay lại
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="flex-1 py-2.5 rounded-lg bg-[#2563EB] text-white text-sm font-semibold hover:bg-[#1D4ED8]"
-                                >
-                                    Xác nhận
-                                </button>
-                            </div>
-                        </form>
+                            {/* Slot Grid */}
+                            {selectedDate && (
+                                <div className="space-y-3">
+                                    <h3 className="font-semibold text-slate-800">Giờ khám còn trống</h3>
+                                    {isLoading ? (
+                                        <div className="text-center py-4 text-slate-500 text-sm">Đang tải lịch...</div>
+                                    ) : slots.length === 0 ? (
+                                        <div className="text-center py-4 text-slate-500 text-sm bg-slate-50 rounded-lg">Không có lịch trống cho ngày này</div>
+                                    ) : (
+                                        <div className="grid grid-cols-4 gap-2">
+                                            {slots.map((slot, idx) => {
+                                                const timeLabel = dayjs(slot.startAt).format("HH:mm");
+                                                const isSelected = selectedSlot?.startAt === slot.startAt;
+                                                return (
+                                                    <button
+                                                        key={idx}
+                                                        onClick={() => setSelectedSlot(slot)}
+                                                        className={`py-2 text-sm rounded-lg border transition-all ${isSelected
+                                                            ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                                                            : 'bg-white text-slate-700 border-slate-200 hover:border-blue-400'
+                                                            }`}
+                                                    >
+                                                        {timeLabel}
+                                                    </button>
+                                                )
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     )}
+
+                    {/* STEP 4: Personal Info */}
+                    {step === 4 && (
+                        <div className="space-y-5">
+                            <div className="bg-blue-50 p-4 rounded-xl space-y-2 text-sm">
+                                <div className="font-semibold text-blue-900 border-b border-blue-100 pb-2 mb-2">Thông tin đặt khám</div>
+                                <div className="flex justify-between">
+                                    <span className="text-slate-500">Cơ sở:</span>
+                                    <span className="font-medium text-slate-900">{selectedClinic?.name}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-slate-500">Dịch vụ:</span>
+                                    <span className="font-medium text-slate-900">{selectedService ? selectedService.name : "Khám bệnh"}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-slate-500">Bác sĩ:</span>
+                                    <span className="font-medium text-slate-900">{selectedDoctor?.fullName}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-slate-500">Thời gian:</span>
+                                    <span className="font-medium text-slate-900">
+                                        {selectedSlot && dayjs(selectedSlot.startAt).format("HH:mm DD/MM/YYYY")}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div className="grid sm:grid-cols-2 gap-4">
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-medium text-slate-700">Họ và tên *</label>
+                                        <div className="relative">
+                                            <FiUser className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                            <input
+                                                type="text"
+                                                className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                                value={patientInfo.fullName}
+                                                onChange={e => setPatientInfo({ ...patientInfo, fullName: e.target.value })}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-medium text-slate-700">Số điện thoại *</label>
+                                        <div className="relative">
+                                            <FiPhone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                            <input
+                                                type="text"
+                                                className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                                value={patientInfo.phone}
+                                                onChange={e => setPatientInfo({ ...patientInfo, phone: e.target.value })}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-medium text-slate-700">Email</label>
+                                    <div className="relative">
+                                        <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                        <input
+                                            type="email"
+                                            className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                            value={patientInfo.email}
+                                            onChange={e => setPatientInfo({ ...patientInfo, email: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-medium text-slate-700">Ghi chú</label>
+                                    <textarea
+                                        rows={2}
+                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                        value={patientInfo.note}
+                                        onChange={e => setPatientInfo({ ...patientInfo, note: e.target.value })}
+                                        placeholder="Triệu chứng hoặc yêu cầu đặc biệt..."
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Footer Buttons */}
+                <div className="px-6 py-4 border-t bg-slate-50 flex gap-3 shrink-0">
+                    {step > 1 && (
+                        <button
+                            onClick={() => setStep(prev => (prev - 1) as Step)}
+                            className="px-6 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 font-medium hover:bg-slate-50 transition"
+                        >
+                            Quay lại
+                        </button>
+                    )}
+
+                    <button
+                        onClick={() => {
+                            if (step === 1 && selectedClinic) setStep(2);
+                            else if (step === 2 && selectedDoctor) setStep(3);
+                            else if (step === 3 && selectedSlot) setStep(4);
+                            else if (step === 4) handleConfirmBooking();
+                        }}
+                        disabled={
+                            (step === 1 && !selectedClinic) ||
+                            (step === 2 && !selectedDoctor) ||
+                            (step === 3 && !selectedSlot) ||
+                            (step === 4 && (!patientInfo.fullName || !patientInfo.phone || isLoading))
+                        }
+                        className="flex-1 px-6 py-2.5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {step === 4 ? (isLoading ? "Đang xử lý..." : "Xác nhận đặt lịch") : "Tiếp tục"}
+                    </button>
                 </div>
             </div>
         </div>

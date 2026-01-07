@@ -1,73 +1,18 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FiCalendar, FiClock, FiSearch, FiPlus } from "react-icons/fi";
 import BookingModal from "../../components/patient/BookingModal";
 import AppointmentDetailModal from "../../components/patient/AppointmentDetailModal";
 import CancelAppointmentModal from "../../components/patient/CancelAppointmentModal";
-
-type AppointmentStatus = "confirmed" | "pending" | "completed" | "cancelled";
-
-type Appointment = {
-  id: number;
-  title: string;
-  doctor: string;
-  date: string;
-  time: string;
-  note: string;
-  status: AppointmentStatus;
-};
-
-const INITIAL_APPOINTMENTS: Appointment[] = [
-  {
-    id: 1,
-    title: "Khám định kỳ",
-    doctor: "BS. Nguyễn Văn A",
-    date: "28/12/2024",
-    time: "10:00",
-    note: "Kiểm tra tình trạng răng miệng định kỳ",
-    status: "confirmed",
-  },
-  {
-    id: 2,
-    title: "Tẩy trắng răng",
-    doctor: "BS. Trần Thị B",
-    date: "5/1/2025",
-    time: "14:00",
-    note: "",
-    status: "pending",
-  },
-  {
-    id: 3,
-    title: "Trám răng",
-    doctor: "BS. Lê Văn C",
-    date: "10/12/2024",
-    time: "09:30",
-    note: "Đã trám răng hàm số 6",
-    status: "completed",
-  },
-  {
-    id: 4,
-    title: "Khám tổng quát",
-    doctor: "BS. Nguyễn Văn A",
-    date: "22/11/2024",
-    time: "15:00",
-    note: "",
-    status: "completed",
-  },
-  {
-    id: 5,
-    title: "Tư vấn niềng răng",
-    doctor: "BS. Trần Thị B",
-    date: "5/11/2024",
-    time: "11:00",
-    note: "Bệnh nhân huỷ lịch",
-    status: "cancelled",
-  },
-];
+import { getPatientAppointments, cancelAppointment, type AppointmentDto, type AppointmentStatus } from "@/services/apiPatient";
 
 const statusMap: Record<
   AppointmentStatus,
   { label: string; className: string }
 > = {
+  booked: {
+    label: "Đã đặt lịch",
+    className: "bg-[#FEF3C7] text-[#92400E]",
+  },
   confirmed: {
     label: "Đã xác nhận",
     className: "bg-[#E0ECFF] text-[#2563EB]",
@@ -84,31 +29,60 @@ const statusMap: Record<
     label: "Đã huỷ",
     className: "bg-[#FEE2E2] text-[#B91C1C]",
   },
+  noshow: {
+    label: "Không đến",
+    className: "bg-[#FEE2E2] text-[#DC2626]",
+  },
 };
 
 const MyAppointmentsPage: React.FC = () => {
-  const [appointments, setAppointments] = useState<Appointment[]>(INITIAL_APPOINTMENTS);
+  const [appointments, setAppointments] = useState<AppointmentDto[]>([]);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [selectedAppointment, setSelectedAppointment] = useState<AppointmentDto | null>(null);
   const [query, setQuery] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch appointments from backend
+  useEffect(() => {
+    const fetchAppointments = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await getPatientAppointments();
+        if (response && response.isSuccess) {
+          setAppointments(response.data || []);
+        } else {
+          setError(response?.message || "Không thể tải danh sách lịch hẹn");
+        }
+      } catch (err: any) {
+        console.error("Error fetching appointments:", err);
+        setError(err.response?.data?.message || "Đã xảy ra lỗi khi tải lịch hẹn");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAppointments();
+  }, []);
 
   const filtered = appointments.filter((a) =>
     a.title.toLowerCase().includes(query.toLowerCase())
   );
 
-  const handleViewDetail = (appointment: Appointment) => {
+  const handleViewDetail = (appointment: AppointmentDto) => {
     setSelectedAppointment(appointment);
     setIsDetailModalOpen(true);
   };
 
-  const handleOpenCancelModal = (appointment: Appointment) => {
+  const handleOpenCancelModal = (appointment: AppointmentDto) => {
     setSelectedAppointment(appointment);
     setIsCancelModalOpen(true);
   };
 
-  const handleCancelFromDetail = (id: number) => {
+  const handleCancelFromDetail = (id: string) => {
     const apt = appointments.find((a) => a.id === id);
     if (apt) {
       setIsDetailModalOpen(false);
@@ -119,20 +93,30 @@ const MyAppointmentsPage: React.FC = () => {
     }
   };
 
-  const handleConfirmCancel = (reason: string) => {
-    if (selectedAppointment) {
-      console.log("Cancelled appointment:", selectedAppointment.id, "Reason:", reason);
-      // Update appointment status to cancelled
-      setAppointments((prev) =>
-        prev.map((a) =>
-          a.id === selectedAppointment.id
-            ? { ...a, status: "cancelled" as AppointmentStatus, note: reason || a.note }
-            : a
-        )
-      );
-      setIsCancelModalOpen(false);
-      setSelectedAppointment(null);
-      alert("Đã huỷ lịch hẹn thành công!");
+  const handleConfirmCancel = async (reason: string) => {
+    if (!selectedAppointment) return;
+
+    try {
+      const response = await cancelAppointment(selectedAppointment.id, reason);
+      if (response && response.isSuccess) {
+        // Update appointment status locally
+        setAppointments((prev) =>
+          prev.map((a) =>
+            a.id === selectedAppointment.id
+              ? { ...a, status: "cancelled" as AppointmentStatus, note: reason || a.note }
+              : a
+          )
+        );
+        setIsCancelModalOpen(false);
+        setSelectedAppointment(null);
+        alert("Đã huỷ lịch hẹn thành công!");
+      } else {
+        alert(response?.message || "Không thể huỷ lịch hẹn");
+      }
+    } catch (err: any) {
+      console.error("Error cancelling appointment:", err);
+      const errorMsg = err.response?.data?.message || "Đã xảy ra lỗi khi huỷ lịch hẹn";
+      alert(errorMsg);
     }
   };
 
@@ -175,9 +159,23 @@ const MyAppointmentsPage: React.FC = () => {
 
         {/* List appointments */}
         <div className="space-y-4">
-          {filtered.length === 0 ? (
+          {loading ? (
             <div className="text-center py-10 text-slate-500">
-              Không tìm thấy lịch hẹn nào
+              Đang tải danh sách lịch hẹn...
+            </div>
+          ) : error ? (
+            <div className="text-center py-10">
+              <p className="text-red-600 mb-2">{error}</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="text-[#2563EB] hover:underline text-sm"
+              >
+                Thử lại
+              </button>
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="text-center py-10 text-slate-500">
+              {query ? "Không tìm thấy lịch hẹn nào" : "Bạn chưa có lịch hẹn nào"}
             </div>
           ) : (
             filtered.map((a) => (
@@ -226,7 +224,7 @@ export default MyAppointmentsPage;
 /* ----- Card từng lịch hẹn ----- */
 
 interface AppointmentCardProps {
-  appointment: Appointment;
+  appointment: AppointmentDto;
   onViewDetail: () => void;
   onCancel: () => void;
 }
@@ -236,8 +234,11 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({
   onViewDetail,
   onCancel,
 }) => {
-  const status = statusMap[appointment.status];
-  const canCancel = appointment.status === "confirmed" || appointment.status === "pending";
+  const status = statusMap[appointment.status as AppointmentStatus] || {
+    label: appointment.status,
+    className: "bg-gray-100 text-gray-600",
+  };
+  const canCancel = appointment.status === "confirmed" || appointment.status === "pending" || appointment.status === "booked";
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-100 px-5 py-4 flex gap-4 items-stretch hover:shadow-md transition-shadow">

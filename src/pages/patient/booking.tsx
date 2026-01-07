@@ -224,12 +224,25 @@ const StepInfo: React.FC<
           </label>
           <input
             type="tel"
-            placeholder="Nhập số điện thoại"
+            placeholder="Nhập số điện thoại (10-12 số)"
             className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none transition focus:border-[#2563EB] focus:bg-white"
             value={data.phone}
-            onChange={(e) => onChange("phone", e.target.value)}
             required
+            minLength={10}
+            maxLength={12}
+            onChange={(e) => {
+              const value = e.target.value;
+              // Regex: Chỉ nhận số (\d*)
+              if (/^\d*$/.test(value) && value.length <= 12) {
+                onChange("phone", value);
+              }
+            }}
           />
+          {data.phone && data.phone.length < 10 && (
+            <p className="text-[10px] text-red-500 mt-1">
+              Số điện thoại phải có ít nhất 10 chữ số
+            </p>
+          )}
         </div>
 
         <div className="space-y-1">
