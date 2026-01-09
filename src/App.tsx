@@ -10,8 +10,8 @@ import HomePage from './pages/guest/HomePage';
 import LoginPage from './pages/guest/LoginPage';
 import RegisterPage from './pages/guest/RegisterPage';
 import BookingPage from './pages/guest/booking';
-import CancelAppointmentPage from './pages/guest/CancelAppointmentPage';
-import RescheduleAppointmentPage from './pages/guest/RescheduleAppointmentPage';
+import AppointmentCancel from './pages/guest/AppointmentCancel';
+import AppointmentReschedule from './pages/guest/AppointmentReschedule';
 
 // Patient Pages
 import PatientDashboard from './pages/patient/dashboard';
@@ -50,11 +50,12 @@ const router = createBrowserRouter([
             { path: 'login', Component: LoginPage },
             { path: 'register', Component: RegisterPage },
             { path: 'booking', Component: BookingPage },
-            { path: 'cancel-appointment', Component: CancelAppointmentPage },
+            { path: 'appointment/cancel', Component: AppointmentCancel },
             {
-                path: 'reschedule-appointment',
-                Component: RescheduleAppointmentPage,
+                path: 'appointment/reschedule',
+                Component: AppointmentReschedule,
             },
+            
         ],
     },
     {

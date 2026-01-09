@@ -1,8 +1,16 @@
-import React, { useState } from "react";
-import { FiHome, FiCalendar, FiFileText, FiUser, FiLogOut, FiMenu, FiX } from "react-icons/fi";
-import { useNavigate, useLocation } from "react-router-dom";
+import React, { useState, useEffect } from 'react';
+import {
+    FiHome,
+    FiCalendar,
+    FiFileText,
+    FiUser,
+    FiLogOut,
+    FiMenu,
+    FiX,
+} from 'react-icons/fi';
+import { useNavigate, useLocation } from 'react-router-dom';
 
-type TabId = "dashboard" | "appointments" | "medical-history" | "profile";
+type TabId = 'dashboard' | 'appointments' | 'medical-history' | 'profile';
 
 type NavTab = {
     id: TabId;
@@ -12,31 +20,60 @@ type NavTab = {
 };
 
 const TABS: NavTab[] = [
-    { id: "dashboard", label: "Trang chủ", path: "/patient", icon: FiHome },
-    { id: "appointments", label: "Lịch hẹn", path: "/patient/appointments", icon: FiCalendar },
-    { id: "medical-history", label: "Hồ sơ bệnh án", path: "/patient/medical-history", icon: FiFileText },
-    { id: "profile", label: "Thông tin cá nhân", path: "/patient/profile", icon: FiUser },
+    { id: 'dashboard', label: 'Trang chủ', path: '/patient', icon: FiHome },
+    {
+        id: 'appointments',
+        label: 'Lịch hẹn',
+        path: '/patient/appointments',
+        icon: FiCalendar,
+    },
+    {
+        id: 'medical-history',
+        label: 'Hồ sơ bệnh án',
+        path: '/patient/medical-history',
+        icon: FiFileText,
+    },
+    {
+        id: 'profile',
+        label: 'Thông tin cá nhân',
+        path: '/patient/profile',
+        icon: FiUser,
+    },
 ];
 
 const PatientHeader: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [userName, setUserName] = useState('Bệnh nhân');
 
-    // TODO: Get user info from context/store
-    const userName = "Nguyễn Văn A";
+    useEffect(() => {
+        // Get user info from localStorage
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+            try {
+                const user = JSON.parse(userStr);
+                setUserName(user.name || user.fullName || 'Bệnh nhân');
+            } catch (error) {
+                console.error('Failed to parse user data:', error);
+            }
+        }
+    }, []);
 
     const isActive = (tab: NavTab) => {
-        if (tab.path === "/patient") {
-            return location.pathname === "/patient" || location.pathname === "/patient/";
+        if (tab.path === '/patient') {
+            return (
+                location.pathname === '/patient' ||
+                location.pathname === '/patient/'
+            );
         }
         return location.pathname.startsWith(tab.path);
     };
 
     const handleLogout = () => {
         // TODO: Clear auth state
-        console.log("logout");
-        navigate("/login");
+        console.log('logout');
+        navigate('/login');
     };
 
     return (
@@ -50,8 +87,12 @@ const PatientHeader: React.FC = () => {
                                 <FiUser className="w-5 h-5 text-white" />
                             </div>
                             <div>
-                                <h2 className="text-sm font-semibold text-slate-900">{userName}</h2>
-                                <p className="text-xs text-slate-500">Bệnh nhân</p>
+                                <h2 className="text-sm font-semibold text-slate-900">
+                                    {userName}
+                                </h2>
+                                <p className="text-xs text-slate-500">
+                                    Bệnh nhân
+                                </p>
                             </div>
                         </div>
                         <div className="hidden xl:block w-px h-10 bg-slate-200" />
@@ -66,10 +107,11 @@ const PatientHeader: React.FC = () => {
                                 <button
                                     key={tab.id}
                                     onClick={() => navigate(tab.path)}
-                                    className={`relative flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${active
-                                        ? "bg-blue-50 text-[#2563EB] shadow-sm"
-                                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                                        }`}
+                                    className={`relative flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                                        active
+                                            ? 'bg-blue-50 text-[#2563EB] shadow-sm'
+                                            : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                                    }`}
                                 >
                                     <Icon className="w-4 h-4" />
                                     <span>{tab.label}</span>
@@ -88,7 +130,9 @@ const PatientHeader: React.FC = () => {
                             className="flex items-center gap-2 px-4 py-2.5 text-red-600 hover:bg-red-50 rounded-lg transition-all"
                         >
                             <FiLogOut className="w-4 h-4" />
-                            <span className="text-sm font-medium">Đăng xuất</span>
+                            <span className="text-sm font-medium">
+                                Đăng xuất
+                            </span>
                         </button>
                     </nav>
 
@@ -98,7 +142,11 @@ const PatientHeader: React.FC = () => {
                             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                             className="p-2 text-slate-700 hover:bg-slate-100 rounded-lg"
                         >
-                            {mobileMenuOpen ? <FiX className="w-6 h-6" /> : <FiMenu className="w-6 h-6" />}
+                            {mobileMenuOpen ? (
+                                <FiX className="w-6 h-6" />
+                            ) : (
+                                <FiMenu className="w-6 h-6" />
+                            )}
                         </button>
                     </div>
                 </div>
@@ -118,14 +166,19 @@ const PatientHeader: React.FC = () => {
                                         navigate(tab.path);
                                         setMobileMenuOpen(false);
                                     }}
-                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${active
-                                        ? "bg-blue-50 text-[#2563EB] shadow-sm"
-                                        : "text-slate-700 hover:bg-slate-50"
-                                        }`}
+                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                                        active
+                                            ? 'bg-blue-50 text-[#2563EB] shadow-sm'
+                                            : 'text-slate-700 hover:bg-slate-50'
+                                    }`}
                                 >
                                     <Icon className="w-5 h-5" />
-                                    <span className="text-sm font-medium">{tab.label}</span>
-                                    {active && <div className="ml-auto w-2 h-2 bg-[#2563EB] rounded-full" />}
+                                    <span className="text-sm font-medium">
+                                        {tab.label}
+                                    </span>
+                                    {active && (
+                                        <div className="ml-auto w-2 h-2 bg-[#2563EB] rounded-full" />
+                                    )}
                                 </button>
                             );
                         })}
@@ -135,7 +188,9 @@ const PatientHeader: React.FC = () => {
                             className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl transition-all"
                         >
                             <FiLogOut className="w-5 h-5" />
-                            <span className="text-sm font-medium">Đăng xuất</span>
+                            <span className="text-sm font-medium">
+                                Đăng xuất
+                            </span>
                         </button>
                     </nav>
                 </div>

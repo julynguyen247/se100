@@ -1,8 +1,17 @@
-import React, { useState } from "react";
-import { FiHome, FiUsers, FiCalendar, FiFileText, FiCreditCard, FiLogOut, FiMenu, FiX } from "react-icons/fi";
-import { useNavigate, useLocation } from "react-router-dom";
+import React, { useState, useEffect } from 'react';
+import {
+    FiHome,
+    FiUsers,
+    FiCalendar,
+    FiFileText,
+    FiCreditCard,
+    FiLogOut,
+    FiMenu,
+    FiX,
+} from 'react-icons/fi';
+import { useNavigate, useLocation } from 'react-router-dom';
 
-type TabId = "dashboard" | "queue" | "appointments" | "patients" | "billing";
+type TabId = 'dashboard' | 'queue' | 'appointments' | 'patients' | 'billing';
 
 type NavTab = {
     id: TabId;
@@ -12,31 +21,70 @@ type NavTab = {
 };
 
 const TABS: NavTab[] = [
-    { id: "dashboard", label: "Trang chủ", path: "/receptionist", icon: FiHome },
-    { id: "queue", label: "Hàng đợi", path: "/receptionist/queue", icon: FiUsers },
-    { id: "appointments", label: "Quản lý lịch hẹn", path: "/receptionist/appointments", icon: FiCalendar },
-    { id: "patients", label: "Hồ sơ bệnh nhân", path: "/receptionist/patients", icon: FiFileText },
-    { id: "billing", label: "Thanh toán", path: "/receptionist/billing", icon: FiCreditCard },
+    {
+        id: 'dashboard',
+        label: 'Trang chủ',
+        path: '/receptionist',
+        icon: FiHome,
+    },
+    {
+        id: 'queue',
+        label: 'Hàng đợi',
+        path: '/receptionist/queue',
+        icon: FiUsers,
+    },
+    {
+        id: 'appointments',
+        label: 'Quản lý lịch hẹn',
+        path: '/receptionist/appointments',
+        icon: FiCalendar,
+    },
+    {
+        id: 'patients',
+        label: 'Hồ sơ bệnh nhân',
+        path: '/receptionist/patients',
+        icon: FiFileText,
+    },
+    {
+        id: 'billing',
+        label: 'Thanh toán',
+        path: '/receptionist/billing',
+        icon: FiCreditCard,
+    },
 ];
 
 const ReceptionistHeader: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [userName, setUserName] = useState('Lễ tân');
 
-    // TODO: Get user info from context/store
-    const userName = "Trần Thị B";
+    useEffect(() => {
+        // Get user info from localStorage
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+            try {
+                const user = JSON.parse(userStr);
+                setUserName(user.name || user.fullName || 'Lễ tân');
+            } catch (error) {
+                console.error('Failed to parse user data:', error);
+            }
+        }
+    }, []);
 
     const isActive = (tab: NavTab) => {
-        if (tab.path === "/receptionist") {
-            return location.pathname === "/receptionist" || location.pathname === "/receptionist/";
+        if (tab.path === '/receptionist') {
+            return (
+                location.pathname === '/receptionist' ||
+                location.pathname === '/receptionist/'
+            );
         }
         return location.pathname.startsWith(tab.path);
     };
 
     const handleLogout = () => {
-        console.log("logout");
-        navigate("/login");
+        console.log('logout');
+        navigate('/login');
     };
 
     return (
@@ -50,7 +98,9 @@ const ReceptionistHeader: React.FC = () => {
                                 <FiCalendar className="w-5 h-5 text-white" />
                             </div>
                             <div>
-                                <h2 className="text-sm font-semibold text-slate-900">{userName}</h2>
+                                <h2 className="text-sm font-semibold text-slate-900">
+                                    {userName}
+                                </h2>
                                 <p className="text-xs text-slate-500">Lễ tân</p>
                             </div>
                         </div>
@@ -66,10 +116,11 @@ const ReceptionistHeader: React.FC = () => {
                                 <button
                                     key={tab.id}
                                     onClick={() => navigate(tab.path)}
-                                    className={`relative flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${active
-                                            ? "bg-blue-50 text-[#2563EB] shadow-sm"
-                                            : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                                        }`}
+                                    className={`relative flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                                        active
+                                            ? 'bg-blue-50 text-[#2563EB] shadow-sm'
+                                            : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                                    }`}
                                 >
                                     <Icon className="w-4 h-4" />
                                     <span>{tab.label}</span>
@@ -88,7 +139,9 @@ const ReceptionistHeader: React.FC = () => {
                             className="flex items-center gap-2 px-4 py-2.5 text-red-600 hover:bg-red-50 rounded-lg transition-all"
                         >
                             <FiLogOut className="w-4 h-4" />
-                            <span className="text-sm font-medium">Đăng xuất</span>
+                            <span className="text-sm font-medium">
+                                Đăng xuất
+                            </span>
                         </button>
                     </nav>
 
@@ -98,7 +151,11 @@ const ReceptionistHeader: React.FC = () => {
                             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                             className="p-2 text-slate-700 hover:bg-slate-100 rounded-lg"
                         >
-                            {mobileMenuOpen ? <FiX className="w-6 h-6" /> : <FiMenu className="w-6 h-6" />}
+                            {mobileMenuOpen ? (
+                                <FiX className="w-6 h-6" />
+                            ) : (
+                                <FiMenu className="w-6 h-6" />
+                            )}
                         </button>
                     </div>
                 </div>
@@ -118,14 +175,19 @@ const ReceptionistHeader: React.FC = () => {
                                         navigate(tab.path);
                                         setMobileMenuOpen(false);
                                     }}
-                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${active
-                                            ? "bg-blue-50 text-[#2563EB] shadow-sm"
-                                            : "text-slate-700 hover:bg-slate-50"
-                                        }`}
+                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                                        active
+                                            ? 'bg-blue-50 text-[#2563EB] shadow-sm'
+                                            : 'text-slate-700 hover:bg-slate-50'
+                                    }`}
                                 >
                                     <Icon className="w-5 h-5" />
-                                    <span className="text-sm font-medium">{tab.label}</span>
-                                    {active && <div className="ml-auto w-2 h-2 bg-[#2563EB] rounded-full" />}
+                                    <span className="text-sm font-medium">
+                                        {tab.label}
+                                    </span>
+                                    {active && (
+                                        <div className="ml-auto w-2 h-2 bg-[#2563EB] rounded-full" />
+                                    )}
                                 </button>
                             );
                         })}
@@ -135,7 +197,9 @@ const ReceptionistHeader: React.FC = () => {
                             className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl transition-all"
                         >
                             <FiLogOut className="w-5 h-5" />
-                            <span className="text-sm font-medium">Đăng xuất</span>
+                            <span className="text-sm font-medium">
+                                Đăng xuất
+                            </span>
                         </button>
                     </nav>
                 </div>
