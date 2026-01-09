@@ -69,7 +69,7 @@ const HeroSection: React.FC<HeroProps> = () => {
         </div>
 
         <div className=" w-full max-w-[520px] text-center mx-auto lg:text-left transition-all duration-700 ease-out peer-hover:-translate-y-4 lg:peer-hover:translate-y-0 lg:peer-hover:-translate-x-12  ">
-          <span className="inline-block px-5 py-1.5 bg-[rgba(255,255,255,0.15)] text-dark rounded-full text-xs font-bold tracking-[0.08em] mb-4 shadow-lg">
+          <span className="inline-block px-5 py-1.5 bg-[rgba(255,255,255,0.15)] text-white rounded-full text-xs font-bold tracking-[0.08em] mb-4 shadow-lg">
             Dental Health Polyclinic
           </span>
 
@@ -564,8 +564,8 @@ const HeroCarouselSection: React.FC = () => {
       thumbnailBorderDom.appendChild(thumbnailItemsDom[0]);
     }
 
-    const timeRunning = 3000;
-    const timeAutoNext = 7000;
+    const timeRunning = 1000;
+    const timeAutoNext = 6000;
 
     let runTimeOut: number | undefined;
     let runNextAuto: number | undefined;
