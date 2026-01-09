@@ -755,7 +755,12 @@ const ReceptionistBilling: React.FC = () => {
             });
             try {
                 console.log('[VNPAY] Calling createVNPayUrl API...');
-                const response = await createVNPayUrl(billId);
+                // Pass API endpoint as returnUrl so backend can process payment and redirect to frontend
+                const apiReturnUrl = `${window.location.origin.replace(
+                    ':3000',
+                    ':5000'
+                )}/api/vnpay/return`;
+                const response = await createVNPayUrl(billId, apiReturnUrl);
                 console.log('[VNPAY] API Response:', response);
 
                 if (response.isSuccess && response.data) {
