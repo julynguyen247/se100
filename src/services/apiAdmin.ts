@@ -214,6 +214,7 @@ export interface PatientItem {
   note: string | null;
   addressLine1: string | null;
   clinic?: AdminClinicOption;
+  createdAt?: string; // ISO date string - when patient was created
 }
 
 /**

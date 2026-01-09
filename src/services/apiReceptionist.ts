@@ -170,6 +170,24 @@ export const getAppointments = (filters: {
 };
 
 /**
+ * Get appointments by date range (for reports)
+ * @param filters Filter options with fromDate and toDate
+ */
+export const getAppointmentsByDateRange = (filters: {
+    fromDate: string; // "YYYY-MM-DD"
+    toDate: string; // "YYYY-MM-DD"
+    status?: string;
+    clinicId?: string;
+}) => {
+    let url = `/api/receptionist/appointments?fromDate=${filters.fromDate}&toDate=${filters.toDate}`;
+    if (filters.status) url += `&status=${filters.status}`;
+    if (filters.clinicId) url += `&clinicId=${filters.clinicId}`;
+    return axios.get<IBackendRes<ReceptionistAppointment[]>>(
+        url
+    ) as unknown as Promise<IBackendRes<ReceptionistAppointment[]>>;
+};
+
+/**
  * Create a new appointment
  * @param data Appointment details
  */
@@ -336,6 +354,8 @@ export interface BillListItem {
     totalAmount: number;
     createdAt: string;
     status: BillStatus;
+    paidAt?: string | null; // Payment date (if available)
+    paymentDate?: string | null; // Alternative field name
 }
 
 export interface PatientInfoDto {
@@ -416,6 +436,13 @@ export interface BillingStats {
     totalRefunded: number;
 }
 
+// Report-specific billing stats (matches api.md spec)
+export interface ReportBillingStats {
+    totalRevenue: number;
+    paidBills: number;
+    unpaidBills: number;
+}
+
 // ============ BILLING APIs ============
 
 /**
@@ -427,11 +454,15 @@ export const getBills = (filters?: {
     status?: string;
     search?: string;
     clinicId?: string;
+    fromDate?: string;
+    toDate?: string;
 }) => {
     let url = '/api/receptionist/bills';
     const params = new URLSearchParams();
 
     if (filters?.date) params.append('date', filters.date);
+    if (filters?.fromDate) params.append('fromDate', filters.fromDate);
+    if (filters?.toDate) params.append('toDate', filters.toDate);
     if (filters?.status) params.append('status', filters.status);
     if (filters?.search) params.append('search', filters.search);
     if (filters?.clinicId) params.append('clinicId', filters.clinicId);
@@ -506,6 +537,25 @@ export const getBillingStats = (filters?: {
 
     return axios.get<IBackendRes<BillingStats>>(url) as unknown as Promise<
         IBackendRes<BillingStats>
+    >;
+};
+
+/**
+ * Get billing statistics for reports (matches api.md spec)
+ * @param date Date in YYYY-MM format
+ * @param clinicId Optional clinic ID
+ */
+export const getReportBillingStats = (date: string, clinicId?: string) => {
+    let url = '/api/receptionist/billing/stats';
+    const params = new URLSearchParams();
+
+    params.append('date', date);
+    if (clinicId) params.append('clinicId', clinicId);
+
+    url += `?${params.toString()}`;
+
+    return axios.get<IBackendRes<ReportBillingStats>>(url) as unknown as Promise<
+        IBackendRes<ReportBillingStats>
     >;
 };
 
