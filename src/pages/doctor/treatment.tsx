@@ -1,42 +1,95 @@
-import React, { useState } from "react";
-import { FiUser, FiSave, FiClipboard, FiClock, FiArrowLeft, FiPlay, FiPlus, FiDollarSign, FiTrash2 } from "react-icons/fi";
-import { FaPills } from "react-icons/fa";
-import Modal from "../../components/ui/Modal";
+import React, { useState, useEffect } from 'react';
+import {
+    FiUser,
+    FiSave,
+    FiClipboard,
+    FiClock,
+    FiArrowLeft,
+    FiPlay,
+    FiPlus,
+    FiDollarSign,
+    FiTrash2,
+    FiRefreshCw,
+} from 'react-icons/fi';
+import { FaPills } from 'react-icons/fa';
+import Modal from '../../components/ui/Modal';
+import {
+    getQueue,
+    startExam,
+    createExamination,
+    getPrescriptionTemplates,
+    getMedicines,
+    CreateExaminationRequest,
+    MedicineCatalogItem,
+    PrescriptionTemplate as ApiPrescriptionTemplate,
+} from '@/services/apiDoctor';
 
 type Patient = {
-    id: number;
+    id: string;
+    appointmentId: string;
+    patientId: string | null;
     name: string;
-    age: number;
-    gender: string;
     phone: string;
     service: string;
+    serviceId: string | null;
     time: string;
-    lastVisit: string;
-    status: "waiting" | "in-progress";
+    status: string;
 };
 
-const WAITING_PATIENTS: Patient[] = [
-    { id: 1, name: "Nguyễn Văn A", age: 35, gender: "Nam", phone: "0901234567", service: "Khám tổng quát", time: "08:30", lastVisit: "22/11/2024", status: "waiting" },
-    { id: 2, name: "Trần Thị B", age: 28, gender: "Nữ", phone: "0912345678", service: "Trám răng", time: "09:00", lastVisit: "15/10/2024", status: "waiting" },
-    { id: 3, name: "Lê Văn C", age: 45, gender: "Nam", phone: "0923456789", service: "Nhổ răng khôn", time: "09:30", lastVisit: "05/09/2024", status: "waiting" },
-    { id: 4, name: "Phạm Thị D", age: 32, gender: "Nữ", phone: "0934567890", service: "Tẩy trắng răng", time: "10:00", lastVisit: "18/08/2024", status: "waiting" },
-];
+// No more mock data - will be fetched from API
 
 // Tooth status types
-type ToothStatus = "normal" | "cavity" | "missing" | "treated" | "crown" | "nextTreatment";
+type ToothStatus =
+    | 'normal'
+    | 'cavity'
+    | 'missing'
+    | 'treated'
+    | 'crown'
+    | 'nextTreatment';
 
-const toothStatusConfig: Record<ToothStatus, { label: string; color: string; border: string }> = {
-    normal: { label: "Bình thường", color: "bg-emerald-400", border: "border-emerald-500" },
-    cavity: { label: "Sâu răng", color: "bg-red-400", border: "border-red-500" },
-    missing: { label: "Mất răng", color: "bg-blue-400", border: "border-blue-500" },
-    treated: { label: "Điều trị", color: "bg-amber-400", border: "border-amber-500" },
-    crown: { label: "Răng sứ", color: "bg-slate-400", border: "border-slate-500" },
-    nextTreatment: { label: "Điều trị kế tiếp", color: "bg-purple-400", border: "border-purple-500" },
+const toothStatusConfig: Record<
+    ToothStatus,
+    { label: string; color: string; border: string }
+> = {
+    normal: {
+        label: 'Bình thường',
+        color: 'bg-emerald-400',
+        border: 'border-emerald-500',
+    },
+    cavity: {
+        label: 'Sâu răng',
+        color: 'bg-red-400',
+        border: 'border-red-500',
+    },
+    missing: {
+        label: 'Mất răng',
+        color: 'bg-blue-400',
+        border: 'border-blue-500',
+    },
+    treated: {
+        label: 'Điều trị',
+        color: 'bg-amber-400',
+        border: 'border-amber-500',
+    },
+    crown: {
+        label: 'Răng sứ',
+        color: 'bg-slate-400',
+        border: 'border-slate-500',
+    },
+    nextTreatment: {
+        label: 'Điều trị kế tiếp',
+        color: 'bg-purple-400',
+        border: 'border-purple-500',
+    },
 };
 
 // Adult teeth numbers
-const adultUpperTeeth = [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28];
-const adultLowerTeeth = [48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38];
+const adultUpperTeeth = [
+    18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28,
+];
+const adultLowerTeeth = [
+    48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38,
+];
 
 // Child teeth numbers
 const childUpperTeeth = [55, 54, 53, 52, 51, 61, 62, 63, 64, 65];
@@ -45,6 +98,7 @@ const childLowerTeeth = [85, 84, 83, 82, 81, 71, 72, 73, 74, 75];
 // Medicine type
 type Medicine = {
     id: number;
+    medicineId: string; // GUID from medicine catalog, empty GUID for free-text
     name: string;
     dosage: string;
     quantity: string;
@@ -64,26 +118,43 @@ const ToothButton: React.FC<{
         <button
             onClick={onClick}
             className="group flex flex-col items-center"
-            title={`Răng số ${number}${status ? ` - ${toothStatusConfig[status].label}` : ""}`}
+            title={`Răng số ${number}${
+                status ? ` - ${toothStatusConfig[status].label}` : ''
+            }`}
         >
             {isUpper && (
-                <span className="text-[9px] text-slate-500 mb-0.5">{number}</span>
+                <span className="text-[9px] text-slate-500 mb-0.5">
+                    {number}
+                </span>
             )}
             <div
                 className={`
                     w-6 h-7 relative flex items-center justify-center
                     transition-all duration-150 group-hover:scale-110
-                    ${isUpper ? "rounded-t-lg rounded-b-md" : "rounded-b-lg rounded-t-md"}
-                    ${config
-                        ? `${config.color} border-2 ${config.border}`
-                        : "bg-white border-2 border-slate-300 group-hover:border-slate-400"
+                    ${
+                        isUpper
+                            ? 'rounded-t-lg rounded-b-md'
+                            : 'rounded-b-lg rounded-t-md'
+                    }
+                    ${
+                        config
+                            ? `${config.color} border-2 ${config.border}`
+                            : 'bg-white border-2 border-slate-300 group-hover:border-slate-400'
                     }
                 `}
             >
-                <div className={`absolute ${isUpper ? "bottom-0" : "top-0"} left-1/2 -translate-x-1/2 w-0.5 h-1.5 ${config ? "bg-white/50" : "bg-slate-200"}`} />
+                <div
+                    className={`absolute ${
+                        isUpper ? 'bottom-0' : 'top-0'
+                    } left-1/2 -translate-x-1/2 w-0.5 h-1.5 ${
+                        config ? 'bg-white/50' : 'bg-slate-200'
+                    }`}
+                />
             </div>
             {!isUpper && (
-                <span className="text-[9px] text-slate-500 mt-0.5">{number}</span>
+                <span className="text-[9px] text-slate-500 mt-0.5">
+                    {number}
+                </span>
             )}
         </button>
     );
@@ -96,71 +167,51 @@ type PrescriptionModalProps = {
     medicines: Medicine[];
     onSave: (medicines: Medicine[], notes: string) => void;
     patientName: string;
+    templates: ApiPrescriptionTemplate[]; // From API
+    medicineCatalog: MedicineCatalogItem[]; // From API
 };
 
-// Prescription Templates
-type PrescriptionTemplate = {
-    id: string;
-    name: string;
-    medicines: Omit<Medicine, "id">[];
-    notes: string;
-};
+// Prescription Templates (now from API, not hardcoded)
 
-const PRESCRIPTION_TEMPLATES: PrescriptionTemplate[] = [
-    {
-        id: "pain-relief",
-        name: "Đơn giảm đau răng",
-        medicines: [
-            { name: "Paracetamol", dosage: "500mg", quantity: "10 viên", instructions: "Uống 1-2 viên khi đau, cách 4-6 giờ" },
-            { name: "Ibuprofen", dosage: "400mg", quantity: "10 viên", instructions: "Uống 1 viên sau ăn, 2-3 lần/ngày" },
-        ],
-        notes: "Uống thuốc sau khi ăn no. Không dùng quá 6 viên Paracetamol/ngày.",
-    },
-    {
-        id: "post-extraction",
-        name: "Đơn sau nhổ răng",
-        medicines: [
-            { name: "Amoxicillin", dosage: "500mg", quantity: "21 viên", instructions: "Uống 1 viên x 3 lần/ngày" },
-            { name: "Metronidazol", dosage: "250mg", quantity: "21 viên", instructions: "Uống 1 viên x 3 lần/ngày" },
-            { name: "Paracetamol", dosage: "500mg", quantity: "10 viên", instructions: "Uống 1-2 viên khi đau" },
-        ],
-        notes: "Uống kháng sinh đủ 7 ngày. Không súc miệng mạnh trong 24 giờ đầu.",
-    },
-    {
-        id: "gum-disease",
-        name: "Đơn viêm nướu",
-        medicines: [
-            { name: "Spiramycin + Metronidazol", dosage: "750.000IU/125mg", quantity: "20 viên", instructions: "Uống 2 viên x 2 lần/ngày" },
-            { name: "Nước súc miệng Chlorhexidine", dosage: "0.12%", quantity: "1 chai", instructions: "Súc miệng 2 lần/ngày" },
-        ],
-        notes: "Đánh răng nhẹ nhàng vùng viêm. Tái khám sau 7 ngày.",
-    },
-    {
-        id: "cavity-filling",
-        name: "Đơn sau trám răng",
-        medicines: [
-            { name: "Paracetamol", dosage: "500mg", quantity: "6 viên", instructions: "Uống 1 viên khi ê buốt" },
-        ],
-        notes: "Tránh ăn đồ quá nóng/lạnh trong 24 giờ. Ê buốt nhẹ là bình thường.",
-    },
-];
-
-const PrescriptionModal: React.FC<PrescriptionModalProps> = ({ open, onClose, medicines: initialMedicines, onSave, patientName }) => {
+const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
+    open,
+    onClose,
+    medicines: initialMedicines,
+    onSave,
+    patientName,
+    templates,
+    medicineCatalog,
+}) => {
     const [medicines, setMedicines] = useState<Medicine[]>(
-        initialMedicines.length > 0 ? initialMedicines : [{ id: 1, name: "", dosage: "", quantity: "", instructions: "" }]
+        initialMedicines.length > 0
+            ? initialMedicines
+            : [
+                  {
+                      id: 1,
+                      medicineId: '00000000-0000-0000-0000-000000000000',
+                      name: '',
+                      dosage: '',
+                      quantity: '',
+                      instructions: '',
+                  },
+              ]
     );
-    const [prescriptionNotes, setPrescriptionNotes] = useState("");
-    const [selectedTemplate, setSelectedTemplate] = useState("");
+    const [prescriptionNotes, setPrescriptionNotes] = useState('');
+    const [selectedTemplate, setSelectedTemplate] = useState('');
 
     const applyTemplate = (templateId: string) => {
-        const template = PRESCRIPTION_TEMPLATES.find(t => t.id === templateId);
+        const template = templates.find((t) => t.id === templateId);
         if (template) {
             const newMedicines = template.medicines.map((m, i) => ({
-                ...m,
                 id: Date.now() + i,
+                medicineId: m.medicineId,
+                name: m.name,
+                dosage: m.dosage,
+                quantity: m.quantity,
+                instructions: m.instructions,
             }));
             setMedicines(newMedicines);
-            setPrescriptionNotes(template.notes);
+            setPrescriptionNotes(template.notes || '');
             setSelectedTemplate(templateId);
         }
     };
@@ -168,7 +219,14 @@ const PrescriptionModal: React.FC<PrescriptionModalProps> = ({ open, onClose, me
     const addMedicine = () => {
         setMedicines([
             ...medicines,
-            { id: Date.now(), name: "", dosage: "", quantity: "", instructions: "" },
+            {
+                id: Date.now(),
+                medicineId: '00000000-0000-0000-0000-000000000000',
+                name: '',
+                dosage: '',
+                quantity: '',
+                instructions: '',
+            },
         ]);
     };
 
@@ -178,27 +236,61 @@ const PrescriptionModal: React.FC<PrescriptionModalProps> = ({ open, onClose, me
         }
     };
 
-    const updateMedicine = (id: number, field: keyof Medicine, value: string) => {
+    const updateMedicine = (
+        id: number,
+        field: keyof Medicine,
+        value: string
+    ) => {
         setMedicines(
-            medicines.map((m) => (m.id === id ? { ...m, [field]: value } : m))
+            medicines.map((m) => {
+                if (m.id === id) {
+                    const updated = { ...m, [field]: value };
+
+                    // If name is being updated, try to match with catalog
+                    if (field === 'name') {
+                        const found = medicineCatalog.find(
+                            (c) => c.name === value
+                        );
+                        updated.medicineId = found
+                            ? found.medicineId
+                            : '00000000-0000-0000-0000-000000000000';
+                        if (found) {
+                            updated.dosage = found.unit; // Suggest unit/dosage
+                        }
+                    }
+
+                    return updated;
+                }
+                return m;
+            })
         );
     };
 
-    const handleKeyDown = (e: React.KeyboardEvent, _medicineId: number, isLastField: boolean, isLastRow: boolean) => {
-        if (e.key === "Enter" && isLastField && isLastRow) {
+    const handleKeyDown = (
+        e: React.KeyboardEvent,
+        _medicineId: number,
+        isLastField: boolean,
+        isLastRow: boolean
+    ) => {
+        if (e.key === 'Enter' && isLastField && isLastRow) {
             e.preventDefault();
             addMedicine();
         }
     };
 
     const handleSave = () => {
-        const validMedicines = medicines.filter(m => m.name.trim() !== "");
+        const validMedicines = medicines.filter((m) => m.name.trim() !== '');
         onSave(validMedicines, prescriptionNotes);
         onClose();
     };
 
     return (
-        <Modal open={open} onClose={onClose} title="Kê đơn thuốc" className="max-w-3xl w-[95vw]">
+        <Modal
+            open={open}
+            onClose={onClose}
+            title="Kê đơn thuốc"
+            className="max-w-3xl w-[95vw]"
+        >
             <div className="space-y-4 max-h-[70vh] overflow-y-auto">
                 {/* Patient Info */}
                 <div className="bg-blue-50 rounded-lg p-3 flex items-center justify-between">
@@ -207,8 +299,12 @@ const PrescriptionModal: React.FC<PrescriptionModalProps> = ({ open, onClose, me
                             <FaPills className="w-5 h-5 text-blue-600" />
                         </div>
                         <div>
-                            <p className="text-xs text-slate-500">Kê đơn cho bệnh nhân</p>
-                            <p className="text-sm font-semibold text-slate-900">{patientName}</p>
+                            <p className="text-xs text-slate-500">
+                                Kê đơn cho bệnh nhân
+                            </p>
+                            <p className="text-sm font-semibold text-slate-900">
+                                {patientName}
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -216,21 +312,28 @@ const PrescriptionModal: React.FC<PrescriptionModalProps> = ({ open, onClose, me
                 {/* Template Selection */}
                 <div className="bg-amber-50 border border-amber-100 rounded-lg p-3">
                     <label className="block text-xs font-medium text-amber-800 mb-2">
-                        ⚡ Chọn mẫu đơn thuốc nhanh
+                        ⚡ Chọn mẫu đơn thuốc nhanh ({templates.length})
                     </label>
                     <div className="flex flex-wrap gap-2">
-                        {PRESCRIPTION_TEMPLATES.map((template) => (
-                            <button
-                                key={template.id}
-                                onClick={() => applyTemplate(template.id)}
-                                className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition ${selectedTemplate === template.id
-                                    ? "bg-amber-500 text-white border-amber-500"
-                                    : "bg-white text-amber-700 border-amber-200 hover:border-amber-400"
+                        {templates.length > 0 ? (
+                            templates.map((template) => (
+                                <button
+                                    key={template.id}
+                                    onClick={() => applyTemplate(template.id)}
+                                    className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition ${
+                                        selectedTemplate === template.id
+                                            ? 'bg-amber-500 text-white border-amber-500'
+                                            : 'bg-white text-amber-700 border-amber-200 hover:border-amber-400'
                                     }`}
-                            >
-                                {template.name}
-                            </button>
-                        ))}
+                                >
+                                    {template.name}
+                                </button>
+                            ))
+                        ) : (
+                            <span className="text-xs text-amber-600 italic">
+                                Chưa có mẫu nào
+                            </span>
+                        )}
                     </div>
                 </div>
 
@@ -238,7 +341,8 @@ const PrescriptionModal: React.FC<PrescriptionModalProps> = ({ open, onClose, me
                 <div>
                     <div className="flex items-center justify-between mb-2">
                         <h4 className="text-xs font-semibold text-slate-700">
-                            Danh sách thuốc ({medicines.filter(m => m.name).length})
+                            Danh sách thuốc (
+                            {medicines.filter((m) => m.name).length})
                         </h4>
                         <button
                             onClick={addMedicine}
@@ -253,26 +357,71 @@ const PrescriptionModal: React.FC<PrescriptionModalProps> = ({ open, onClose, me
                         <table className="w-full">
                             <thead className="bg-slate-50">
                                 <tr>
-                                    <th className="text-left text-[10px] font-semibold text-slate-600 px-2 py-2 w-[25%]">Tên thuốc *</th>
-                                    <th className="text-left text-[10px] font-semibold text-slate-600 px-2 py-2 w-[15%]">Liều lượng</th>
-                                    <th className="text-left text-[10px] font-semibold text-slate-600 px-2 py-2 w-[15%]">Số lượng</th>
-                                    <th className="text-left text-[10px] font-semibold text-slate-600 px-2 py-2 w-[35%]">Cách dùng</th>
+                                    <th className="text-left text-[10px] font-semibold text-slate-600 px-2 py-2 w-[25%]">
+                                        Tên thuốc *
+                                    </th>
+                                    <th className="text-left text-[10px] font-semibold text-slate-600 px-2 py-2 w-[15%]">
+                                        Liều lượng
+                                    </th>
+                                    <th className="text-left text-[10px] font-semibold text-slate-600 px-2 py-2 w-[15%]">
+                                        Số lượng
+                                    </th>
+                                    <th className="text-left text-[10px] font-semibold text-slate-600 px-2 py-2 w-[35%]">
+                                        Cách dùng
+                                    </th>
                                     <th className="w-[10%]"></th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {medicines.map((medicine, index) => {
-                                    const isLastRow = index === medicines.length - 1;
+                                    const isLastRow =
+                                        index === medicines.length - 1;
                                     return (
-                                        <tr key={medicine.id} className="border-t border-slate-100 hover:bg-slate-50">
-                                            <td className="px-1 py-1">
+                                        <tr
+                                            key={medicine.id}
+                                            className="border-t border-slate-100 hover:bg-slate-50"
+                                        >
+                                            <td className="px-1 py-1 relative group">
                                                 <input
                                                     type="text"
                                                     placeholder="Nhập tên thuốc"
                                                     className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:bg-white focus:ring-1 focus:ring-blue-500 rounded outline-none"
                                                     value={medicine.name}
-                                                    onChange={(e) => updateMedicine(medicine.id, "name", e.target.value)}
+                                                    onChange={(e) =>
+                                                        updateMedicine(
+                                                            medicine.id,
+                                                            'name',
+                                                            e.target.value
+                                                        )
+                                                    }
+                                                    list={`medicines-list-${medicine.id}`}
                                                 />
+                                                <datalist
+                                                    id={`medicines-list-${medicine.id}`}
+                                                >
+                                                    {medicineCatalog.map(
+                                                        (item) => (
+                                                            <option
+                                                                key={
+                                                                    item.medicineId
+                                                                }
+                                                                value={
+                                                                    item.name
+                                                                }
+                                                            >
+                                                                {item.unit} -{' '}
+                                                                {item.price.toLocaleString()}
+                                                                đ
+                                                            </option>
+                                                        )
+                                                    )}
+                                                </datalist>
+                                                {medicine.medicineId !==
+                                                    '00000000-0000-0000-0000-000000000000' && (
+                                                    <span className="absolute right-2 top-2 text-[10px] text-green-600 bg-green-50 px-1 rounded">
+                                                        Catalog
+                                                    </span>
+                                                )}
                                             </td>
                                             <td className="px-1 py-1">
                                                 <input
@@ -280,7 +429,13 @@ const PrescriptionModal: React.FC<PrescriptionModalProps> = ({ open, onClose, me
                                                     placeholder="500mg"
                                                     className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:bg-white focus:ring-1 focus:ring-blue-500 rounded outline-none"
                                                     value={medicine.dosage}
-                                                    onChange={(e) => updateMedicine(medicine.id, "dosage", e.target.value)}
+                                                    onChange={(e) =>
+                                                        updateMedicine(
+                                                            medicine.id,
+                                                            'dosage',
+                                                            e.target.value
+                                                        )
+                                                    }
                                                 />
                                             </td>
                                             <td className="px-1 py-1">
@@ -289,7 +444,13 @@ const PrescriptionModal: React.FC<PrescriptionModalProps> = ({ open, onClose, me
                                                     placeholder="20 viên"
                                                     className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:bg-white focus:ring-1 focus:ring-blue-500 rounded outline-none"
                                                     value={medicine.quantity}
-                                                    onChange={(e) => updateMedicine(medicine.id, "quantity", e.target.value)}
+                                                    onChange={(e) =>
+                                                        updateMedicine(
+                                                            medicine.id,
+                                                            'quantity',
+                                                            e.target.value
+                                                        )
+                                                    }
                                                 />
                                             </td>
                                             <td className="px-1 py-1">
@@ -297,15 +458,34 @@ const PrescriptionModal: React.FC<PrescriptionModalProps> = ({ open, onClose, me
                                                     type="text"
                                                     placeholder="2 viên/ngày sau ăn"
                                                     className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:bg-white focus:ring-1 focus:ring-blue-500 rounded outline-none"
-                                                    value={medicine.instructions}
-                                                    onChange={(e) => updateMedicine(medicine.id, "instructions", e.target.value)}
-                                                    onKeyDown={(e) => handleKeyDown(e, medicine.id, true, isLastRow)}
+                                                    value={
+                                                        medicine.instructions
+                                                    }
+                                                    onChange={(e) =>
+                                                        updateMedicine(
+                                                            medicine.id,
+                                                            'instructions',
+                                                            e.target.value
+                                                        )
+                                                    }
+                                                    onKeyDown={(e) =>
+                                                        handleKeyDown(
+                                                            e,
+                                                            medicine.id,
+                                                            true,
+                                                            isLastRow
+                                                        )
+                                                    }
                                                 />
                                             </td>
                                             <td className="px-1 py-1 text-center">
                                                 {medicines.length > 1 && (
                                                     <button
-                                                        onClick={() => removeMedicine(medicine.id)}
+                                                        onClick={() =>
+                                                            removeMedicine(
+                                                                medicine.id
+                                                            )
+                                                        }
                                                         className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded"
                                                     >
                                                         <FiTrash2 className="w-3.5 h-3.5" />
@@ -318,7 +498,10 @@ const PrescriptionModal: React.FC<PrescriptionModalProps> = ({ open, onClose, me
                             </tbody>
                         </table>
                     </div>
-                    <p className="text-[10px] text-slate-400 mt-1">💡 Nhấn Enter ở ô cuối để thêm dòng mới. Tab để di chuyển giữa các ô.</p>
+                    <p className="text-[10px] text-slate-400 mt-1">
+                        💡 Nhấn Enter ở ô cuối để thêm dòng mới. Tab để di
+                        chuyển giữa các ô.
+                    </p>
                 </div>
 
                 {/* Notes */}
@@ -358,39 +541,159 @@ const PrescriptionModal: React.FC<PrescriptionModalProps> = ({ open, onClose, me
 
 // Main Component
 const DoctorTreatment: React.FC = () => {
-    const [patients, setPatients] = useState<Patient[]>(WAITING_PATIENTS);
-    const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
-    const [teethType, setTeethType] = useState<"adult" | "child">("adult");
-    const [selectedTeeth, setSelectedTeeth] = useState<Record<number, ToothStatus>>({});
+    const [patients, setPatients] = useState<Patient[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [actionLoading, setActionLoading] = useState(false);
+
+    // Prescription Templates & Medicine Catalog from API
+    const [templates, setTemplates] = useState<ApiPrescriptionTemplate[]>([]);
+    const [medicineCatalog, setMedicineCatalog] = useState<
+        MedicineCatalogItem[]
+    >([]);
+
+    const [selectedPatient, setSelectedPatient] = useState<Patient | null>(
+        null
+    );
+    const [teethType, setTeethType] = useState<'adult' | 'child'>('adult');
+    const [selectedTeeth, setSelectedTeeth] = useState<
+        Record<number, ToothStatus>
+    >({});
     const [prescriptionModalOpen, setPrescriptionModalOpen] = useState(false);
     const [medicines, setMedicines] = useState<Medicine[]>([]);
     const [formData, setFormData] = useState({
-        reason: "",
-        diagnosis: "",
-        treatment: "",
-        prescriptionNotes: "",
-        notes: "",
-        followUpDate: "",
+        reason: '',
+        diagnosis: '',
+        treatment: '',
+        prescriptionNotes: '',
+        notes: '',
+        followUpDate: '',
     });
 
-    const handleStartExam = (patient: Patient) => {
-        setPatients(patients.map(p =>
-            p.id === patient.id ? { ...p, status: "in-progress" as const } : p
-        ));
-        setSelectedPatient(patient);
-        setFormData({ reason: "", diagnosis: "", treatment: "", prescriptionNotes: "", notes: "", followUpDate: "" });
-        setSelectedTeeth({});
-        setMedicines([]);
+    const fetchQueue = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const response = await getQueue();
+            if (response.isSuccess && response.data) {
+                const mappedPatients: Patient[] = response.data
+                    .filter(
+                        (q) =>
+                            q.status === 'confirmed' ||
+                            q.status === 'checkedin' ||
+                            q.status === 'inprogress'
+                    )
+                    .map((q) => ({
+                        id: q.id,
+                        appointmentId: q.appointmentId,
+                        patientId: q.patientId,
+                        name: q.patientName,
+                        phone: q.patientPhone,
+                        service: q.service,
+                        serviceId: q.serviceId,
+                        time: new Date(q.scheduledTime).toLocaleTimeString(
+                            'vi-VN',
+                            { hour: '2-digit', minute: '2-digit' }
+                        ),
+                        status: q.status,
+                    }));
+                setPatients(mappedPatients);
+            } else {
+                setError(response.message || 'Không thể tải hàng đợi');
+            }
+        } catch (err) {
+            console.error('Error fetching queue:', err);
+            setError('Lỗi kết nối server');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchData = async () => {
+        try {
+            const [templatesRes, medicinesRes] = await Promise.all([
+                getPrescriptionTemplates(),
+                getMedicines(),
+            ]);
+
+            if (templatesRes.isSuccess && templatesRes.data) {
+                setTemplates(templatesRes.data);
+            }
+            if (medicinesRes.isSuccess && medicinesRes.data) {
+                setMedicineCatalog(medicinesRes.data);
+            }
+        } catch (err) {
+            console.error('Error fetching prescription data:', err);
+        }
+    };
+
+    useEffect(() => {
+        fetchQueue();
+        fetchData(); // Fetch templates and medicine catalog
+    }, []);
+
+    const handleStartExam = async (patient: Patient) => {
+        // If already in progress, just open exam form without calling API
+        if (patient.status === 'inprogress') {
+            setSelectedPatient(patient);
+            setFormData({
+                reason: '',
+                diagnosis: '',
+                treatment: '',
+                prescriptionNotes: '',
+                notes: '',
+                followUpDate: '',
+            });
+            setSelectedTeeth({});
+            setMedicines([]);
+            return;
+        }
+
+        // For confirmed/checkedin, call startExam API first
+        try {
+            setActionLoading(true);
+            const response = await startExam(patient.appointmentId);
+            if (response.isSuccess) {
+                setSelectedPatient(patient);
+                setFormData({
+                    reason: '',
+                    diagnosis: '',
+                    treatment: '',
+                    prescriptionNotes: '',
+                    notes: '',
+                    followUpDate: '',
+                });
+                setSelectedTeeth({});
+                setMedicines([]);
+            } else {
+                alert(response.message || 'Không thể bắt đầu khám');
+            }
+        } catch (err) {
+            console.error('Error starting exam:', err);
+            alert('Lỗi kết nối server');
+        } finally {
+            setActionLoading(false);
+        }
     };
 
     const handleBack = () => {
         setSelectedPatient(null);
+        fetchQueue(); // Refresh queue when going back
     };
 
     const handleToothClick = (toothNumber: number) => {
         const currentStatus = selectedTeeth[toothNumber];
-        const statuses: ToothStatus[] = ["normal", "cavity", "missing", "treated", "crown", "nextTreatment"];
-        const currentIndex = currentStatus ? statuses.indexOf(currentStatus) : -1;
+        const statuses: ToothStatus[] = [
+            'normal',
+            'cavity',
+            'missing',
+            'treated',
+            'crown',
+            'nextTreatment',
+        ];
+        const currentIndex = currentStatus
+            ? statuses.indexOf(currentStatus)
+            : -1;
         const nextIndex = (currentIndex + 1) % statuses.length;
 
         if (currentIndex === statuses.length - 1) {
@@ -405,57 +708,159 @@ const DoctorTreatment: React.FC = () => {
         }
     };
 
-    const handleSavePrescription = (newMedicines: Medicine[], notes: string) => {
+    const handleSavePrescription = (
+        newMedicines: Medicine[],
+        notes: string
+    ) => {
         setMedicines(newMedicines);
         setFormData({ ...formData, prescriptionNotes: notes });
     };
 
-    const handleSave = () => {
+    const handleSave = async (createBill: boolean = false) => {
         if (!formData.diagnosis || !formData.treatment) {
-            alert("Vui lòng nhập chẩn đoán và phương pháp điều trị!");
+            alert('Vui lòng nhập chẩn đoán và phương pháp điều trị!');
             return;
         }
 
-        console.log("Treatment data:", {
-            patient: selectedPatient,
-            teeth: selectedTeeth,
-            medicines,
-            ...formData,
-        });
+        if (!selectedPatient?.patientId) {
+            alert('Không tìm thấy thông tin bệnh nhân!');
+            return;
+        }
 
-        setPatients(patients.filter(p => p.id !== selectedPatient?.id));
-        setSelectedPatient(null);
-        alert("Đã lưu phiếu khám thành công!");
+        try {
+            setActionLoading(true);
+
+            // Convert tooth status for API
+            const toothStatusForApi: Record<string, string> = {};
+            Object.entries(selectedTeeth).forEach(([tooth, status]) => {
+                toothStatusForApi[`T${tooth}`] = status;
+            });
+
+            const request: CreateExaminationRequest = {
+                appointmentId: selectedPatient.appointmentId,
+                patientId: selectedPatient.patientId,
+                title: selectedPatient.service,
+                diagnosis: formData.diagnosis,
+                treatment: formData.treatment,
+                toothStatus:
+                    Object.keys(toothStatusForApi).length > 0
+                        ? toothStatusForApi
+                        : undefined,
+                prescription:
+                    medicines.length > 0
+                        ? {
+                              medicines: medicines.map((m) => ({
+                                  medicineId: m.medicineId, // Now uses actual ID from catalog or empty GUID for free-text
+                                  name: m.name,
+                                  dosage: m.dosage,
+                                  quantity: m.quantity,
+                                  instructions: m.instructions,
+                              })),
+                              notes: formData.prescriptionNotes,
+                          }
+                        : undefined,
+                notes: formData.notes || undefined,
+                createBill: createBill,
+                serviceIds:
+                    createBill && selectedPatient.serviceId
+                        ? [selectedPatient.serviceId]
+                        : undefined,
+            };
+
+            const response = await createExamination(request);
+            if (response.isSuccess) {
+                alert(
+                    createBill
+                        ? 'Đã lưu phiếu khám và tạo hóa đơn!'
+                        : 'Đã lưu phiếu khám thành công!'
+                );
+                setSelectedPatient(null);
+                fetchQueue();
+            } else {
+                alert(response.message || 'Không thể lưu phiếu khám');
+            }
+        } catch (err) {
+            console.error('Error saving examination:', err);
+            alert('Lỗi kết nối server');
+        } finally {
+            setActionLoading(false);
+        }
     };
 
     const handleCreateInvoice = () => {
-        if (!formData.diagnosis || !formData.treatment) {
-            alert("Vui lòng điền thông tin khám trước khi tạo hoá đơn!");
-            return;
-        }
-        alert("Đã tạo yêu cầu thanh toán. Lễ tân sẽ xử lý.");
+        handleSave(true);
     };
 
     // Show patient list if no patient selected
     if (!selectedPatient) {
+        if (loading) {
+            return (
+                <div className="px-6 py-8 lg:px-10">
+                    <div className="max-w-[1000px] mx-auto flex items-center justify-center min-h-[400px]">
+                        <div className="text-center">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2563EB] mx-auto"></div>
+                            <p className="mt-4 text-slate-500">
+                                Đang tải danh sách bệnh nhân...
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        if (error) {
+            return (
+                <div className="px-6 py-8 lg:px-10">
+                    <div className="max-w-[1000px] mx-auto">
+                        <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+                            <p className="text-red-600">{error}</p>
+                            <button
+                                onClick={fetchQueue}
+                                className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                            >
+                                Thử lại
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
         return (
             <div className="px-6 py-8 lg:px-10">
                 <div className="max-w-[1000px] mx-auto space-y-6">
                     {/* Header */}
-                    <div>
-                        <span className="inline-flex items-center rounded-full bg-[#E0ECFF] text-[#2563EB] text-[11px] font-semibold px-4 py-1.5 tracking-wide uppercase mb-3">
-                            TREATMENT
-                        </span>
-                        <h1 className="text-xl font-semibold text-slate-900">Khám bệnh</h1>
-                        <p className="text-sm text-slate-500 mt-1">Chọn bệnh nhân để bắt đầu khám</p>
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <span className="inline-flex items-center rounded-full bg-[#E0ECFF] text-[#2563EB] text-[11px] font-semibold px-4 py-1.5 tracking-wide uppercase mb-3">
+                                TREATMENT
+                            </span>
+                            <h1 className="text-xl font-semibold text-slate-900">
+                                Khám bệnh
+                            </h1>
+                            <p className="text-sm text-slate-500 mt-1">
+                                Chọn bệnh nhân để bắt đầu khám
+                            </p>
+                        </div>
+                        <button
+                            onClick={fetchQueue}
+                            className="flex items-center gap-2 px-4 py-2 text-sm text-[#2563EB] hover:bg-blue-50 rounded-lg transition"
+                        >
+                            <FiRefreshCw className="w-4 h-4" />
+                            Làm mới
+                        </button>
                     </div>
 
                     {/* Waiting Patients List */}
                     {patients.length === 0 ? (
                         <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
                             <FiClipboard className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                            <h3 className="text-sm font-semibold text-slate-900 mb-1">Không có bệnh nhân chờ khám</h3>
-                            <p className="text-xs text-slate-500">Tất cả bệnh nhân đã được khám xong</p>
+                            <h3 className="text-sm font-semibold text-slate-900 mb-1">
+                                Không có bệnh nhân chờ khám
+                            </h3>
+                            <p className="text-xs text-slate-500">
+                                Tất cả bệnh nhân đã được khám xong
+                            </p>
                         </div>
                     ) : (
                         <div className="space-y-3">
@@ -473,8 +878,12 @@ const DoctorTreatment: React.FC = () => {
                                                 <FiUser className="w-5 h-5 text-slate-500" />
                                             </div>
                                             <div>
-                                                <h3 className="text-sm font-semibold text-slate-900">{patient.name}</h3>
-                                                <p className="text-xs text-slate-500">{patient.service}</p>
+                                                <h3 className="text-sm font-semibold text-slate-900">
+                                                    {patient.name}
+                                                </h3>
+                                                <p className="text-xs text-slate-500">
+                                                    {patient.service}
+                                                </p>
                                             </div>
                                         </div>
                                     </div>
@@ -484,18 +893,37 @@ const DoctorTreatment: React.FC = () => {
                                             <FiClock className="w-3.5 h-3.5" />
                                             <span>{patient.time}</span>
                                         </div>
-                                        <span className={`px-3 py-1 rounded-full text-[10px] font-semibold ${patient.status === "in-progress"
-                                            ? "bg-blue-100 text-blue-700"
-                                            : "bg-amber-100 text-amber-700"
-                                            }`}>
-                                            {patient.status === "in-progress" ? "Đang khám" : "Đang chờ"}
+                                        <span
+                                            className={`px-3 py-1 rounded-full text-[10px] font-semibold ${
+                                                patient.status === 'inprogress'
+                                                    ? 'bg-purple-100 text-purple-700'
+                                                    : patient.status ===
+                                                      'checkedin'
+                                                    ? 'bg-amber-100 text-amber-700'
+                                                    : 'bg-blue-100 text-blue-700'
+                                            }`}
+                                        >
+                                            {patient.status === 'inprogress'
+                                                ? 'Đang khám'
+                                                : patient.status === 'checkedin'
+                                                ? 'Đã check-in'
+                                                : 'Đã xác nhận'}
                                         </span>
                                         <button
-                                            onClick={() => handleStartExam(patient)}
-                                            className="flex items-center gap-2 px-4 py-2 bg-[#2563EB] text-white text-xs font-semibold rounded-lg hover:bg-[#1D4ED8] transition"
+                                            onClick={() =>
+                                                handleStartExam(patient)
+                                            }
+                                            disabled={actionLoading}
+                                            className="flex items-center gap-2 px-4 py-2 bg-[#2563EB] text-white text-xs font-semibold rounded-lg hover:bg-[#1D4ED8] transition disabled:opacity-50"
                                         >
-                                            <FiPlay className="w-3.5 h-3.5" />
-                                            Bắt đầu khám
+                                            {actionLoading ? (
+                                                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                            ) : (
+                                                <FiPlay className="w-3.5 h-3.5" />
+                                            )}
+                                            {patient.status === 'inprogress'
+                                                ? 'Tiếp tục khám'
+                                                : 'Bắt đầu khám'}
                                         </button>
                                     </div>
                                 </div>
@@ -508,8 +936,10 @@ const DoctorTreatment: React.FC = () => {
     }
 
     // Get teeth arrays based on type
-    const upperTeeth = teethType === "adult" ? adultUpperTeeth : childUpperTeeth;
-    const lowerTeeth = teethType === "adult" ? adultLowerTeeth : childLowerTeeth;
+    const upperTeeth =
+        teethType === 'adult' ? adultUpperTeeth : childUpperTeeth;
+    const lowerTeeth =
+        teethType === 'adult' ? adultLowerTeeth : childLowerTeeth;
 
     return (
         <div className="px-6 py-8 lg:px-10">
@@ -520,8 +950,12 @@ const DoctorTreatment: React.FC = () => {
                         <span className="inline-flex items-center rounded-full bg-[#E0ECFF] text-[#2563EB] text-[11px] font-semibold px-4 py-1.5 tracking-wide uppercase mb-2">
                             TREATMENT FORM
                         </span>
-                        <h1 className="text-lg font-semibold text-slate-900">Phiếu khám bệnh</h1>
-                        <p className="text-xs text-slate-500">Ghi nhận thông tin khám và điều trị</p>
+                        <h1 className="text-lg font-semibold text-slate-900">
+                            Phiếu khám bệnh
+                        </h1>
+                        <p className="text-xs text-slate-500">
+                            Ghi nhận thông tin khám và điều trị
+                        </p>
                     </div>
                     <button
                         onClick={handleBack}
@@ -538,9 +972,12 @@ const DoctorTreatment: React.FC = () => {
                         {selectedPatient.name.charAt(0)}
                     </div>
                     <div>
-                        <h2 className="text-sm font-semibold text-slate-900">{selectedPatient.name}</h2>
+                        <h2 className="text-sm font-semibold text-slate-900">
+                            {selectedPatient.name}
+                        </h2>
                         <p className="text-xs text-slate-500">
-                            {selectedPatient.age} tuổi • {selectedPatient.gender} • Khám gần nhất: {selectedPatient.lastVisit}
+                            {selectedPatient.phone} • Dịch vụ:{' '}
+                            {selectedPatient.service}
                         </p>
                     </div>
                 </div>
@@ -550,23 +987,27 @@ const DoctorTreatment: React.FC = () => {
                     {/* Left: Dental Chart */}
                     <div className="bg-white rounded-xl shadow-sm p-5">
                         <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-sm font-semibold text-slate-900">Sơ đồ răng miệng</h3>
+                            <h3 className="text-sm font-semibold text-slate-900">
+                                Sơ đồ răng miệng
+                            </h3>
                             <div className="flex gap-1">
                                 <button
-                                    onClick={() => setTeethType("adult")}
-                                    className={`px-3 py-1.5 text-xs font-medium rounded-lg transition ${teethType === "adult"
-                                        ? "bg-[#2563EB] text-white"
-                                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                                        }`}
+                                    onClick={() => setTeethType('adult')}
+                                    className={`px-3 py-1.5 text-xs font-medium rounded-lg transition ${
+                                        teethType === 'adult'
+                                            ? 'bg-[#2563EB] text-white'
+                                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                    }`}
                                 >
                                     Người lớn (32)
                                 </button>
                                 <button
-                                    onClick={() => setTeethType("child")}
-                                    className={`px-3 py-1.5 text-xs font-medium rounded-lg transition ${teethType === "child"
-                                        ? "bg-[#2563EB] text-white"
-                                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                                        }`}
+                                    onClick={() => setTeethType('child')}
+                                    className={`px-3 py-1.5 text-xs font-medium rounded-lg transition ${
+                                        teethType === 'child'
+                                            ? 'bg-[#2563EB] text-white'
+                                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                    }`}
                                 >
                                     Trẻ em (20)
                                 </button>
@@ -575,14 +1016,26 @@ const DoctorTreatment: React.FC = () => {
 
                         {/* Legend */}
                         <div className="mb-5 p-3 bg-slate-50 rounded-lg">
-                            <p className="text-[10px] font-medium text-slate-600 mb-2">Chú thích: (Click vào răng để thay đổi trạng thái)</p>
+                            <p className="text-[10px] font-medium text-slate-600 mb-2">
+                                Chú thích: (Click vào răng để thay đổi trạng
+                                thái)
+                            </p>
                             <div className="grid grid-cols-3 gap-2">
-                                {Object.entries(toothStatusConfig).map(([key, config]) => (
-                                    <div key={key} className="flex items-center gap-1.5">
-                                        <div className={`w-3 h-3 rounded ${config.color}`} />
-                                        <span className="text-[10px] text-slate-600">{config.label}</span>
-                                    </div>
-                                ))}
+                                {Object.entries(toothStatusConfig).map(
+                                    ([key, config]) => (
+                                        <div
+                                            key={key}
+                                            className="flex items-center gap-1.5"
+                                        >
+                                            <div
+                                                className={`w-3 h-3 rounded ${config.color}`}
+                                            />
+                                            <span className="text-[10px] text-slate-600">
+                                                {config.label}
+                                            </span>
+                                        </div>
+                                    )
+                                )}
                             </div>
                         </div>
 
@@ -590,68 +1043,92 @@ const DoctorTreatment: React.FC = () => {
                         <div className="bg-gradient-to-b from-pink-50 to-white rounded-xl p-4 border border-pink-100">
                             {/* Upper Teeth */}
                             <div className="mb-2">
-                                <p className="text-[10px] text-slate-500 mb-2 text-center font-medium">Hàm trên</p>
+                                <p className="text-[10px] text-slate-500 mb-2 text-center font-medium">
+                                    Hàm trên
+                                </p>
                                 <div className="flex justify-center gap-0.5 flex-wrap">
-                                    {upperTeeth.slice(0, upperTeeth.length / 2).map((tooth) => (
-                                        <ToothButton
-                                            key={tooth}
-                                            number={tooth}
-                                            status={selectedTeeth[tooth]}
-                                            onClick={() => handleToothClick(tooth)}
-                                            isUpper={true}
-                                        />
-                                    ))}
+                                    {upperTeeth
+                                        .slice(0, upperTeeth.length / 2)
+                                        .map((tooth) => (
+                                            <ToothButton
+                                                key={tooth}
+                                                number={tooth}
+                                                status={selectedTeeth[tooth]}
+                                                onClick={() =>
+                                                    handleToothClick(tooth)
+                                                }
+                                                isUpper={true}
+                                            />
+                                        ))}
                                     <div className="w-2" />
-                                    {upperTeeth.slice(upperTeeth.length / 2).map((tooth) => (
-                                        <ToothButton
-                                            key={tooth}
-                                            number={tooth}
-                                            status={selectedTeeth[tooth]}
-                                            onClick={() => handleToothClick(tooth)}
-                                            isUpper={true}
-                                        />
-                                    ))}
+                                    {upperTeeth
+                                        .slice(upperTeeth.length / 2)
+                                        .map((tooth) => (
+                                            <ToothButton
+                                                key={tooth}
+                                                number={tooth}
+                                                status={selectedTeeth[tooth]}
+                                                onClick={() =>
+                                                    handleToothClick(tooth)
+                                                }
+                                                isUpper={true}
+                                            />
+                                        ))}
                                 </div>
                             </div>
 
                             {/* Divider line */}
                             <div className="flex items-center gap-2 my-3">
                                 <div className="flex-1 h-px bg-pink-200" />
-                                <span className="text-[9px] text-pink-400 font-medium">đường viền nướu</span>
+                                <span className="text-[9px] text-pink-400 font-medium">
+                                    đường viền nướu
+                                </span>
                                 <div className="flex-1 h-px bg-pink-200" />
                             </div>
 
                             {/* Lower Teeth */}
                             <div>
                                 <div className="flex justify-center gap-0.5 flex-wrap">
-                                    {lowerTeeth.slice(0, lowerTeeth.length / 2).map((tooth) => (
-                                        <ToothButton
-                                            key={tooth}
-                                            number={tooth}
-                                            status={selectedTeeth[tooth]}
-                                            onClick={() => handleToothClick(tooth)}
-                                            isUpper={false}
-                                        />
-                                    ))}
+                                    {lowerTeeth
+                                        .slice(0, lowerTeeth.length / 2)
+                                        .map((tooth) => (
+                                            <ToothButton
+                                                key={tooth}
+                                                number={tooth}
+                                                status={selectedTeeth[tooth]}
+                                                onClick={() =>
+                                                    handleToothClick(tooth)
+                                                }
+                                                isUpper={false}
+                                            />
+                                        ))}
                                     <div className="w-2" />
-                                    {lowerTeeth.slice(lowerTeeth.length / 2).map((tooth) => (
-                                        <ToothButton
-                                            key={tooth}
-                                            number={tooth}
-                                            status={selectedTeeth[tooth]}
-                                            onClick={() => handleToothClick(tooth)}
-                                            isUpper={false}
-                                        />
-                                    ))}
+                                    {lowerTeeth
+                                        .slice(lowerTeeth.length / 2)
+                                        .map((tooth) => (
+                                            <ToothButton
+                                                key={tooth}
+                                                number={tooth}
+                                                status={selectedTeeth[tooth]}
+                                                onClick={() =>
+                                                    handleToothClick(tooth)
+                                                }
+                                                isUpper={false}
+                                            />
+                                        ))}
                                 </div>
-                                <p className="text-[10px] text-slate-500 mt-2 text-center font-medium">Hàm dưới</p>
+                                <p className="text-[10px] text-slate-500 mt-2 text-center font-medium">
+                                    Hàm dưới
+                                </p>
                             </div>
                         </div>
                     </div>
 
                     {/* Right: Treatment Form */}
                     <div className="bg-white rounded-xl shadow-sm p-5">
-                        <h3 className="text-sm font-semibold text-slate-900 mb-4">Thông tin điều trị</h3>
+                        <h3 className="text-sm font-semibold text-slate-900 mb-4">
+                            Thông tin điều trị
+                        </h3>
 
                         <div className="space-y-4">
                             {/* Reason */}
@@ -664,44 +1141,65 @@ const DoctorTreatment: React.FC = () => {
                                     placeholder="Nhập triệu chứng hoặc lý do khám..."
                                     className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:border-[#2563EB] outline-none resize-none"
                                     value={formData.reason}
-                                    onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
+                                    onChange={(e) =>
+                                        setFormData({
+                                            ...formData,
+                                            reason: e.target.value,
+                                        })
+                                    }
                                 />
                             </div>
 
                             {/* Diagnosis */}
                             <div>
                                 <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                                    Chẩn đoán <span className="text-red-500">*</span>
+                                    Chẩn đoán{' '}
+                                    <span className="text-red-500">*</span>
                                 </label>
                                 <textarea
                                     rows={2}
                                     placeholder="Chẩn đoán bệnh..."
                                     className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:border-[#2563EB] outline-none resize-none"
                                     value={formData.diagnosis}
-                                    onChange={(e) => setFormData({ ...formData, diagnosis: e.target.value })}
+                                    onChange={(e) =>
+                                        setFormData({
+                                            ...formData,
+                                            diagnosis: e.target.value,
+                                        })
+                                    }
                                 />
                             </div>
 
                             {/* Treatment */}
                             <div>
                                 <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                                    Điều trị <span className="text-red-500">*</span>
+                                    Điều trị{' '}
+                                    <span className="text-red-500">*</span>
                                 </label>
                                 <textarea
                                     rows={2}
                                     placeholder="Mô tả điều trị đã thực hiện..."
                                     className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:border-[#2563EB] outline-none resize-none"
                                     value={formData.treatment}
-                                    onChange={(e) => setFormData({ ...formData, treatment: e.target.value })}
+                                    onChange={(e) =>
+                                        setFormData({
+                                            ...formData,
+                                            treatment: e.target.value,
+                                        })
+                                    }
                                 />
                             </div>
 
                             {/* Prescription */}
                             <div>
                                 <div className="flex items-center justify-between mb-1.5">
-                                    <label className="text-xs font-medium text-slate-700">Đơn thuốc</label>
+                                    <label className="text-xs font-medium text-slate-700">
+                                        Đơn thuốc
+                                    </label>
                                     <button
-                                        onClick={() => setPrescriptionModalOpen(true)}
+                                        onClick={() =>
+                                            setPrescriptionModalOpen(true)
+                                        }
                                         className="flex items-center gap-1 text-xs text-[#2563EB] hover:underline"
                                     >
                                         <FiPlus className="w-3 h-3" />
@@ -709,19 +1207,26 @@ const DoctorTreatment: React.FC = () => {
                                     </button>
                                 </div>
                                 <div
-                                    onClick={() => setPrescriptionModalOpen(true)}
+                                    onClick={() =>
+                                        setPrescriptionModalOpen(true)
+                                    }
                                     className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm cursor-pointer hover:border-slate-300 min-h-[38px] flex items-center"
                                 >
                                     {medicines.length > 0 ? (
                                         <div className="flex flex-wrap gap-1">
                                             {medicines.map((m, i) => (
-                                                <span key={i} className="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs rounded">
+                                                <span
+                                                    key={i}
+                                                    className="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs rounded"
+                                                >
                                                     {m.name} ({m.quantity})
                                                 </span>
                                             ))}
                                         </div>
                                     ) : (
-                                        <span className="text-slate-400">Click để kê đơn thuốc...</span>
+                                        <span className="text-slate-400">
+                                            Click để kê đơn thuốc...
+                                        </span>
                                     )}
                                 </div>
                             </div>
@@ -736,7 +1241,12 @@ const DoctorTreatment: React.FC = () => {
                                     placeholder="Ghi chú thêm, lưu ý..."
                                     className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:border-[#2563EB] outline-none"
                                     value={formData.notes}
-                                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                                    onChange={(e) =>
+                                        setFormData({
+                                            ...formData,
+                                            notes: e.target.value,
+                                        })
+                                    }
                                 />
                             </div>
 
@@ -749,7 +1259,12 @@ const DoctorTreatment: React.FC = () => {
                                     type="date"
                                     className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:border-[#2563EB] outline-none"
                                     value={formData.followUpDate}
-                                    onChange={(e) => setFormData({ ...formData, followUpDate: e.target.value })}
+                                    onChange={(e) =>
+                                        setFormData({
+                                            ...formData,
+                                            followUpDate: e.target.value,
+                                        })
+                                    }
                                 />
                             </div>
                         </div>
@@ -759,18 +1274,24 @@ const DoctorTreatment: React.FC = () => {
                 {/* Action Buttons */}
                 <div className="flex flex-col sm:flex-row gap-3">
                     <button
-                        onClick={handleSave}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-[#2563EB] text-white text-sm font-medium rounded-lg hover:bg-[#1D4ED8] transition"
+                        onClick={() => handleSave(false)}
+                        disabled={actionLoading}
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-[#2563EB] text-white text-sm font-medium rounded-lg hover:bg-[#1D4ED8] transition disabled:opacity-50"
                     >
-                        <FiSave className="w-4 h-4" />
-                        Lưu phiếu khám
+                        {actionLoading ? (
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        ) : (
+                            <FiSave className="w-4 h-4" />
+                        )}
+                        Hoàn thành khám
                     </button>
                     <button
                         onClick={handleCreateInvoice}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border border-slate-300 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-50 transition"
+                        disabled={actionLoading}
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border-2 border-green-500 text-green-700 text-sm font-medium rounded-lg hover:bg-green-50 transition disabled:opacity-50"
                     >
                         <FiDollarSign className="w-4 h-4" />
-                        Tạo hoá đơn thanh toán
+                        Hoàn thành & Tạo hóa đơn
                     </button>
                 </div>
             </div>
@@ -781,7 +1302,9 @@ const DoctorTreatment: React.FC = () => {
                 onClose={() => setPrescriptionModalOpen(false)}
                 medicines={medicines}
                 onSave={handleSavePrescription}
-                patientName={selectedPatient.name}
+                patientName={selectedPatient?.name || ''}
+                templates={templates}
+                medicineCatalog={medicineCatalog}
             />
         </div>
     );

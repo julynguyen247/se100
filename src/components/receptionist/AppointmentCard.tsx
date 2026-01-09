@@ -5,23 +5,75 @@ import {
     checkinAppointment,
     type ReceptionistAppointment,
 } from '@/services/apiReceptionist';
+import CredentialModal from './CredentialModal';
 
 interface AppointmentCardProps {
     appointment: ReceptionistAppointment;
     onUpdate: () => void;
 }
 
-export default function AppointmentCard({ appointment, onUpdate }: AppointmentCardProps) {
+export default function AppointmentCard({
+    appointment,
+    onUpdate,
+}: AppointmentCardProps) {
     const [loading, setLoading] = useState(false);
     const [showCancelDialog, setShowCancelDialog] = useState(false);
     const [cancelReason, setCancelReason] = useState('');
+
+    // Credential modal state
+    const [showCredentialModal, setShowCredentialModal] = useState(false);
+    const [credentials, setCredentials] = useState<{
+        username: string;
+        password: string;
+        patientName: string;
+        patientPhone: string;
+    } | null>(null);
+
+    // Helper function to format datetime
+    const formatDateTime = (isoString: string) => {
+        const date = new Date(isoString);
+        return {
+            date: date.toLocaleDateString('vi-VN', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+            }),
+            time: date.toLocaleTimeString('vi-VN', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false,
+            }),
+        };
+    };
+
+    const startDateTime = formatDateTime(appointment.startAt);
+    const endTime = formatDateTime(appointment.endAt).time;
 
     const handleConfirm = async () => {
         try {
             setLoading(true);
             const result = await confirmAppointment(appointment.id);
+
+            // Debug logging
+            console.log('🔍 Confirm API Response:', result);
+            console.log('🔍 Credentials:', {
+                username: result.data?.username,
+                password: result.data?.password,
+            });
+
             if (result.isSuccess && result.data) {
-                alert('✅ Xác nhận lịch hẹn thành công!');
+                // Check if new account was created (credentials present)
+                if (result.data.username && result.data.password) {
+                    setCredentials({
+                        username: result.data.username,
+                        password: result.data.password,
+                        patientName: appointment.patientName,
+                        patientPhone: appointment.phone,
+                    });
+                    setShowCredentialModal(true);
+                } else {
+                    alert('✅ Xác nhận lịch hẹn thành công!');
+                }
                 onUpdate();
             }
         } catch (error: any) {
@@ -51,7 +103,10 @@ export default function AppointmentCard({ appointment, onUpdate }: AppointmentCa
     const handleCancelSubmit = async () => {
         try {
             setLoading(true);
-            const result = await cancelAppointment(appointment.id, cancelReason || undefined);
+            const result = await cancelAppointment(
+                appointment.id,
+                cancelReason || undefined
+            );
             if (result.isSuccess && result.data) {
                 alert('✅ Hủy lịch hẹn thành công!');
                 setShowCancelDialog(false);
@@ -67,15 +122,36 @@ export default function AppointmentCard({ appointment, onUpdate }: AppointmentCa
     };
 
     const getStatusBadge = (status: string) => {
-        const badges: Record<string, { bg: string; text: string; label: string }> = {
-            confirmed: { bg: 'bg-green-100', text: 'text-green-800', label: 'Đã xác nhận' },
-            pending: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Chờ xác nhận' },
-            'checked-in': { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Đang khám' },
-            cancelled: { bg: 'bg-red-100', text: 'text-red-800', label: 'Đã hủy' },
+        const badges: Record<
+            string,
+            { bg: string; text: string; label: string }
+        > = {
+            confirmed: {
+                bg: 'bg-green-100',
+                text: 'text-green-800',
+                label: 'Đã xác nhận',
+            },
+            pending: {
+                bg: 'bg-yellow-100',
+                text: 'text-yellow-800',
+                label: 'Chờ xác nhận',
+            },
+            'checked-in': {
+                bg: 'bg-blue-100',
+                text: 'text-blue-800',
+                label: 'Đang khám',
+            },
+            cancelled: {
+                bg: 'bg-red-100',
+                text: 'text-red-800',
+                label: 'Đã hủy',
+            },
         };
         const badge = badges[status] || badges.pending;
         return (
-            <span className={`px-2 py-1 rounded text-xs font-medium ${badge.bg} ${badge.text}`}>
+            <span
+                className={`px-2 py-1 rounded text-xs font-medium ${badge.bg} ${badge.text}`}
+            >
                 {badge.label}
             </span>
         );
@@ -86,8 +162,12 @@ export default function AppointmentCard({ appointment, onUpdate }: AppointmentCa
             <div className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                 <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
-                        <h3 className="font-semibold text-lg">{appointment.patientName}</h3>
-                        <p className="text-sm text-gray-600">{appointment.phone}</p>
+                        <h3 className="font-semibold text-lg">
+                            {appointment.patientName}
+                        </h3>
+                        <p className="text-sm text-gray-600">
+                            {appointment.phone}
+                        </p>
                     </div>
                     {getStatusBadge(appointment.status)}
                 </div>
@@ -103,19 +183,21 @@ export default function AppointmentCard({ appointment, onUpdate }: AppointmentCa
                     </div>
                     <div>
                         <span className="text-gray-500">Ngày:</span>
-                        <p className="font-medium">{appointment.date}</p>
+                        <p className="font-medium">{startDateTime.date}</p>
                     </div>
                     <div>
                         <span className="text-gray-500">Giờ:</span>
                         <p className="font-medium">
-                            {appointment.time} ({appointment.duration} phút)
+                            {startDateTime.time} - {endTime} (
+                            {appointment.duration} phút)
                         </p>
                     </div>
                 </div>
 
                 {appointment.notes && (
                     <div className="text-sm bg-gray-50 p-2 rounded mb-3">
-                        <span className="text-gray-500">Ghi chú:</span> {appointment.notes}
+                        <span className="text-gray-500">Ghi chú:</span>{' '}
+                        {appointment.notes}
                     </div>
                 )}
 
@@ -141,7 +223,8 @@ export default function AppointmentCard({ appointment, onUpdate }: AppointmentCa
                         </button>
                     )}
 
-                    {(appointment.status === 'pending' || appointment.status === 'confirmed') && (
+                    {(appointment.status === 'pending' ||
+                        appointment.status === 'confirmed') && (
                         <button
                             onClick={() => setShowCancelDialog(true)}
                             disabled={loading}
@@ -157,9 +240,12 @@ export default function AppointmentCard({ appointment, onUpdate }: AppointmentCa
             {showCancelDialog && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-                        <h3 className="text-lg font-semibold mb-4">Hủy lịch hẹn</h3>
+                        <h3 className="text-lg font-semibold mb-4">
+                            Hủy lịch hẹn
+                        </h3>
                         <p className="text-sm text-gray-600 mb-4">
-                            Bạn có chắc muốn hủy lịch hẹn của <strong>{appointment.patientName}</strong>?
+                            Bạn có chắc muốn hủy lịch hẹn của{' '}
+                            <strong>{appointment.patientName}</strong>?
                         </p>
                         <textarea
                             value={cancelReason}
@@ -188,6 +274,18 @@ export default function AppointmentCard({ appointment, onUpdate }: AppointmentCa
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Credential Modal */}
+            {showCredentialModal && credentials && (
+                <CredentialModal
+                    isOpen={showCredentialModal}
+                    onClose={() => {
+                        setShowCredentialModal(false);
+                        setCredentials(null);
+                    }}
+                    credentials={credentials}
+                />
             )}
         </>
     );
