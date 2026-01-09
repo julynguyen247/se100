@@ -39,23 +39,45 @@ const PaymentResult: React.FC = () => {
     const [bill, setBill] = useState<BillDetail | null>(null);
     const [loading, setLoading] = useState(true);
 
-    const responseCode = searchParams.get('vnp_ResponseCode') || '99';
-    const billId = searchParams.get('vnp_TxnRef');
-    const transactionNo = searchParams.get('vnp_TransactionNo');
-    const amountParam = searchParams.get('vnp_Amount');
+    // Read params from backend redirect (not raw VNPay params)
+    const success = searchParams.get('success');
+    const billId = searchParams.get('billId');
+    const transactionNo = searchParams.get('transactionNo');
+    const amountParam = searchParams.get('amount');
+    const bankCode = searchParams.get('bankCode');
+    const payDate = searchParams.get('payDate');
+    const orderInfo = searchParams.get('orderInfo');
+    const errorCode = searchParams.get('code');
+    const errorMessage = searchParams.get('message');
+    const signatureError = searchParams.get('error');
 
-    const isSuccess = responseCode === '00';
-    const errorMessage =
-        VNPAY_RESPONSE_CODES[responseCode] ||
-        'Lỗi không xác định. Vui lòng liên hệ hỗ trợ.';
-    const amount = amountParam ? parseInt(amountParam) / 100 : 0;
+    const isSuccess = success === 'true';
+    const amount = amountParam ? parseFloat(amountParam) : 0;
+
+    // Get error message from params or lookup table
+    const getErrorMessage = () => {
+        if (signatureError === 'invalid_signature') {
+            return 'Chữ ký giao dịch không hợp lệ. Vui lòng thử lại.';
+        }
+        if (errorMessage) {
+            return decodeURIComponent(errorMessage);
+        }
+        if (errorCode) {
+            return (
+                VNPAY_RESPONSE_CODES[errorCode] ||
+                'Lỗi không xác định. Vui lòng liên hệ hỗ trợ.'
+            );
+        }
+        return 'Giao dịch không thành công.';
+    };
 
     // Log VNPay callback parameters
     console.log('[VNPAY_RESULT] Payment result page loaded');
-    console.log('[VNPAY_RESULT] Response Code:', responseCode);
+    console.log('[VNPAY_RESULT] Success:', success);
     console.log('[VNPAY_RESULT] Bill ID:', billId);
     console.log('[VNPAY_RESULT] Transaction No:', transactionNo);
     console.log('[VNPAY_RESULT] Amount:', amount);
+    console.log('[VNPAY_RESULT] Bank Code:', bankCode);
     console.log('[VNPAY_RESULT] Is Success:', isSuccess);
     console.log(
         '[VNPAY_RESULT] All URL params:',
@@ -132,7 +154,7 @@ const PaymentResult: React.FC = () => {
                         <p className="text-white/90 text-sm">
                             {isSuccess
                                 ? 'Giao dịch của bạn đã được xử lý thành công'
-                                : errorMessage}
+                                : getErrorMessage()}
                         </p>
                     </div>
 
