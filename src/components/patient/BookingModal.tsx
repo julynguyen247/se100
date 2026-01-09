@@ -1,11 +1,27 @@
-import React, { useState, useEffect } from "react";
-import { FiX, FiCalendar, FiUser, FiPhone, FiMail, FiMapPin } from "react-icons/fi";
+import React, { useState, useEffect } from 'react';
 import {
-    getClinics, getServices, getDoctors, getSlots, createBooking,
-    ClinicDto, ServiceDto, DoctorDto, SlotDto
-} from "@/services/apiPatient";
-import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc";
+    FiX,
+    FiCalendar,
+    FiUser,
+    FiPhone,
+    FiMail,
+    FiMapPin,
+} from 'react-icons/fi';
+import {
+    getClinics,
+    getServices,
+    getDoctors,
+    getSlots,
+    createBooking,
+    ClinicDto,
+    ServiceDto,
+    DoctorDto,
+    SlotDto,
+    ProfileData,
+} from '@/services/apiPatient';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import { useAuth } from '@/context/AuthContext';
 dayjs.extend(utc);
 
 type Step = 1 | 2 | 3 | 4;
@@ -30,18 +46,44 @@ const BookingModal: React.FC<BookingModalProps> = ({
     const [doctors, setDoctors] = useState<DoctorDto[]>([]);
     const [slots, setSlots] = useState<SlotDto[]>([]);
 
-    const [selectedClinic, setSelectedClinic] = useState<ClinicDto | null>(null);
-    const [selectedService, setSelectedService] = useState<ServiceDto | null>(null);
-    const [selectedDoctor, setSelectedDoctor] = useState<DoctorDto | null>(null);
-    const [selectedDate, setSelectedDate] = useState<string>("");
+    const [selectedClinic, setSelectedClinic] = useState<ClinicDto | null>(
+        null
+    );
+    const [selectedService, setSelectedService] = useState<ServiceDto | null>(
+        null
+    );
+    const [selectedDoctor, setSelectedDoctor] = useState<DoctorDto | null>(
+        null
+    );
+    const [selectedDate, setSelectedDate] = useState<string>('');
     const [selectedSlot, setSelectedSlot] = useState<SlotDto | null>(null);
 
     const [patientInfo, setPatientInfo] = useState({
-        fullName: "",
-        phone: "",
-        email: "",
-        note: ""
+        fullName: '',
+        phone: '',
+        email: '',
+        note: '',
     });
+
+    const { isAuth } = useAuth();
+    const [patientProfile, setPatientProfile] = useState<ProfileData | null>(
+        null
+    );
+
+    // Load patient profile from localStorage if logged in
+    useEffect(() => {
+        if (isAuth) {
+            const storedProfile = localStorage.getItem('patient_profile');
+            if (storedProfile) {
+                try {
+                    const profile = JSON.parse(storedProfile) as ProfileData;
+                    setPatientProfile(profile);
+                } catch (error) {
+                    console.error('Failed to parse patient profile:', error);
+                }
+            }
+        }
+    }, [isAuth]);
 
     // Reset flow when opening
     useEffect(() => {
@@ -52,17 +94,35 @@ const BookingModal: React.FC<BookingModalProps> = ({
             setSelectedClinic(null);
             setSelectedService(null);
             setSelectedDoctor(null);
-            setSelectedDate("");
+            setSelectedDate('');
             setSelectedSlot(null);
             setSlots([]);
+
+            // Auto-fill patient info if logged in
+            if (patientProfile) {
+                setPatientInfo({
+                    fullName: patientProfile.fullName || '',
+                    phone: patientProfile.phone || '',
+                    email: patientProfile.email || '',
+                    note: '',
+                });
+            } else {
+                // Reset patient info if not logged in
+                setPatientInfo({
+                    fullName: '',
+                    phone: '',
+                    email: '',
+                    note: '',
+                });
+            }
         }
-    }, [isOpen]);
+    }, [isOpen, patientProfile]);
 
     // Cleanup when clinic changes
     useEffect(() => {
         setSelectedService(null);
         setSelectedDoctor(null);
-        setSelectedDate("");
+        setSelectedDate('');
         setSelectedSlot(null);
         setSlots([]);
         setDoctors([]); // Clear doctors too
@@ -71,7 +131,10 @@ const BookingModal: React.FC<BookingModalProps> = ({
     // Refetch doctors when service changes
     useEffect(() => {
         if (selectedClinic && selectedService) {
-            fetchDoctorsForService(selectedClinic.clinicId, selectedService.serviceId);
+            fetchDoctorsForService(
+                selectedClinic.clinicId,
+                selectedService.serviceId
+            );
         }
         // Clear doctor selection when service changes
         setSelectedDoctor(null);
@@ -102,7 +165,10 @@ const BookingModal: React.FC<BookingModalProps> = ({
         }
     };
 
-    const fetchDoctorsForService = async (clinicId: string, serviceId: string) => {
+    const fetchDoctorsForService = async (
+        clinicId: string,
+        serviceId: string
+    ) => {
         setIsLoading(true);
         try {
             const dRes = await getDoctors(clinicId, serviceId);
@@ -121,7 +187,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
             const res = await getSlots(
                 selectedClinic.clinicId,
                 selectedDoctor.doctorId,
-                dayjs(selectedDate).format("YYYY-MM-DD"),
+                dayjs(selectedDate).format('YYYY-MM-DD'),
                 selectedService?.serviceId
             );
             if (res.isSuccess) {
@@ -148,7 +214,6 @@ const BookingModal: React.FC<BookingModalProps> = ({
         }
     }, [selectedDate, selectedDoctor]);
 
-
     const handleConfirmBooking = async () => {
         if (!selectedClinic || !selectedDoctor || !selectedSlot) return;
 
@@ -158,24 +223,25 @@ const BookingModal: React.FC<BookingModalProps> = ({
                 clinicId: selectedClinic.clinicId,
                 doctorId: selectedDoctor.doctorId,
                 serviceId: selectedService?.serviceId,
+                patientId: patientProfile?.id, // ✅ Send patientId if logged in
                 startAt: selectedSlot.startAt,
                 endAt: selectedSlot.endAt,
                 fullName: patientInfo.fullName,
                 phone: patientInfo.phone,
                 email: patientInfo.email,
-                notes: patientInfo.note
+                notes: patientInfo.note,
             });
 
             if (response.isSuccess) {
-                alert("Đặt lịch thành công! Vui lòng kiểm tra email.");
+                alert('Đặt lịch thành công! Vui lòng kiểm tra email.');
                 onSubmit?.(response.data);
                 onClose();
             } else {
-                alert(response.message || "Đặt lịch thất bại");
+                alert(response.message || 'Đặt lịch thất bại');
             }
         } catch (error: any) {
             console.error(error);
-            alert(error.response?.data?.message || "Đã xảy ra lỗi");
+            alert(error.response?.data?.message || 'Đã xảy ra lỗi');
         } finally {
             setIsLoading(false);
         }
@@ -191,18 +257,55 @@ const BookingModal: React.FC<BookingModalProps> = ({
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b shrink-0">
                     <div>
-                        <h2 className="text-lg font-semibold text-slate-900">Đặt lịch khám</h2>
+                        <h2 className="text-lg font-semibold text-slate-900">
+                            Đặt lịch khám
+                        </h2>
                         <div className="flex items-center gap-2 mt-1">
-                            <span className={`text-xs px-2 py-0.5 rounded-full ${step >= 1 ? 'bg-blue-100 text-blue-700 font-medium' : 'bg-slate-100 text-slate-500'}`}>1. Cơ sở</span>
+                            <span
+                                className={`text-xs px-2 py-0.5 rounded-full ${
+                                    step >= 1
+                                        ? 'bg-blue-100 text-blue-700 font-medium'
+                                        : 'bg-slate-100 text-slate-500'
+                                }`}
+                            >
+                                1. Cơ sở
+                            </span>
                             <span className="text-slate-300">/</span>
-                            <span className={`text-xs px-2 py-0.5 rounded-full ${step >= 2 ? 'bg-blue-100 text-blue-700 font-medium' : 'bg-slate-100 text-slate-500'}`}>2. Dịch vụ</span>
+                            <span
+                                className={`text-xs px-2 py-0.5 rounded-full ${
+                                    step >= 2
+                                        ? 'bg-blue-100 text-blue-700 font-medium'
+                                        : 'bg-slate-100 text-slate-500'
+                                }`}
+                            >
+                                2. Dịch vụ
+                            </span>
                             <span className="text-slate-300">/</span>
-                            <span className={`text-xs px-2 py-0.5 rounded-full ${step >= 3 ? 'bg-blue-100 text-blue-700 font-medium' : 'bg-slate-100 text-slate-500'}`}>3. Thời gian</span>
+                            <span
+                                className={`text-xs px-2 py-0.5 rounded-full ${
+                                    step >= 3
+                                        ? 'bg-blue-100 text-blue-700 font-medium'
+                                        : 'bg-slate-100 text-slate-500'
+                                }`}
+                            >
+                                3. Thời gian
+                            </span>
                             <span className="text-slate-300">/</span>
-                            <span className={`text-xs px-2 py-0.5 rounded-full ${step >= 4 ? 'bg-blue-100 text-blue-700 font-medium' : 'bg-slate-100 text-slate-500'}`}>4. Thông tin</span>
+                            <span
+                                className={`text-xs px-2 py-0.5 rounded-full ${
+                                    step >= 4
+                                        ? 'bg-blue-100 text-blue-700 font-medium'
+                                        : 'bg-slate-100 text-slate-500'
+                                }`}
+                            >
+                                4. Thông tin
+                            </span>
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-lg transition">
+                    <button
+                        onClick={onClose}
+                        className="p-2 hover:bg-slate-100 rounded-lg transition"
+                    >
                         <FiX className="w-5 h-5 text-slate-500" />
                     </button>
                 </div>
@@ -212,20 +315,29 @@ const BookingModal: React.FC<BookingModalProps> = ({
                     {/* STEP 1: Select Clinic */}
                     {step === 1 && (
                         <div className="space-y-4">
-                            <h3 className="font-semibold text-slate-800">Chọn phòng khám</h3>
+                            <h3 className="font-semibold text-slate-800">
+                                Chọn phòng khám
+                            </h3>
                             <div className="grid sm:grid-cols-2 gap-3">
-                                {clinics.map(clinic => (
+                                {clinics.map((clinic) => (
                                     <div
                                         key={clinic.clinicId}
-                                        onClick={() => setSelectedClinic(clinic)}
-                                        className={`p-4 rounded-xl border text-left cursor-pointer transition-all hover:shadow-md ${selectedClinic?.clinicId === clinic.clinicId
-                                            ? 'border-blue-500 bg-blue-50/50 ring-1 ring-blue-500'
-                                            : 'border-slate-200 hover:border-blue-300'
-                                            }`}
+                                        onClick={() =>
+                                            setSelectedClinic(clinic)
+                                        }
+                                        className={`p-4 rounded-xl border text-left cursor-pointer transition-all hover:shadow-md ${
+                                            selectedClinic?.clinicId ===
+                                            clinic.clinicId
+                                                ? 'border-blue-500 bg-blue-50/50 ring-1 ring-blue-500'
+                                                : 'border-slate-200 hover:border-blue-300'
+                                        }`}
                                     >
-                                        <div className="font-medium text-slate-900">{clinic.name}</div>
+                                        <div className="font-medium text-slate-900">
+                                            {clinic.name}
+                                        </div>
                                         <div className="text-xs text-slate-500 mt-1 flex items-center gap-1">
-                                            <FiMapPin className="w-3 h-3" /> {clinic.email || "Đang cập nhật"}
+                                            <FiMapPin className="w-3 h-3" />{' '}
+                                            {clinic.email || 'Đang cập nhật'}
                                         </div>
                                     </div>
                                 ))}
@@ -238,20 +350,30 @@ const BookingModal: React.FC<BookingModalProps> = ({
                         <div className="space-y-6">
                             {/* Services */}
                             <div className="space-y-3">
-                                <h3 className="font-semibold text-slate-800">Chọn dịch vụ</h3>
+                                <h3 className="font-semibold text-slate-800">
+                                    Chọn dịch vụ
+                                </h3>
                                 <div className="grid sm:grid-cols-2 gap-3">
-                                    {services.map(svc => (
+                                    {services.map((svc) => (
                                         <div
                                             key={svc.serviceId}
-                                            onClick={() => setSelectedService(svc)}
-                                            className={`p-3 rounded-xl border text-left cursor-pointer transition-all ${selectedService?.serviceId === svc.serviceId
-                                                ? 'border-blue-500 bg-blue-50/50 ring-1 ring-blue-500'
-                                                : 'border-slate-200 hover:border-blue-300'
-                                                }`}
+                                            onClick={() =>
+                                                setSelectedService(svc)
+                                            }
+                                            className={`p-3 rounded-xl border text-left cursor-pointer transition-all ${
+                                                selectedService?.serviceId ===
+                                                svc.serviceId
+                                                    ? 'border-blue-500 bg-blue-50/50 ring-1 ring-blue-500'
+                                                    : 'border-slate-200 hover:border-blue-300'
+                                            }`}
                                         >
-                                            <div className="text-sm font-medium text-slate-900">{svc.name}</div>
+                                            <div className="text-sm font-medium text-slate-900">
+                                                {svc.name}
+                                            </div>
                                             <div className="text-xs text-slate-500 mt-1">
-                                                {svc.defaultPrice?.toLocaleString()} đ • {svc.defaultDurationMin} phút
+                                                {svc.defaultPrice?.toLocaleString()}{' '}
+                                                đ • {svc.defaultDurationMin}{' '}
+                                                phút
                                             </div>
                                         </div>
                                     ))}
@@ -260,37 +382,55 @@ const BookingModal: React.FC<BookingModalProps> = ({
 
                             {/* Doctors */}
                             <div className="space-y-3">
-                                <h3 className="font-semibold text-slate-800">Chọn bác sĩ</h3>
+                                <h3 className="font-semibold text-slate-800">
+                                    Chọn bác sĩ
+                                </h3>
                                 {!selectedService ? (
                                     <div className="text-center py-6 bg-slate-50 rounded-xl">
-                                        <p className="text-sm text-slate-500">Vui lòng chọn dịch vụ trước</p>
+                                        <p className="text-sm text-slate-500">
+                                            Vui lòng chọn dịch vụ trước
+                                        </p>
                                     </div>
                                 ) : isLoading ? (
                                     <div className="text-center py-6">
-                                        <p className="text-sm text-slate-500">Đang tải danh sách bác sĩ...</p>
+                                        <p className="text-sm text-slate-500">
+                                            Đang tải danh sách bác sĩ...
+                                        </p>
                                     </div>
                                 ) : doctors.length === 0 ? (
                                     <div className="text-center py-6 bg-amber-50 rounded-xl">
-                                        <p className="text-sm text-amber-700">Không có bác sĩ nào cung cấp dịch vụ này</p>
+                                        <p className="text-sm text-amber-700">
+                                            Không có bác sĩ nào cung cấp dịch vụ
+                                            này
+                                        </p>
                                     </div>
                                 ) : (
                                     <div className="grid sm:grid-cols-2 gap-3">
-                                        {doctors.map(doc => (
+                                        {doctors.map((doc) => (
                                             <div
                                                 key={doc.doctorId}
-                                                onClick={() => setSelectedDoctor(doc)}
-                                                className={`p-3 rounded-xl border text-left cursor-pointer transition-all ${selectedDoctor?.doctorId === doc.doctorId
-                                                    ? 'border-blue-500 bg-blue-50/50 ring-1 ring-blue-500'
-                                                    : 'border-slate-200 hover:border-blue-300'
-                                                    }`}
+                                                onClick={() =>
+                                                    setSelectedDoctor(doc)
+                                                }
+                                                className={`p-3 rounded-xl border text-left cursor-pointer transition-all ${
+                                                    selectedDoctor?.doctorId ===
+                                                    doc.doctorId
+                                                        ? 'border-blue-500 bg-blue-50/50 ring-1 ring-blue-500'
+                                                        : 'border-slate-200 hover:border-blue-300'
+                                                }`}
                                             >
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
                                                         <FiUser />
                                                     </div>
                                                     <div>
-                                                        <div className="text-sm font-medium text-slate-900">{doc.fullName}</div>
-                                                        <div className="text-xs text-slate-500">{doc.specialty || "Bác sĩ"}</div>
+                                                        <div className="text-sm font-medium text-slate-900">
+                                                            {doc.fullName}
+                                                        </div>
+                                                        <div className="text-xs text-slate-500">
+                                                            {doc.specialty ||
+                                                                'Bác sĩ'}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -306,15 +446,23 @@ const BookingModal: React.FC<BookingModalProps> = ({
                         <div className="space-y-6">
                             {/* Date Picker */}
                             <div className="space-y-2">
-                                <label className="block text-sm font-medium text-slate-700">Ngày khám</label>
+                                <label className="block text-sm font-medium text-slate-700">
+                                    Ngày khám
+                                </label>
                                 <div className="relative">
                                     <FiCalendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                                     <input
                                         type="date"
                                         className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
-                                        min={new Date().toISOString().split('T')[0]}
+                                        min={
+                                            new Date()
+                                                .toISOString()
+                                                .split('T')[0]
+                                        }
                                         value={selectedDate}
-                                        onChange={(e) => setSelectedDate(e.target.value)}
+                                        onChange={(e) =>
+                                            setSelectedDate(e.target.value)
+                                        }
                                     />
                                 </div>
                             </div>
@@ -322,29 +470,44 @@ const BookingModal: React.FC<BookingModalProps> = ({
                             {/* Slot Grid */}
                             {selectedDate && (
                                 <div className="space-y-3">
-                                    <h3 className="font-semibold text-slate-800">Giờ khám còn trống</h3>
+                                    <h3 className="font-semibold text-slate-800">
+                                        Giờ khám còn trống
+                                    </h3>
                                     {isLoading ? (
-                                        <div className="text-center py-4 text-slate-500 text-sm">Đang tải lịch...</div>
+                                        <div className="text-center py-4 text-slate-500 text-sm">
+                                            Đang tải lịch...
+                                        </div>
                                     ) : slots.length === 0 ? (
-                                        <div className="text-center py-4 text-slate-500 text-sm bg-slate-50 rounded-lg">Không có lịch trống cho ngày này</div>
+                                        <div className="text-center py-4 text-slate-500 text-sm bg-slate-50 rounded-lg">
+                                            Không có lịch trống cho ngày này
+                                        </div>
                                     ) : (
                                         <div className="grid grid-cols-4 gap-2">
                                             {slots.map((slot, idx) => {
                                                 // Display time as-is (UTC = clinic local time)
-                                                const timeLabel = dayjs.utc(slot.startAt).format("HH:mm");
-                                                const isSelected = selectedSlot?.startAt === slot.startAt;
+                                                const timeLabel = dayjs
+                                                    .utc(slot.startAt)
+                                                    .format('HH:mm');
+                                                const isSelected =
+                                                    selectedSlot?.startAt ===
+                                                    slot.startAt;
                                                 return (
                                                     <button
                                                         key={idx}
-                                                        onClick={() => setSelectedSlot(slot)}
-                                                        className={`py-2 text-sm rounded-lg border transition-all ${isSelected
-                                                            ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                                                            : 'bg-white text-slate-700 border-slate-200 hover:border-blue-400'
-                                                            }`}
+                                                        onClick={() =>
+                                                            setSelectedSlot(
+                                                                slot
+                                                            )
+                                                        }
+                                                        className={`py-2 text-sm rounded-lg border transition-all ${
+                                                            isSelected
+                                                                ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                                                                : 'bg-white text-slate-700 border-slate-200 hover:border-blue-400'
+                                                        }`}
                                                     >
                                                         {timeLabel}
                                                     </button>
-                                                )
+                                                );
                                             })}
                                         </div>
                                     )}
@@ -357,23 +520,44 @@ const BookingModal: React.FC<BookingModalProps> = ({
                     {step === 4 && (
                         <div className="space-y-5">
                             <div className="bg-blue-50 p-4 rounded-xl space-y-2 text-sm">
-                                <div className="font-semibold text-blue-900 border-b border-blue-100 pb-2 mb-2">Thông tin đặt khám</div>
-                                <div className="flex justify-between">
-                                    <span className="text-slate-500">Cơ sở:</span>
-                                    <span className="font-medium text-slate-900">{selectedClinic?.name}</span>
+                                <div className="font-semibold text-blue-900 border-b border-blue-100 pb-2 mb-2">
+                                    Thông tin đặt khám
                                 </div>
                                 <div className="flex justify-between">
-                                    <span className="text-slate-500">Dịch vụ:</span>
-                                    <span className="font-medium text-slate-900">{selectedService ? selectedService.name : "Khám bệnh"}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-slate-500">Bác sĩ:</span>
-                                    <span className="font-medium text-slate-900">{selectedDoctor?.fullName}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-slate-500">Thời gian:</span>
+                                    <span className="text-slate-500">
+                                        Cơ sở:
+                                    </span>
                                     <span className="font-medium text-slate-900">
-                                        {selectedSlot && dayjs.utc(selectedSlot.startAt).format("HH:mm DD/MM/YYYY")}
+                                        {selectedClinic?.name}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-slate-500">
+                                        Dịch vụ:
+                                    </span>
+                                    <span className="font-medium text-slate-900">
+                                        {selectedService
+                                            ? selectedService.name
+                                            : 'Khám bệnh'}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-slate-500">
+                                        Bác sĩ:
+                                    </span>
+                                    <span className="font-medium text-slate-900">
+                                        {selectedDoctor?.fullName}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-slate-500">
+                                        Thời gian:
+                                    </span>
+                                    <span className="font-medium text-slate-900">
+                                        {selectedSlot &&
+                                            dayjs
+                                                .utc(selectedSlot.startAt)
+                                                .format('HH:mm DD/MM/YYYY')}
                                     </span>
                                 </div>
                             </div>
@@ -381,49 +565,78 @@ const BookingModal: React.FC<BookingModalProps> = ({
                             <div className="space-y-4">
                                 <div className="grid sm:grid-cols-2 gap-4">
                                     <div className="space-y-1.5">
-                                        <label className="text-xs font-medium text-slate-700">Họ và tên *</label>
+                                        <label className="text-xs font-medium text-slate-700">
+                                            Họ và tên *
+                                        </label>
                                         <div className="relative">
                                             <FiUser className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                                             <input
                                                 type="text"
                                                 className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                                                 value={patientInfo.fullName}
-                                                onChange={e => setPatientInfo({ ...patientInfo, fullName: e.target.value })}
+                                                onChange={(e) =>
+                                                    setPatientInfo({
+                                                        ...patientInfo,
+                                                        fullName:
+                                                            e.target.value,
+                                                    })
+                                                }
                                             />
                                         </div>
                                     </div>
                                     <div className="space-y-1.5">
-                                        <label className="text-xs font-medium text-slate-700">Số điện thoại *</label>
+                                        <label className="text-xs font-medium text-slate-700">
+                                            Số điện thoại *
+                                        </label>
                                         <div className="relative">
                                             <FiPhone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                                             <input
                                                 type="text"
                                                 className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                                                 value={patientInfo.phone}
-                                                onChange={e => setPatientInfo({ ...patientInfo, phone: e.target.value })}
+                                                onChange={(e) =>
+                                                    setPatientInfo({
+                                                        ...patientInfo,
+                                                        phone: e.target.value,
+                                                    })
+                                                }
                                             />
                                         </div>
                                     </div>
                                 </div>
                                 <div className="space-y-1.5">
-                                    <label className="text-xs font-medium text-slate-700">Email</label>
+                                    <label className="text-xs font-medium text-slate-700">
+                                        Email
+                                    </label>
                                     <div className="relative">
                                         <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                                         <input
                                             type="email"
                                             className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                                             value={patientInfo.email}
-                                            onChange={e => setPatientInfo({ ...patientInfo, email: e.target.value })}
+                                            onChange={(e) =>
+                                                setPatientInfo({
+                                                    ...patientInfo,
+                                                    email: e.target.value,
+                                                })
+                                            }
                                         />
                                     </div>
                                 </div>
                                 <div className="space-y-1.5">
-                                    <label className="text-xs font-medium text-slate-700">Ghi chú</label>
+                                    <label className="text-xs font-medium text-slate-700">
+                                        Ghi chú
+                                    </label>
                                     <textarea
                                         rows={2}
                                         className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                                         value={patientInfo.note}
-                                        onChange={e => setPatientInfo({ ...patientInfo, note: e.target.value })}
+                                        onChange={(e) =>
+                                            setPatientInfo({
+                                                ...patientInfo,
+                                                note: e.target.value,
+                                            })
+                                        }
                                         placeholder="Triệu chứng hoặc yêu cầu đặc biệt..."
                                     />
                                 </div>
@@ -436,7 +649,9 @@ const BookingModal: React.FC<BookingModalProps> = ({
                 <div className="px-6 py-4 border-t bg-slate-50 flex gap-3 shrink-0">
                     {step > 1 && (
                         <button
-                            onClick={() => setStep(prev => (prev - 1) as Step)}
+                            onClick={() =>
+                                setStep((prev) => (prev - 1) as Step)
+                            }
                             className="px-6 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 font-medium hover:bg-slate-50 transition"
                         >
                             Quay lại
@@ -454,11 +669,18 @@ const BookingModal: React.FC<BookingModalProps> = ({
                             (step === 1 && !selectedClinic) ||
                             (step === 2 && !selectedDoctor) ||
                             (step === 3 && !selectedSlot) ||
-                            (step === 4 && (!patientInfo.fullName || !patientInfo.phone || isLoading))
+                            (step === 4 &&
+                                (!patientInfo.fullName ||
+                                    !patientInfo.phone ||
+                                    isLoading))
                         }
                         className="flex-1 px-6 py-2.5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {step === 4 ? (isLoading ? "Đang xử lý..." : "Xác nhận đặt lịch") : "Tiếp tục"}
+                        {step === 4
+                            ? isLoading
+                                ? 'Đang xử lý...'
+                                : 'Xác nhận đặt lịch'
+                            : 'Tiếp tục'}
                     </button>
                 </div>
             </div>

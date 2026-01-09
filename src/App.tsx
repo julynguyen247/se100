@@ -1,55 +1,64 @@
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import GuestLayout from "./components/layouts/GuestLayout";
-import PatientLayout from "./components/layouts/PatientLayout";
-import AdminLayout from "./components/layouts/AdminLayout";
-import DoctorLayout from "./components/layouts/DoctorLayout";
-import ReceptionistLayout from "./components/layouts/ReceptionistLayout";
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import GuestLayout from './components/layouts/GuestLayout';
+import PatientLayout from './components/layouts/PatientLayout';
+import AdminLayout from './components/layouts/AdminLayout';
+import DoctorLayout from './components/layouts/DoctorLayout';
+import ReceptionistLayout from './components/layouts/ReceptionistLayout';
 
 // Guest Pages
-import HomePage from "./pages/guest/HomePage";
-import LoginPage from "./pages/guest/LoginPage";
-import RegisterPage from "./pages/guest/RegisterPage";
-import BookingPage from "./pages/patient/booking";
+import HomePage from './pages/guest/HomePage';
+import LoginPage from './pages/guest/LoginPage';
+import RegisterPage from './pages/guest/RegisterPage';
+import BookingPage from './pages/guest/booking';
+import CancelAppointmentPage from './pages/guest/CancelAppointmentPage';
+import RescheduleAppointmentPage from './pages/guest/RescheduleAppointmentPage';
 
 // Patient Pages
-import PatientDashboard from "./pages/patient/dashboard";
-import MyProfilePage from "./pages/patient/info";
-import MyAppointmentsPage from "./pages/patient/appointment";
-import MedicalHistoryPage from "./pages/patient/medicalHistory";
+import PatientDashboard from './pages/patient/dashboard';
+import MyProfilePage from './pages/patient/info';
+import MyAppointmentsPage from './pages/patient/appointment';
+import MedicalHistoryPage from './pages/patient/medicalHistory';
 
 // Admin Pages
-import Dashboard from "./pages/admin/dashboard";
-import UserManagementPage from "./pages/admin/users";
-import AdminReportsPage from "./pages/admin/report";
-import AdminSettingsPage from "./pages/admin/setting";
+import Dashboard from './pages/admin/dashboard';
+import UserManagementPage from './pages/admin/users';
+import AdminReportsPage from './pages/admin/report';
+import AdminSettingsPage from './pages/admin/setting';
+import MedicinesPage from './pages/admin/medicines';
 
 // Doctor Pages
-import DoctorDashboard from "./pages/doctor/dashboard";
-import DoctorQueue from "./pages/doctor/queue";
-import DoctorPatients from "./pages/doctor/patients";
-import DoctorTreatment from "./pages/doctor/treatment";
-import DoctorPrescription from "./pages/doctor/prescription";
+import DoctorDashboard from './pages/doctor/dashboard';
+import DoctorQueue from './pages/doctor/queue';
+import DoctorPatients from './pages/doctor/patients';
+import DoctorTreatment from './pages/doctor/treatment';
+import DoctorPrescription from './pages/doctor/prescription';
 
 // Receptionist Pages
-import ReceptionistDashboard from "./pages/receptionist/dashboard";
-import ReceptionistQueue from "./pages/receptionist/queue";
-import ReceptionistAppointments from "./pages/receptionist/appointments";
-import ReceptionistPatients from "./pages/receptionist/patients";
-import ReceptionistBilling from "./pages/receptionist/billing";
+import ReceptionistDashboard from './pages/receptionist/dashboard';
+import ReceptionistQueue from './pages/receptionist/queue';
+import ReceptionistAppointments from './pages/receptionist/appointments';
+import ReceptionistPatients from './pages/receptionist/patients';
+import ReceptionistBilling from './pages/receptionist/billing';
+import PaymentResult from './pages/receptionist/PaymentResult';
 
 const router = createBrowserRouter([
     {
-        path: "/",
+        path: '/',
         Component: GuestLayout,
         children: [
             { index: true, Component: HomePage },
-            { path: "login", Component: LoginPage },
-            { path: "register", Component: RegisterPage },
-            { path: "booking", Component: BookingPage },
+            { path: 'login', Component: LoginPage },
+            { path: 'register', Component: RegisterPage },
+            { path: 'booking', Component: BookingPage },
+            { path: 'cancel-appointment', Component: CancelAppointmentPage },
+            {
+                path: 'reschedule-appointment',
+                Component: RescheduleAppointmentPage,
+            },
         ],
     },
     {
-        path: "/patient",
+        path: '/patient',
         Component: PatientLayout,
         children: [
             {
@@ -57,21 +66,21 @@ const router = createBrowserRouter([
                 element: <PatientDashboard />,
             },
             {
-                path: "appointments",
+                path: 'appointments',
                 element: <MyAppointmentsPage />,
             },
             {
-                path: "medical-history",
+                path: 'medical-history',
                 element: <MedicalHistoryPage />,
             },
             {
-                path: "profile",
+                path: 'profile',
                 element: <MyProfilePage />,
             },
         ],
     },
     {
-        path: "/admin",
+        path: '/admin',
         Component: AdminLayout,
         children: [
             {
@@ -79,21 +88,25 @@ const router = createBrowserRouter([
                 element: <Dashboard />,
             },
             {
-                path: "users",
+                path: 'users',
                 element: <UserManagementPage />,
             },
             {
-                path: "reports",
+                path: 'reports',
                 element: <AdminReportsPage />,
             },
             {
-                path: "settings",
+                path: 'settings',
                 element: <AdminSettingsPage />,
+            },
+            {
+                path: 'medicines',
+                element: <MedicinesPage />,
             },
         ],
     },
     {
-        path: "/doctor",
+        path: '/doctor',
         Component: DoctorLayout,
         children: [
             {
@@ -101,25 +114,29 @@ const router = createBrowserRouter([
                 element: <DoctorDashboard />,
             },
             {
-                path: "queue",
+                path: 'queue',
                 element: <DoctorQueue />,
             },
             {
-                path: "patients",
+                path: 'patients',
                 element: <DoctorPatients />,
             },
             {
-                path: "treatment",
+                path: 'treatment',
                 element: <DoctorTreatment />,
             },
             {
-                path: "prescription",
+                path: 'prescription',
                 element: <DoctorPrescription />,
+            },
+            {
+                path: 'medicines',
+                element: <MedicinesPage />,
             },
         ],
     },
     {
-        path: "/receptionist",
+        path: '/receptionist',
         Component: ReceptionistLayout,
         children: [
             {
@@ -127,20 +144,29 @@ const router = createBrowserRouter([
                 element: <ReceptionistDashboard />,
             },
             {
-                path: "queue",
+                path: 'queue',
                 element: <ReceptionistQueue />,
             },
             {
-                path: "appointments",
+                path: 'appointments',
                 element: <ReceptionistAppointments />,
             },
             {
-                path: "patients",
+                path: 'patients',
                 element: <ReceptionistPatients />,
             },
             {
-                path: "billing",
+                path: 'billing',
                 element: <ReceptionistBilling />,
+            },
+        ],
+    },
+    {
+        path: '/payment',
+        children: [
+            {
+                path: 'result',
+                element: <PaymentResult />,
             },
         ],
     },
