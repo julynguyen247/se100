@@ -505,3 +505,353 @@ export const deleteDoctorTimeOff = async (
   const url = `/api/admin/doctor/time-off/${timeOffId}`;
   return axios.delete<IBackendRes<unknown>>(url);
 };
+
+// ================== SERVICE MANAGEMENT ==================
+
+export interface ServiceItem {
+  serviceId: string;
+  clinicId: string;
+  code: string;
+  name: string;
+  description: string | null;
+  durationMinutes: number;
+  price: number;
+  isActive: boolean;
+}
+
+export interface CreateServiceRequest {
+  clinicId: string;
+  code: string;
+  name: string;
+  description?: string;
+  durationMinutes: number;
+  price: number;
+}
+
+export interface UpdateServiceRequest {
+  clinicId: string;
+  code: string;
+  name: string;
+  description?: string;
+  durationMinutes: number;
+  price: number;
+}
+
+/**
+ * GET /api/admin/service
+ * Lấy danh sách tất cả dịch vụ
+ */
+export const getServices = async (): Promise<ServiceItem[]> => {
+  const url = "/api/admin/service";
+  const response = await axios.get<IBackendRes<ServiceItem[]>>(url);
+
+  if (response.isSuccess && response.data) {
+    return response.data;
+  }
+
+  throw new Error(response.message || "Không thể tải danh sách dịch vụ");
+};
+
+/**
+ * POST /api/admin/service
+ * Tạo dịch vụ mới
+ */
+export const createService = async (
+  payload: CreateServiceRequest
+): Promise<IBackendRes<unknown>> => {
+  const url = "/api/admin/service";
+  return axios.post<IBackendRes<unknown>>(url, payload);
+};
+
+/**
+ * PUT /api/admin/service/{serviceId}
+ * Cập nhật dịch vụ
+ */
+export const updateService = async (
+  serviceId: string,
+  payload: UpdateServiceRequest
+): Promise<IBackendRes<unknown>> => {
+  const url = `/api/admin/service/${serviceId}`;
+  return axios.put<IBackendRes<unknown>>(url, payload);
+};
+
+/**
+ * DELETE /api/admin/service/{serviceId}
+ * Xóa dịch vụ
+ */
+export const deleteService = async (
+  serviceId: string
+): Promise<IBackendRes<unknown>> => {
+  const url = `/api/admin/service/${serviceId}`;
+  return axios.delete<IBackendRes<unknown>>(url);
+};
+
+// ================== MEDICINE MANAGEMENT ==================
+
+export interface MedicineItem {
+  medicineId: string;
+  code: string;
+  name: string;
+  description: string | null;
+  unit: string;
+  unitPrice: number;
+  stockQuantity: number;
+  minStockLevel: number;
+  isActive: boolean;
+}
+
+export interface CreateMedicineRequest {
+  code: string;
+  name: string;
+  description?: string;
+  unit: string;
+  unitPrice: number;
+  stockQuantity: number;
+  minStockLevel: number;
+}
+
+export interface UpdateMedicineRequest {
+  code: string;
+  name: string;
+  description?: string;
+  unit: string;
+  unitPrice: number;
+  stockQuantity: number;
+  minStockLevel: number;
+}
+
+/**
+ * GET /api/medicines
+ * Lấy danh sách tất cả thuốc
+ */
+export const getMedicines = async (): Promise<MedicineItem[]> => {
+  const url = "/api/medicines";
+  const response = await axios.get<IBackendRes<MedicineItem[]>>(url);
+
+  if (response.isSuccess && response.data) {
+    return response.data;
+  }
+
+  throw new Error(response.message || "Không thể tải danh sách thuốc");
+};
+
+/**
+ * POST /api/medicines
+ * Tạo thuốc mới
+ */
+export const createMedicine = async (
+  payload: CreateMedicineRequest
+): Promise<IBackendRes<unknown>> => {
+  const url = "/api/medicines";
+  return axios.post<IBackendRes<unknown>>(url, payload);
+};
+
+/**
+ * PUT /api/medicines/{medicineId}
+ * Cập nhật thuốc
+ */
+export const updateMedicine = async (
+  medicineId: string,
+  payload: UpdateMedicineRequest
+): Promise<IBackendRes<unknown>> => {
+  const url = `/api/medicines/${medicineId}`;
+  return axios.put<IBackendRes<unknown>>(url, payload);
+};
+
+/**
+ * DELETE /api/medicines/{medicineId}
+ * Xóa thuốc
+ */
+export const deleteMedicine = async (
+  medicineId: string
+): Promise<IBackendRes<unknown>> => {
+  const url = `/api/medicines/${medicineId}`;
+  return axios.delete<IBackendRes<unknown>>(url);
+};
+
+
+// ================== ADMIN REPORTS & DASHBOARD ==================
+
+/**
+ * Admin Dashboard Statistics
+ * Tương ứng với AdminDashboardStatsDto từ backend
+ */
+export interface AdminDashboardStatsDto {
+  totalPatients: number;
+  totalAppointments: number;
+  totalRevenue: number;
+  satisfactionRate: number;
+  totalDoctors: number;
+  totalStaff: number;
+  activeClinics: number;
+}
+
+/**
+ * Patient Report Item
+ * Tương ứng với PatientReportItemDto từ backend
+ */
+export interface PatientReportItemDto {
+  id: string;
+  patientCode: string;
+  fullName: string;
+  phone: string | null;
+  email: string | null;
+  gender: string | null;
+  dob: string | null; // ISO date
+  totalVisits: number;
+  createdAt: string; // ISO datetime
+  updatedAt: string; // ISO datetime
+}
+
+/**
+ * Historical Statistics
+ * Tương ứng với HistoricalStatsDto từ backend
+ */
+export interface HistoricalStatsDto {
+  period: string; // "2026-01"
+  periodStart: string; // ISO datetime
+  periodEnd: string; // ISO datetime
+  revenue: number;
+  totalVisits: number;
+  newPatients: number;
+  completedAppointments: number;
+  cancelledAppointments: number;
+}
+
+/**
+ * Appointment Report
+ * Tương ứng với AppointmentReportDto từ backend
+ */
+export interface AppointmentReportDto {
+  month: string; // "2026-01"
+  totalAppointments: number;
+  completedAppointments: number;
+  cancelledAppointments: number;
+  noShowAppointments: number;
+  pendingAppointments: number;
+}
+
+/**
+ * Rating Distribution
+ * Tương ứng với RatingDistributionDto từ backend
+ */
+export interface RatingDistributionDto {
+  fiveStar: number;
+  fourStar: number;
+  threeStar: number;
+  twoStar: number;
+  oneStar: number;
+}
+
+/**
+ * Review Statistics
+ * Tương ứng với ReviewStatsDto từ backend
+ */
+export interface ReviewStatsDto {
+  averageRating: number;
+  totalReviews: number;
+  satisfactionRate: number;
+  ratingDistribution: RatingDistributionDto;
+}
+
+/**
+ * GET /api/admin/dashboard/stats
+ * Lấy thống kê tổng quan dashboard cho admin
+ */
+export const getAdminDashboardStatsNew = async (): Promise<AdminDashboardStatsDto> => {
+  const url = "/api/admin/dashboard/stats";
+  const response = await axios.get<IBackendRes<AdminDashboardStatsDto>>(url);
+
+  if (response.isSuccess && response.data) {
+    return response.data;
+  }
+
+  throw new Error(response.message || "Không thể tải thống kê dashboard");
+};
+
+/**
+ * GET /api/admin/report/patients?month={month}&year={year}
+ * Lấy báo cáo bệnh nhân (có filter theo tháng/năm)
+ */
+export const getPatientReport = async (
+  month?: number,
+  year?: number
+): Promise<PatientReportItemDto[]> => {
+  let url = "/api/admin/report/patients";
+  const params: string[] = [];
+
+  if (month !== undefined) params.push(`month=${month}`);
+  if (year !== undefined) params.push(`year=${year}`);
+
+  if (params.length > 0) {
+    url += `?${params.join("&")}`;
+  }
+
+  const response = await axios.get<IBackendRes<PatientReportItemDto[]>>(url);
+
+  if (response.isSuccess && response.data) {
+    return response.data;
+  }
+
+  throw new Error(response.message || "Không thể tải báo cáo bệnh nhân");
+};
+
+/**
+ * GET /api/admin/report/historical-stats?startDate={startDate}&endDate={endDate}
+ * Lấy thống kê lịch sử (mặc định 12 tháng gần nhất)
+ */
+export const getHistoricalStats = async (
+  startDate?: string, // ISO datetime
+  endDate?: string    // ISO datetime
+): Promise<HistoricalStatsDto[]> => {
+  let url = "/api/admin/report/historical-stats";
+  const params: string[] = [];
+
+  if (startDate) params.push(`startDate=${encodeURIComponent(startDate)}`);
+  if (endDate) params.push(`endDate=${encodeURIComponent(endDate)}`);
+
+  if (params.length > 0) {
+    url += `?${params.join("&")}`;
+  }
+
+  const response = await axios.get<IBackendRes<HistoricalStatsDto[]>>(url);
+
+  if (response.isSuccess && response.data) {
+    return response.data;
+  }
+
+  throw new Error(response.message || "Không thể tải thống kê lịch sử");
+};
+
+/**
+ * GET /api/admin/report/appointment?month={month}&year={year}
+ * Lấy báo cáo lịch hẹn theo tháng/năm
+ */
+export const getAppointmentReport = async (
+  month: number,
+  year: number
+): Promise<AppointmentReportDto> => {
+  const url = `/api/admin/report/appointment?month=${month}&year=${year}`;
+  const response = await axios.get<IBackendRes<AppointmentReportDto>>(url);
+
+  if (response.isSuccess && response.data) {
+    return response.data;
+  }
+
+  throw new Error(response.message || "Không thể tải báo cáo lịch hẹn");
+};
+
+/**
+ * GET /api/admin/reviews/stats
+ * Lấy thống kê đánh giá
+ */
+export const getReviewStats = async (): Promise<ReviewStatsDto> => {
+  const url = "/api/admin/reviews/stats";
+  const response = await axios.get<IBackendRes<ReviewStatsDto>>(url);
+
+  if (response.isSuccess && response.data) {
+    return response.data;
+  }
+
+  throw new Error(response.message || "Không thể tải thống kê đánh giá");
+};
