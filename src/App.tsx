@@ -20,7 +20,7 @@ import MyAppointmentsPage from './pages/patient/appointment';
 import MedicalHistoryPage from './pages/patient/medicalHistory';
 
 // Admin Pages
-import Dashboard from './pages/admin/dashboard';
+import AdminDashboardPage from './pages/admin/dashboard';
 import StaffManagementPage from './pages/admin/staff';
 import PatientManagementPage from './pages/admin/patients';
 import DoctorManagementPage from './pages/admin/doctors';
@@ -57,7 +57,7 @@ const router = createBrowserRouter([
                 path: 'appointment/reschedule',
                 Component: AppointmentReschedule,
             },
-            
+
         ],
     },
     {
@@ -88,7 +88,7 @@ const router = createBrowserRouter([
         children: [
             {
                 index: true,
-                element: <Dashboard />,
+                element: <AdminDashboardPage />,
             },
             {
                 path: 'staff',

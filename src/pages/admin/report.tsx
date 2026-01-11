@@ -54,18 +54,12 @@ const AdminReportsPage: React.FC = () => {
 
   // Bills table state
   const [bills, setBills] = useState<BillListItem[]>([]);
-  const [loadingBills, setLoadingBills] = useState(false);
-  const [errorBills, setErrorBills] = useState<string | null>(null);
 
   // Appointments table state
   const [appointments, setAppointments] = useState<ReceptionistAppointment[]>([]);
-  const [loadingAppointments, setLoadingAppointments] = useState(false);
-  const [errorAppointments, setErrorAppointments] = useState<string | null>(null);
 
   // Patients table state
   const [patients, setPatients] = useState<PatientItem[]>([]);
-  const [loadingPatients, setLoadingPatients] = useState(false);
-  const [errorPatients, setErrorPatients] = useState<string | null>(null);
 
   // Get current and previous month in YYYY-MM format
   const getCurrentMonth = () => {
@@ -422,117 +416,15 @@ const AdminReportsPage: React.FC = () => {
     }
   };
 
-  const loadBills = async () => {
-    try {
-      setLoadingBills(true);
-      setErrorBills(null);
-      const result = await getBills();
-      if (result.isSuccess && result.data) {
-        // Filter only paid bills and sort by createdAt descending
-        const paidBills = result.data
-          .filter((bill) => bill.status === BillStatus.Paid)
-          .sort((a, b) => {
-            const dateA = new Date(a.createdAt).getTime();
-            const dateB = new Date(b.createdAt).getTime();
-            return dateB - dateA; // Newest first
-          });
-        setBills(paidBills);
-      } else {
-        setErrorBills("Không thể tải danh sách hóa đơn");
-      }
-    } catch (err) {
-      console.error("Failed to load bills:", err);
-      setErrorBills(
-        err instanceof Error ? err.message : "Không thể tải danh sách hóa đơn"
-      );
-    } finally {
-      setLoadingBills(false);
-    }
-  };
+
 
   const handleBackToOverview = () => {
     setViewMode('overview');
   };
 
-  const loadAppointments = async () => {
-    try {
-      setLoadingAppointments(true);
-      setErrorAppointments(null);
 
-      const currentMonth = getCurrentMonth();
-      const currentRange = getMonthDateRange(currentMonth);
-      const days = getDaysInMonth(currentRange.fromDate);
 
-      // Fetch appointments for all days in current month
-      const appointmentsPromises = days.map(day =>
-        getAppointments({
-          date: day,
-          status: "completed",
-        }).catch(() => ({ isSuccess: false, data: [] }))
-      );
 
-      const results = await Promise.all(appointmentsPromises);
-      const allAppointments = results
-        .filter(res => res.isSuccess && res.data)
-        .flatMap(res => res.data || []);
-
-      // Sort by date descending
-      const sortedAppointments = allAppointments.sort((a, b) => {
-        const dateA = a.date ? new Date(a.date).getTime() : 0;
-        const dateB = b.date ? new Date(b.date).getTime() : 0;
-        return dateB - dateA; // Newest first
-      });
-
-      setAppointments(sortedAppointments);
-    } catch (err) {
-      console.error("Failed to load appointments:", err);
-      setErrorAppointments(
-        err instanceof Error ? err.message : "Không thể tải danh sách lượt khám"
-      );
-    } finally {
-      setLoadingAppointments(false);
-    }
-  };
-
-  const loadPatients = async () => {
-    try {
-      setLoadingPatients(true);
-      setErrorPatients(null);
-
-      const currentMonth = getCurrentMonth();
-      const currentRange = getMonthDateRange(currentMonth);
-      const currentRangeStart = new Date(currentRange.fromDate);
-      currentRangeStart.setHours(0, 0, 0, 0);
-      const currentRangeEnd = new Date(currentRange.toDate);
-      currentRangeEnd.setHours(23, 59, 59, 999);
-
-      const result = await getPatients();
-      if (result && result.length > 0) {
-        const newPatients = result
-          .filter((patient: PatientItem) => {
-            if (!patient.createdAt) return false;
-            const patientDate = new Date(patient.createdAt);
-            return patientDate >= currentRangeStart && patientDate <= currentRangeEnd;
-          })
-          .sort((a: PatientItem, b: PatientItem) => {
-            const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-            const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-            return dateB - dateA;
-          });
-
-        setPatients(newPatients);
-      } else {
-        setErrorPatients("Không thể tải danh sách bệnh nhân");
-      }
-    } catch (err) {
-      console.error("Failed to load patients:", err);
-      setErrorPatients(
-        err instanceof Error ? err.message : "Không thể tải danh sách bệnh nhân"
-      );
-    } finally {
-      setLoadingPatients(false);
-    }
-  };
 
   // Format date to DD/MM/YYYY
   const formatDate = (dateString: string) => {
