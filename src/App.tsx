@@ -21,7 +21,9 @@ import MedicalHistoryPage from './pages/patient/medicalHistory';
 
 // Admin Pages
 import Dashboard from './pages/admin/dashboard';
-import UserManagementPage from './pages/admin/users';
+import StaffManagementPage from './pages/admin/staff';
+import PatientManagementPage from './pages/admin/patients';
+import DoctorManagementPage from './pages/admin/doctors';
 import AdminReportsPage from './pages/admin/report';
 import AdminSettingsPage from './pages/admin/setting';
 import MedicinesPage from './pages/admin/medicines';
@@ -89,8 +91,16 @@ const router = createBrowserRouter([
                 element: <Dashboard />,
             },
             {
-                path: 'users',
-                element: <UserManagementPage />,
+                path: 'staff',
+                element: <StaffManagementPage />,
+            },
+            {
+                path: 'patients',
+                element: <PatientManagementPage />,
+            },
+            {
+                path: 'doctors',
+                element: <DoctorManagementPage />,
             },
             {
                 path: 'reports',

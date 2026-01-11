@@ -14,9 +14,11 @@ import {
   getAdminDashboardStats,
   getPatients,
   getTodayAppointments,
+  getBillingStats,
   type AdminDashboardStats,
   type PatientItem,
   type TodayAppointmentItem,
+  type BillingStats,
 } from "@/services/apiAdmin";
 import {
   formatVND,
@@ -29,7 +31,7 @@ const AdminDashboardPage: React.FC = () => {
   const [stats, setStats] = useState<AdminDashboardStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(true);
   const [errorStats, setErrorStats] = useState<string | null>(null);
-  
+
   // Patients list state
   const [showPatientsList, setShowPatientsList] = useState(false);
   const [patients, setPatients] = useState<PatientItem[]>([]);
@@ -46,6 +48,10 @@ const AdminDashboardPage: React.FC = () => {
   const [totalAppointmentsCount, setTotalAppointmentsCount] = useState<number | null>(null);
   const [loadingTotalAppointments, setLoadingTotalAppointments] = useState(false);
 
+  // Billing stats state
+  const [billingStats, setBillingStats] = useState<BillingStats | null>(null);
+  const [loadingBilling, setLoadingBilling] = useState(false);
+
   // Fetch dashboard stats
   const fetchDashboardStats = async () => {
     try {
@@ -60,6 +66,20 @@ const AdminDashboardPage: React.FC = () => {
       );
     } finally {
       setLoadingStats(false);
+    }
+  };
+
+  // Fetch billing stats
+  const fetchBillingStats = async () => {
+    try {
+      setLoadingBilling(true);
+      const data = await getBillingStats();
+      setBillingStats(data);
+    } catch (error) {
+      console.error("Error fetching billing stats:", error);
+      // Don't set error state, just log it
+    } finally {
+      setLoadingBilling(false);
     }
   };
 
@@ -112,7 +132,7 @@ const AdminDashboardPage: React.FC = () => {
     try {
       setLoadingTotalAppointments(true);
       const data = await getTodayAppointments(100); // Get more to count
-      
+
       // Đảm bảo data là array
       const appointmentsArray = Array.isArray(data) ? data : [];
       setTotalAppointmentsCount(appointmentsArray.length);
@@ -131,7 +151,7 @@ const AdminDashboardPage: React.FC = () => {
       setLoadingAppointments(true);
       setErrorAppointments(null);
       const data = await getTodayAppointments(100); // Get all for display
-      
+
       // Đảm bảo data là array
       const appointmentsArray = Array.isArray(data) ? data : [];
       setAppointments(appointmentsArray);
@@ -172,6 +192,7 @@ const AdminDashboardPage: React.FC = () => {
     fetchDashboardStats();
     fetchTotalPatientsCount(); // Fetch total patients count for card
     fetchTotalAppointmentsCount(); // Fetch total appointments count for card
+    fetchBillingStats(); // Fetch billing stats
   }, []);
 
   // Prepare stats for display
@@ -179,10 +200,10 @@ const AdminDashboardPage: React.FC = () => {
     {
       id: 1,
       label: "Tổng bệnh nhân",
-      value: totalPatientsCount !== null 
-        ? formatNumber(totalPatientsCount) 
-        : loadingTotalPatients 
-          ? "..." 
+      value: totalPatientsCount !== null
+        ? formatNumber(totalPatientsCount)
+        : loadingTotalPatients
+          ? "..."
           : "—",
       change: "+12% so với tháng trước", // TODO: Calculate from API if available
       icon: FiUsers,
@@ -191,10 +212,10 @@ const AdminDashboardPage: React.FC = () => {
     {
       id: 2,
       label: "Lịch hẹn hôm nay",
-      value: totalAppointmentsCount !== null 
-        ? formatNumber(totalAppointmentsCount) 
-        : loadingTotalAppointments 
-          ? "..." 
+      value: totalAppointmentsCount !== null
+        ? formatNumber(totalAppointmentsCount)
+        : loadingTotalAppointments
+          ? "..."
           : "—",
       change: "+5% so với tháng trước", // TODO: Calculate from API if available
       icon: FiCalendar,
@@ -203,10 +224,16 @@ const AdminDashboardPage: React.FC = () => {
     {
       id: 3,
       label: "Doanh thu tháng",
-      value: stats ? formatVND(stats.monthlyRevenue) : "—",
-      change: "+18% so với tháng trước", // TODO: Calculate from API if available
+      value: billingStats !== null
+        ? formatVND(billingStats.totalPaid)
+        : loadingBilling
+          ? "..."
+          : stats?.monthlyRevenue
+            ? formatVND(stats.monthlyRevenue)
+            : "—",
+      change: "+8% so với tháng trước", // TODO: Calculate from API if available
       icon: FiDollarSign,
-      loading: loadingStats,
+      loading: loadingBilling || loadingStats,
     },
     {
       id: 4,
@@ -267,17 +294,17 @@ const AdminDashboardPage: React.FC = () => {
               {...stat}
               onRetry={stat.id === 1 ? fetchDashboardStats : undefined}
               onClick={
-                stat.id === 1 
-                  ? handleTotalPatientsClick 
-                  : stat.id === 2 
-                    ? handleTodayAppointmentsClick 
+                stat.id === 1
+                  ? handleTotalPatientsClick
+                  : stat.id === 2
+                    ? handleTodayAppointmentsClick
                     : undefined
               }
               clickable={stat.id === 1 || stat.id === 2}
             />
           ))}
         </div>
-        
+
         {/* Error message for stats */}
         {errorStats && (
           <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center gap-3">
@@ -401,9 +428,8 @@ const AdminDashboardPage: React.FC = () => {
                             patients.map((patient, idx) => (
                               <tr
                                 key={patient.patientId}
-                                className={`border-b border-slate-100 ${
-                                  idx % 2 === 1 ? "bg-[#FCFCFD]" : "bg-white"
-                                }`}
+                                className={`border-b border-slate-100 ${idx % 2 === 1 ? "bg-[#FCFCFD]" : "bg-white"
+                                  }`}
                               >
                                 <td className="px-3 py-2.5 text-slate-800 font-medium">
                                   {patient.patientCode}
@@ -491,9 +517,8 @@ const AdminDashboardPage: React.FC = () => {
                             appointments.map((appointment, idx) => (
                               <tr
                                 key={appointment.id}
-                                className={`border-b border-slate-100 ${
-                                  idx % 2 === 1 ? "bg-[#FCFCFD]" : "bg-white"
-                                }`}
+                                className={`border-b border-slate-100 ${idx % 2 === 1 ? "bg-[#FCFCFD]" : "bg-white"
+                                  }`}
                               >
                                 <td className="px-3 py-2.5 text-slate-800 font-medium">
                                   {appointment.patientName}
@@ -542,11 +567,11 @@ const AdminDashboardPage: React.FC = () => {
               route="/admin/reports"
             />
             <GradientCard
-              title="Cài đặt hệ thống"
-              description="Cấu hình và tùy chỉnh hệ thống"
-              buttonLabel="Cài đặt"
-              gradient="from-[#F97316] to-[#EF4444]"
-              route="/admin/settings"
+              title="Quản lý thuốc"
+              description="Quản lý danh mục thuốc và kho"
+              buttonLabel="Quản lý thuốc"
+              gradient="from-[#10B981] to-[#059669]"
+              route="/admin/medicines"
             />
           </div>
         </div>
@@ -599,14 +624,13 @@ const StatCard: React.FC<StatCardProps> = ({
   clickable = false,
 }) => {
   const Icon = icon;
-  
+
   return (
     <div
-      className={`bg-white rounded-2xl shadow-sm border border-slate-100 px-4 py-4 flex items-start justify-between ${
-        clickable && !loading
-          ? "cursor-pointer hover:shadow-md hover:border-[#2563EB] transition-all"
-          : ""
-      }`}
+      className={`bg-white rounded-2xl shadow-sm border border-slate-100 px-4 py-4 flex items-start justify-between ${clickable && !loading
+        ? "cursor-pointer hover:shadow-md hover:border-[#2563EB] transition-all"
+        : ""
+        }`}
       onClick={clickable && !loading ? onClick : undefined}
     >
       <div className="flex-1 min-w-0">
@@ -663,7 +687,7 @@ const GradientCard: React.FC<GradientCardProps> = ({
       <p className="mt-2 text-xs sm:text-sm text-blue-100 max-w-xs">
         {description}
       </p>
-      <button 
+      <button
         onClick={handleClick}
         className="mt-4 inline-flex items-center justify-center rounded-lg bg-white/90 hover:bg-white text-xs sm:text-sm font-semibold text-slate-900 px-4 py-2 shadow-sm transition-colors cursor-pointer"
       >
