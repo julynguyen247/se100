@@ -19,7 +19,11 @@ import {
   type ReceptionistAppointment,
   BillStatus,
 } from "@/services/apiReceptionist";
-import { getPatients, type PatientItem } from "@/services/apiAdmin";
+import {
+  getPatients,
+  getHistoricalStats,
+  type PatientItem,
+} from "@/services/apiAdmin";
 import * as XLSX from "xlsx";
 
 interface SummaryCardData {
@@ -60,6 +64,18 @@ const AdminReportsPage: React.FC = () => {
 
   // Patients table state
   const [patients, setPatients] = useState<PatientItem[]>([]);
+
+  // Store historical stats for charts
+  const [historicalStats, setHistoricalStats] = useState<Array<{
+    period: string;
+    periodStart: string;
+    periodEnd: string;
+    revenue: number;
+    totalVisits: number;
+    newPatients: number;
+    completedAppointments: number;
+    cancelledAppointments: number;
+  }>>([]);
 
   // Get current and previous month in YYYY-MM format
   const getCurrentMonth = () => {
@@ -120,7 +136,7 @@ const AdminReportsPage: React.FC = () => {
     return `${sign}${change.toFixed(0)}% so với tháng trước`;
   };
 
-  // Load all report data
+  // Load all report data using Historical Stats API
   const loadReportData = async () => {
     try {
       setLoading(true);
@@ -128,136 +144,49 @@ const AdminReportsPage: React.FC = () => {
 
       const currentMonth = getCurrentMonth();
       const previousMonth = getPreviousMonth();
-      const currentRange = getMonthDateRange(currentMonth);
-      const previousRange = getMonthDateRange(previousMonth);
 
-      // Fetch all data in parallel
-      // Note: Using getAppointments with single date since fromDate/toDate is not supported
-      const [
-        allBillsRes,
-        allPatientsRes,
-      ] = await Promise.all([
-        getBills(), // Get all bills
-        getPatients(),
-      ]);
+      // Use Historical Stats API instead of manual calculations
+      // This reduces from 31+ API calls to just 1!
+      const historicalData = await getHistoricalStats();
 
-      // Get appointments for all days in current and previous month
-      // Since API only supports single date, we need to fetch for multiple days
-      const currentMonthDays = getDaysInMonth(currentRange.fromDate);
-      const previousMonthDays = getDaysInMonth(previousRange.fromDate);
+      // Store for charts
+      setHistoricalStats(historicalData);
 
-      // Fetch appointments for all days in both months
-      const currentMonthAppointmentsPromises = currentMonthDays.map(day =>
-        getAppointments({
-          date: day,
-          status: "completed",
-        }).catch(() => ({ isSuccess: false, data: [] }))
-      );
+      // Find current and previous month data
+      const currentStats = historicalData.find(h => h.period === currentMonth);
+      const previousStats = historicalData.find(h => h.period === previousMonth);
 
-      const previousMonthAppointmentsPromises = previousMonthDays.map(day =>
-        getAppointments({
-          date: day,
-          status: "completed",
-        }).catch(() => ({ isSuccess: false, data: [] }))
-      );
-
-      const [currentMonthAppointmentsResults, previousMonthAppointmentsResults] = await Promise.all([
-        Promise.all(currentMonthAppointmentsPromises),
-        Promise.all(previousMonthAppointmentsPromises),
-      ]);
-
-      // Combine all appointments from all days
-      const currentMonthAppointments = currentMonthAppointmentsResults
-        .filter(res => res.isSuccess && res.data)
-        .flatMap(res => res.data || []);
-
-      const previousMonthAppointments = previousMonthAppointmentsResults
-        .filter(res => res.isSuccess && res.data)
-        .flatMap(res => res.data || []);
-
-      // Calculate revenue from bills - simply sum all paid bills
-      if (allBillsRes.isSuccess && allBillsRes.data) {
-        // Filter paid bills for current month (by createdAt)
-        const currentRangeStart = new Date(currentRange.fromDate);
-        currentRangeStart.setHours(0, 0, 0, 0);
-        const currentRangeEnd = new Date(currentRange.toDate);
-        currentRangeEnd.setHours(23, 59, 59, 999);
-
-        const previousRangeStart = new Date(previousRange.fromDate);
-        previousRangeStart.setHours(0, 0, 0, 0);
-        const previousRangeEnd = new Date(previousRange.toDate);
-        previousRangeEnd.setHours(23, 59, 59, 999);
-
-        // Get all paid bills
-        const paidBills = allBillsRes.data.filter(
-          (bill) => bill.status === BillStatus.Paid
-        );
-
-        // Filter by month using createdAt
-        const currentMonthBills = paidBills.filter((bill) => {
-          if (!bill.createdAt) return false;
-          const billDate = new Date(bill.createdAt);
-          return billDate >= currentRangeStart && billDate <= currentRangeEnd;
-        });
-
-        const previousMonthBills = paidBills.filter((bill) => {
-          if (!bill.createdAt) return false;
-          const billDate = new Date(bill.createdAt);
-          return billDate >= previousRangeStart && billDate <= previousRangeEnd;
-        });
-
-        // Calculate total revenue
-        const currentRevenue = currentMonthBills.reduce(
-          (sum, bill) => sum + bill.totalAmount,
-          0
-        );
-        const previousRevenue = previousMonthBills.reduce(
-          (sum, bill) => sum + bill.totalAmount,
-          0
-        );
-
-        setCurrentMonthRevenue(currentRevenue);
-        setPreviousMonthRevenue(previousRevenue);
-
-        console.log("Revenue calculation:", {
-          totalBills: allBillsRes.data.length,
-          paidBills: paidBills.length,
-          currentMonthBills: currentMonthBills.length,
-          previousMonthBills: previousMonthBills.length,
-          currentRevenue,
-          previousRevenue,
-        });
+      // Set current month data
+      if (currentStats) {
+        setCurrentMonthRevenue(currentStats.revenue);
+        setCurrentMonthVisits(currentStats.completedAppointments);
+        setCurrentMonthNewPatients(currentStats.newPatients);
+      } else {
+        // Fallback if current month not found
+        setCurrentMonthRevenue(0);
+        setCurrentMonthVisits(0);
+        setCurrentMonthNewPatients(0);
       }
 
-      // Set visits data - appointments already filtered by month from API calls
-      setCurrentMonthVisits(currentMonthAppointments.length);
-      setPreviousMonthVisits(previousMonthAppointments.length);
-
-      // Calculate new patients for current month
-      if (allPatientsRes && allPatientsRes.length > 0) {
-        const currentRangeStart = new Date(currentRange.fromDate);
-        const currentRangeEnd = new Date(currentRange.toDate);
-        currentRangeEnd.setHours(23, 59, 59, 999);
-
-        const previousRangeStart = new Date(previousRange.fromDate);
-        const previousRangeEnd = new Date(previousRange.toDate);
-        previousRangeEnd.setHours(23, 59, 59, 999);
-
-        const currentNewPatients = allPatientsRes.filter((patient: PatientItem) => {
-          if (!patient.createdAt) return false;
-          const patientDate = new Date(patient.createdAt);
-          return patientDate >= currentRangeStart && patientDate <= currentRangeEnd;
-        }).length;
-
-        const previousNewPatients = allPatientsRes.filter((patient: PatientItem) => {
-          if (!patient.createdAt) return false;
-          const patientDate = new Date(patient.createdAt);
-          return patientDate >= previousRangeStart && patientDate <= previousRangeEnd;
-        }).length;
-
-        setCurrentMonthNewPatients(currentNewPatients);
-        setPreviousMonthNewPatients(previousNewPatients);
+      // Set previous month data
+      if (previousStats) {
+        setPreviousMonthRevenue(previousStats.revenue);
+        setPreviousMonthVisits(previousStats.completedAppointments);
+        setPreviousMonthNewPatients(previousStats.newPatients);
+      } else {
+        // Fallback if previous month not found
+        setPreviousMonthRevenue(0);
+        setPreviousMonthVisits(0);
+        setPreviousMonthNewPatients(0);
       }
+
+      console.log("Historical stats loaded:", {
+        currentMonth,
+        previousMonth,
+        currentStats,
+        previousStats,
+        totalMonths: historicalData.length,
+      });
     } catch (err) {
       console.error("Failed to load report data:", err);
       setError(
@@ -354,25 +283,28 @@ const AdminReportsPage: React.FC = () => {
     previousMonthNewPatients,
   ]);
 
-  // Prepare chart data for last 6 months
+  // Prepare chart data for last 6 months using historical stats
   const revenueChartData = useMemo(() => {
-    const months = [];
-    const now = new Date();
-
-    for (let i = 5; i >= 0; i--) {
-      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const monthStr = `Tháng ${date.getMonth() + 1}`;
-
-      months.push({
-        month: monthStr,
-        revenue: i === 0 ? currentMonthRevenue : Math.floor(Math.random() * 50000000 + 30000000),
-        visits: i === 0 ? currentMonthVisits : Math.floor(Math.random() * 100 + 50),
-        patients: i === 0 ? currentMonthNewPatients : Math.floor(Math.random() * 30 + 10),
-      });
+    if (historicalStats.length === 0) {
+      // Return empty data if no historical stats yet
+      return [];
     }
 
-    return months;
-  }, [currentMonthRevenue, currentMonthVisits, currentMonthNewPatients]);
+    // Get last 6 months from historical data
+    const last6Months = historicalStats.slice(-6);
+
+    return last6Months.map(stat => {
+      const date = new Date(stat.periodStart);
+      const monthStr = `Tháng ${date.getMonth() + 1}`;
+
+      return {
+        month: monthStr,
+        revenue: stat.revenue,
+        visits: stat.completedAppointments,
+        patients: stat.newPatients,
+      };
+    });
+  }, [historicalStats]);
 
   const detailReports = [
     {
