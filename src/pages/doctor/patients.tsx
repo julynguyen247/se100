@@ -447,27 +447,343 @@ const DoctorPatients: React.FC = () => {
                                         </div>
                                     )}
 
-                                    {selectedRecord.prescription && (
-                                        <div>
-                                            <p className="text-xs font-medium text-slate-500 mb-1">
-                                                Đơn thuốc
-                                            </p>
-                                            <p className="text-sm text-slate-900 whitespace-pre-line">
-                                                {selectedRecord.prescription}
-                                            </p>
-                                        </div>
-                                    )}
+                                    {selectedRecord.prescription &&
+                                        (() => {
+                                            try {
+                                                const prescription =
+                                                    typeof selectedRecord.prescription ===
+                                                    'string'
+                                                        ? JSON.parse(
+                                                              selectedRecord.prescription
+                                                          )
+                                                        : selectedRecord.prescription;
 
-                                    {selectedRecord.notes && (
-                                        <div>
-                                            <p className="text-xs font-medium text-slate-500 mb-1">
-                                                Ghi chú
-                                            </p>
-                                            <p className="text-sm text-slate-900">
-                                                {selectedRecord.notes}
-                                            </p>
-                                        </div>
-                                    )}
+                                                const medicines =
+                                                    prescription.Medicines ||
+                                                    prescription.medicines ||
+                                                    [];
+                                                const notes =
+                                                    prescription.Notes ||
+                                                    prescription.notes ||
+                                                    '';
+
+                                                return (
+                                                    <div>
+                                                        <p className="text-xs font-medium text-slate-500 mb-2">
+                                                            Đơn thuốc
+                                                        </p>
+
+                                                        {medicines.length >
+                                                            0 && (
+                                                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-2 space-y-2">
+                                                                {medicines.map(
+                                                                    (
+                                                                        med: any,
+                                                                        idx: number
+                                                                    ) => (
+                                                                        <div
+                                                                            key={
+                                                                                idx
+                                                                            }
+                                                                            className="bg-white rounded p-2 text-xs"
+                                                                        >
+                                                                            <p className="font-semibold text-slate-900">
+                                                                                {med.Name ||
+                                                                                    med.name}
+                                                                            </p>
+                                                                            <div className="grid grid-cols-2 gap-1 text-slate-600 mt-1">
+                                                                                <div>
+                                                                                    <span className="font-medium">
+                                                                                        Liều
+                                                                                        lượng:
+                                                                                    </span>{' '}
+                                                                                    {med.Dosage ||
+                                                                                        med.dosage}
+                                                                                </div>
+                                                                                <div>
+                                                                                    <span className="font-medium">
+                                                                                        SL:
+                                                                                    </span>{' '}
+                                                                                    {med.Quantity ||
+                                                                                        med.quantity}
+                                                                                </div>
+                                                                            </div>
+                                                                            {(med.Instructions ||
+                                                                                med.instructions) && (
+                                                                                <p className="text-slate-600 mt-1">
+                                                                                    <span className="font-medium">
+                                                                                        Cách
+                                                                                        dùng:
+                                                                                    </span>{' '}
+                                                                                    {med.Instructions ||
+                                                                                        med.instructions}
+                                                                                </p>
+                                                                            )}
+                                                                        </div>
+                                                                    )
+                                                                )}
+                                                            </div>
+                                                        )}
+
+                                                        {notes && (
+                                                            <div className="bg-amber-50 border border-amber-200 rounded p-2 text-xs text-amber-800">
+                                                                <span className="font-medium">
+                                                                    Lưu ý:
+                                                                </span>{' '}
+                                                                {notes}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            } catch (error) {
+                                                return (
+                                                    <div>
+                                                        <p className="text-xs font-medium text-slate-500 mb-1">
+                                                            Đơn thuốc
+                                                        </p>
+                                                        <p className="text-sm text-slate-900 whitespace-pre-line">
+                                                            {
+                                                                selectedRecord.prescription
+                                                            }
+                                                        </p>
+                                                    </div>
+                                                );
+                                            }
+                                        })()}
+
+                                    {selectedRecord.notes &&
+                                        (() => {
+                                            try {
+                                                let parsed =
+                                                    selectedRecord.notes;
+
+                                                // Check if notes has format: [ToothStatus]: {"T26":"normal"}
+                                                if (
+                                                    typeof selectedRecord.notes ===
+                                                        'string' &&
+                                                    selectedRecord.notes.includes(
+                                                        '[ToothStatus]:'
+                                                    )
+                                                ) {
+                                                    const jsonPart =
+                                                        selectedRecord.notes
+                                                            .split(
+                                                                '[ToothStatus]:'
+                                                            )[1]
+                                                            ?.trim();
+                                                    if (jsonPart) {
+                                                        parsed =
+                                                            JSON.parse(
+                                                                jsonPart
+                                                            );
+                                                    }
+                                                } else if (
+                                                    typeof selectedRecord.notes ===
+                                                    'string'
+                                                ) {
+                                                    parsed = JSON.parse(
+                                                        selectedRecord.notes
+                                                    );
+                                                }
+
+                                                // Check if it's array directly
+                                                if (Array.isArray(parsed)) {
+                                                    return (
+                                                        <div>
+                                                            <p className="text-xs font-medium text-slate-500 mb-1">
+                                                                Ghi chú
+                                                            </p>
+                                                            <div className="bg-slate-50 rounded p-2 text-xs">
+                                                                <p className="font-medium text-slate-700 mb-1">
+                                                                    Tình trạng
+                                                                    răng:
+                                                                </p>
+                                                                <div className="grid grid-cols-4 gap-1 text-slate-600">
+                                                                    {parsed.map(
+                                                                        (
+                                                                            tooth: any,
+                                                                            idx: number
+                                                                        ) => {
+                                                                            const toothNum =
+                                                                                Object.keys(
+                                                                                    tooth
+                                                                                )[0];
+                                                                            const status =
+                                                                                tooth[
+                                                                                    toothNum
+                                                                                ];
+                                                                            return (
+                                                                                <div
+                                                                                    key={
+                                                                                        idx
+                                                                                    }
+                                                                                >
+                                                                                    #
+                                                                                    {
+                                                                                        toothNum
+                                                                                    }
+
+                                                                                    :{' '}
+                                                                                    {status ===
+                                                                                    'normal'
+                                                                                        ? '✓'
+                                                                                        : status}
+                                                                                </div>
+                                                                            );
+                                                                        }
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                }
+
+                                                // Check if object has tooth keys (T26, etc.)
+                                                const keys =
+                                                    Object.keys(parsed);
+                                                const hasToothKeys = keys.some(
+                                                    (k) => /^T\d+$/i.test(k)
+                                                );
+
+                                                if (hasToothKeys) {
+                                                    return (
+                                                        <div>
+                                                            <p className="text-xs font-medium text-slate-500 mb-1">
+                                                                Ghi chú
+                                                            </p>
+                                                            <div className="bg-slate-50 rounded p-2 text-xs">
+                                                                <p className="font-medium text-slate-700 mb-1">
+                                                                    Tình trạng
+                                                                    răng:
+                                                                </p>
+                                                                <div className="grid grid-cols-4 gap-1 text-slate-600">
+                                                                    {keys
+                                                                        .filter(
+                                                                            (
+                                                                                k
+                                                                            ) =>
+                                                                                /^T\d+$/i.test(
+                                                                                    k
+                                                                                )
+                                                                        )
+                                                                        .map(
+                                                                            (
+                                                                                toothNum,
+                                                                                idx
+                                                                            ) => {
+                                                                                const status =
+                                                                                    (
+                                                                                        parsed as any
+                                                                                    )[
+                                                                                        toothNum
+                                                                                    ];
+                                                                                return (
+                                                                                    <div
+                                                                                        key={
+                                                                                            idx
+                                                                                        }
+                                                                                    >
+                                                                                        #
+                                                                                        {
+                                                                                            toothNum
+                                                                                        }
+
+                                                                                        :{' '}
+                                                                                        {status ===
+                                                                                        'normal'
+                                                                                            ? '✓'
+                                                                                            : status}
+                                                                                    </div>
+                                                                                );
+                                                                            }
+                                                                        )}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                }
+
+                                                if (
+                                                    (parsed as any)
+                                                        .ToothStatus ||
+                                                    (parsed as any).toothStatus
+                                                ) {
+                                                    const toothStatus =
+                                                        (parsed as any)
+                                                            .ToothStatus ||
+                                                        (parsed as any)
+                                                            .toothStatus ||
+                                                        [];
+                                                    return (
+                                                        <div>
+                                                            <p className="text-xs font-medium text-slate-500 mb-1">
+                                                                Ghi chú
+                                                            </p>
+                                                            <div className="bg-slate-50 rounded p-2 text-xs">
+                                                                <p className="font-medium text-slate-700 mb-1">
+                                                                    Tình trạng
+                                                                    răng:
+                                                                </p>
+                                                                <div className="grid grid-cols-4 gap-1 text-slate-600">
+                                                                    {toothStatus.map(
+                                                                        (
+                                                                            tooth: any,
+                                                                            idx: number
+                                                                        ) => (
+                                                                            <div
+                                                                                key={
+                                                                                    idx
+                                                                                }
+                                                                            >
+                                                                                #
+                                                                                {tooth.T26 ||
+                                                                                    tooth.t26}
+
+                                                                                :{' '}
+                                                                                {tooth.T26 ===
+                                                                                    'normal' ||
+                                                                                tooth.t26 ===
+                                                                                    'normal'
+                                                                                    ? '✓'
+                                                                                    : tooth.T26 ||
+                                                                                      tooth.t26}
+                                                                            </div>
+                                                                        )
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                }
+                                                return (
+                                                    <div>
+                                                        <p className="text-xs font-medium text-slate-500 mb-1">
+                                                            Ghi chú
+                                                        </p>
+                                                        <p className="text-sm text-slate-900">
+                                                            {JSON.stringify(
+                                                                parsed,
+                                                                null,
+                                                                2
+                                                            )}
+                                                        </p>
+                                                    </div>
+                                                );
+                                            } catch (error) {
+                                                return (
+                                                    <div>
+                                                        <p className="text-xs font-medium text-slate-500 mb-1">
+                                                            Ghi chú
+                                                        </p>
+                                                        <p className="text-sm text-slate-900">
+                                                            {
+                                                                selectedRecord.notes
+                                                            }
+                                                        </p>
+                                                    </div>
+                                                );
+                                            }
+                                        })()}
                                 </div>
                             ) : null}
                         </div>

@@ -10,8 +10,8 @@ import HomePage from './pages/guest/HomePage';
 import LoginPage from './pages/guest/LoginPage';
 import RegisterPage from './pages/guest/RegisterPage';
 import BookingPage from './pages/guest/booking';
-import CancelAppointmentPage from './pages/guest/CancelAppointmentPage';
-import RescheduleAppointmentPage from './pages/guest/RescheduleAppointmentPage';
+import AppointmentCancel from './pages/guest/AppointmentCancel';
+import AppointmentReschedule from './pages/guest/AppointmentReschedule';
 
 // Patient Pages
 import PatientDashboard from './pages/patient/dashboard';
@@ -20,8 +20,10 @@ import MyAppointmentsPage from './pages/patient/appointment';
 import MedicalHistoryPage from './pages/patient/medicalHistory';
 
 // Admin Pages
-import Dashboard from './pages/admin/dashboard';
-import UserManagementPage from './pages/admin/users';
+import AdminDashboardPage from './pages/admin/dashboard';
+import StaffManagementPage from './pages/admin/staff';
+import PatientManagementPage from './pages/admin/patients';
+import DoctorManagementPage from './pages/admin/doctors';
 import AdminReportsPage from './pages/admin/report';
 import AdminSettingsPage from './pages/admin/setting';
 import MedicinesPage from './pages/admin/medicines';
@@ -50,11 +52,12 @@ const router = createBrowserRouter([
             { path: 'login', Component: LoginPage },
             { path: 'register', Component: RegisterPage },
             { path: 'booking', Component: BookingPage },
-            { path: 'cancel-appointment', Component: CancelAppointmentPage },
+            { path: 'appointment/cancel', Component: AppointmentCancel },
             {
-                path: 'reschedule-appointment',
-                Component: RescheduleAppointmentPage,
+                path: 'appointment/reschedule',
+                Component: AppointmentReschedule,
             },
+
         ],
     },
     {
@@ -85,11 +88,19 @@ const router = createBrowserRouter([
         children: [
             {
                 index: true,
-                element: <Dashboard />,
+                element: <AdminDashboardPage />,
             },
             {
-                path: 'users',
-                element: <UserManagementPage />,
+                path: 'staff',
+                element: <StaffManagementPage />,
+            },
+            {
+                path: 'patients',
+                element: <PatientManagementPage />,
+            },
+            {
+                path: 'doctors',
+                element: <DoctorManagementPage />,
             },
             {
                 path: 'reports',

@@ -20,7 +20,7 @@ import {
   type AdminClinicOption,
 } from "@/services/apiAdmin";
 
-type RoleFilter = StaffRoleValue | "ALL";
+type StatusFilter = "ALL" | "ACTIVE" | "INACTIVE";
 
 type AddUserFormState = {
   clinicId: string;
@@ -38,9 +38,9 @@ const initialAddForm: AddUserFormState = {
   isActive: true,
 };
 
-const UserManagementPage: React.FC = () => {
+const StaffManagementPage: React.FC = () => {
   const [query, setQuery] = useState("");
-  const [roleFilter, setRoleFilter] = useState<RoleFilter>("ALL");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
 
   const [users, setUsers] = useState<StaffUserRow[]>([]);
   const [roles, setRoles] = useState<StaffRoleOption[]>([]);
@@ -97,12 +97,14 @@ const UserManagementPage: React.FC = () => {
           u.username.toLowerCase().includes(query.toLowerCase()) ||
           u.clinic?.name.toLowerCase().includes(query.toLowerCase());
 
-        const matchRole =
-          roleFilter === "ALL" || u.role.toUpperCase() === roleFilter;
+        const matchStatus =
+          statusFilter === "ALL" ||
+          (statusFilter === "ACTIVE" && u.isActive) ||
+          (statusFilter === "INACTIVE" && !u.isActive);
 
-        return matchText && matchRole;
+        return matchText && matchStatus;
       }),
-    [users, query, roleFilter]
+    [users, query, statusFilter]
   );
 
   const handleAdd = () => {
@@ -247,10 +249,10 @@ const UserManagementPage: React.FC = () => {
         {/* Header */}
         <div>
           <h1 className="text-lg sm:text-xl font-semibold text-slate-900">
-            Quản lý người dùng
+            Quản lý nhân viên
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Quản lý tài khoản nhân viên và quyền truy cập
+            Quản lý tài khoản nhân viên (Admin, Lễ tân, Bác sĩ) và quyền truy cập
           </p>
         </div>
 
@@ -269,31 +271,15 @@ const UserManagementPage: React.FC = () => {
               />
             </div>
 
-            {/* Role filter từ API enums - bỏ PATIENT vì admin không quản lý patient */}
+            {/* Status filter - Active/Inactive */}
             <select
               className="w-full md:w-52 rounded-lg border border-slate-200 bg-[#F9FAFB] px-3 py-2.5 text-sm outline-none focus:border-[#2563EB]"
-              value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value as RoleFilter)}
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
             >
-              <option value="ALL">Tất cả vai trò</option>
-              {roles
-                .filter((r) => r.value !== "PATIENT") // Bỏ PATIENT khỏi dropdown
-                .map((r) => (
-                  <option key={r.value} value={r.value}>
-                    {(() => {
-                      switch (r.value) {
-                        case "ADMIN":
-                          return "Quản trị viên";
-                        case "RECEPTIONIST":
-                          return "Lễ tân";
-                        case "DOCTOR":
-                          return "Bác sĩ";
-                        default:
-                          return r.name;
-                      }
-                    })()}
-                  </option>
-                ))}
+              <option value="ALL">Tất cả trạng thái</option>
+              <option value="ACTIVE">Đang hoạt động</option>
+              <option value="INACTIVE">Ngưng hoạt động</option>
             </select>
 
             {/* Add + refresh buttons */}
@@ -315,9 +301,8 @@ const UserManagementPage: React.FC = () => {
                 className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 px-3 py-2.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
               >
                 <FiRefreshCw
-                  className={`w-3.5 h-3.5 ${
-                    isRefreshing ? "animate-spin" : ""
-                  }`}
+                  className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin" : ""
+                    }`}
                 />
                 <span>Làm mới</span>
               </button>
@@ -346,11 +331,21 @@ const UserManagementPage: React.FC = () => {
           </div>
         )}
 
+        {/* Count display */}
+        {!loading && !error && (
+          <div className="bg-white border-x border-slate-100 px-5 py-2">
+            <p className="text-xs text-slate-600">
+              Hiển thị <span className="font-semibold text-slate-900">{filteredUsers.length}</span> / {users.length} nhân viên
+            </p>
+          </div>
+        )}
+
         {/* Table */}
         <div className="bg-white rounded-b-2xl border border-t-0 border-slate-100 overflow-hidden">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-[#F9FAFB] text-xs text-slate-500">
+                <th className="text-center font-medium px-3 py-3 w-16">STT</th>
                 <th className="text-left font-medium px-5 py-3">Tên</th>
                 <th className="text-left font-medium px-5 py-3">Username</th>
                 <th className="text-left font-medium px-5 py-3">Phòng khám</th>
@@ -362,77 +357,81 @@ const UserManagementPage: React.FC = () => {
             <tbody>
               {loading
                 ? Array.from({ length: 5 }).map((_, idx) => (
-                    <tr key={idx} className="border-t border-slate-100">
-                      <td className="px-5 py-3">
-                        <div className="h-4 w-32 bg-slate-200 rounded animate-pulse" />
-                      </td>
-                      <td className="px-5 py-3">
-                        <div className="h-4 w-40 bg-slate-200 rounded animate-pulse" />
-                      </td>
-                      <td className="px-5 py-3">
-                        <div className="h-4 w-44 bg-slate-200 rounded animate-pulse" />
-                      </td>
-                      <td className="px-5 py-3">
-                        <div className="h-4 w-24 bg-slate-200 rounded animate-pulse" />
-                      </td>
-                      <td className="px-5 py-3">
-                        <div className="h-4 w-20 bg-slate-200 rounded animate-pulse" />
-                      </td>
-                      <td className="px-5 py-3">
-                        <div className="h-4 w-16 bg-slate-200 rounded animate-pulse mx-auto" />
-                      </td>
-                    </tr>
-                  ))
+                  <tr key={idx} className="border-t border-slate-100">
+                    <td className="px-3 py-3 text-center text-slate-400">
+                      <div className="h-4 w-8 bg-slate-200 rounded animate-pulse mx-auto" />
+                    </td>
+                    <td className="px-5 py-3">
+                      <div className="h-4 w-32 bg-slate-200 rounded animate-pulse" />
+                    </td>
+                    <td className="px-5 py-3">
+                      <div className="h-4 w-40 bg-slate-200 rounded animate-pulse" />
+                    </td>
+                    <td className="px-5 py-3">
+                      <div className="h-4 w-44 bg-slate-200 rounded animate-pulse" />
+                    </td>
+                    <td className="px-5 py-3">
+                      <div className="h-4 w-24 bg-slate-200 rounded animate-pulse" />
+                    </td>
+                    <td className="px-5 py-3">
+                      <div className="h-4 w-20 bg-slate-200 rounded animate-pulse" />
+                    </td>
+                    <td className="px-5 py-3">
+                      <div className="h-4 w-16 bg-slate-200 rounded animate-pulse mx-auto" />
+                    </td>
+                  </tr>
+                ))
                 : filteredUsers.map((user, idx) => (
-                    <tr
-                      key={user.userId}
-                      className={`border-t border-slate-100 ${
-                        idx % 2 === 1 ? "bg-[#FCFCFD]" : "bg-white"
+                  <tr
+                    key={user.userId}
+                    className={`border-t border-slate-100 ${idx % 2 === 1 ? "bg-[#FCFCFD]" : "bg-white"
                       }`}
-                    >
-                      <td className="px-5 py-3 text-slate-800">
-                        {user.fullName || "—"}
-                      </td>
-                      <td className="px-5 py-3 text-slate-600">
-                        {user.username}
-                      </td>
-                      <td className="px-5 py-3 text-slate-600">
-                        {user.clinic?.name || "—"}
-                      </td>
-                      <td className="px-5 py-3">
-                        <RoleBadge role={user.role} />
-                      </td>
-                      <td className="px-5 py-3">
-                        <span
-                          className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold ${
-                            user.isActive
-                              ? "bg-[#DCFCE7] text-[#15803D]"
-                              : "bg-[#F3F4F6] text-[#4B5563]"
+                  >
+                    <td className="px-3 py-3 text-center text-slate-500 font-medium">
+                      {idx + 1}
+                    </td>
+                    <td className="px-5 py-3 text-slate-800">
+                      {user.fullName || "—"}
+                    </td>
+                    <td className="px-5 py-3 text-slate-600">
+                      {user.username}
+                    </td>
+                    <td className="px-5 py-3 text-slate-600">
+                      {user.clinic?.name || "—"}
+                    </td>
+                    <td className="px-5 py-3">
+                      <RoleBadge role={user.role} />
+                    </td>
+                    <td className="px-5 py-3">
+                      <span
+                        className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold ${user.isActive
+                          ? "bg-[#DCFCE7] text-[#15803D]"
+                          : "bg-[#F3F4F6] text-[#4B5563]"
                           }`}
+                      >
+                        {user.isActive ? "Hoạt động" : "Không hoạt động"}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3">
+                      <div className="flex items-center justify-center gap-3 text-[15px]">
+                        <button
+                          type="button"
+                          onClick={() => handleEdit(user)}
+                          className="text-[#2563EB] hover:text-[#1D4ED8]"
                         >
-                          {user.isActive ? "Hoạt động" : "Không hoạt động"}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3">
-                        <div className="flex items-center justify-center gap-3 text-[15px]">
-                          <button
-                            type="button"
-                            onClick={() => handleEdit(user)}
-                            className="text-[#2563EB] hover:text-[#1D4ED8]"
-                          >
-                            <FiEdit2 />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(user)}
-                            className="text-[#EF4444] hover:text-[#DC2626]"
-                          >
-                            <FiTrash2 />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                          <FiEdit2 />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(user)}
+                          className="text-[#EF4444] hover:text-[#DC2626]"
+                        >
+                          <FiTrash2 />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
 
               {!loading && filteredUsers.length === 0 && !error && (
                 <tr>
@@ -453,7 +452,7 @@ const UserManagementPage: React.FC = () => {
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
               <h2 className="text-lg font-semibold text-slate-900 mb-4">
-                Thêm người dùng
+                Thêm nhân viên
               </h2>
 
               <form onSubmit={handleSubmitAdd} className="space-y-4">
@@ -566,11 +565,10 @@ const UserManagementPage: React.FC = () => {
                         isActive: !prev.isActive,
                       }))
                     }
-                    className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold ${
-                      addForm.isActive
-                        ? "bg-[#DCFCE7] text-[#15803D]"
-                        : "bg-[#F3F4F6] text-[#4B5563]"
-                    }`}
+                    className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold ${addForm.isActive
+                      ? "bg-[#DCFCE7] text-[#15803D]"
+                      : "bg-[#F3F4F6] text-[#4B5563]"
+                      }`}
                   >
                     {addForm.isActive ? "Hoạt động" : "Không hoạt động"}
                   </button>
@@ -615,7 +613,7 @@ const UserManagementPage: React.FC = () => {
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
               <h2 className="text-lg font-semibold text-slate-900 mb-4">
-                Sửa người dùng
+                Sửa nhân viên
               </h2>
 
               <form onSubmit={handleSubmitEdit} className="space-y-4">
@@ -728,11 +726,10 @@ const UserManagementPage: React.FC = () => {
                         isActive: !prev.isActive,
                       }))
                     }
-                    className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold ${
-                      editForm.isActive
-                        ? "bg-[#DCFCE7] text-[#15803D]"
-                        : "bg-[#F3F4F6] text-[#4B5563]"
-                    }`}
+                    className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold ${editForm.isActive
+                      ? "bg-[#DCFCE7] text-[#15803D]"
+                      : "bg-[#F3F4F6] text-[#4B5563]"
+                      }`}
                   >
                     {editForm.isActive ? "Hoạt động" : "Không hoạt động"}
                   </button>
@@ -777,7 +774,7 @@ const UserManagementPage: React.FC = () => {
   );
 };
 
-export default UserManagementPage;
+export default StaffManagementPage;
 
 /* ====== Badge vai trò ====== */
 

@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import { FiHome, FiUsers, FiBarChart2, FiSettings, FiLogOut, FiMenu, FiX } from "react-icons/fi";
+import { FiHome, FiUsers, FiUser, FiUserCheck, FiBarChart2, FiSettings, FiLogOut, FiMenu, FiX } from "react-icons/fi";
+import { FaPills } from "react-icons/fa";
 import { useLocation, useNavigate } from "react-router-dom";
 
-type AdminTabId = "home" | "users" | "reports" | "settings";
+type AdminTabId = "home" | "staff" | "patients" | "doctors" | "reports" | "medicines" | "settings";
 
 type AdminTab = {
   id: AdminTabId;
@@ -13,9 +14,12 @@ type AdminTab = {
 
 const ADMIN_TABS: AdminTab[] = [
   { id: "home", label: "Trang chủ", path: "/admin", icon: FiHome },
-  { id: "users", label: "Quản lý người dùng", path: "/admin/users", icon: FiUsers },
+  { id: "staff", label: "Quản lý nhân viên", path: "/admin/staff", icon: FiUsers },
+  { id: "patients", label: "Quản lý bệnh nhân", path: "/admin/patients", icon: FiUser },
+  { id: "doctors", label: "Quản lý bác sĩ", path: "/admin/doctors", icon: FiUserCheck },
   { id: "reports", label: "Báo cáo", path: "/admin/reports", icon: FiBarChart2 },
-  // { id: "settings", label: "Cài đặt hệ thống", path: "/admin/settings", icon: FiSettings },
+  { id: "medicines", label: "Quản lý thuốc", path: "/admin/medicines", icon: FaPills },
+  { id: "settings", label: "Cài đặt hệ thống", path: "/admin/settings", icon: FiSettings },
 ];
 
 const AdminHeader: React.FC = () => {

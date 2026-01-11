@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     FiHome,
     FiUsers,
@@ -59,9 +59,22 @@ const DoctorHeader: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [userName, setUserName] = useState('Bác sĩ');
 
-    // TODO: Get user info from context/store
-    const userName = 'BS. Nguyễn Văn A';
+    useEffect(() => {
+        // Get user info from localStorage
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+            try {
+                const user = JSON.parse(userStr);
+                const name = user.name || user.fullName || 'Bác sĩ';
+                // Add 'BS.' prefix if not already present
+                setUserName(name.startsWith('BS.') ? name : `BS. ${name}`);
+            } catch (error) {
+                console.error('Failed to parse user data:', error);
+            }
+        }
+    }, []);
 
     const isActive = (tab: NavTab) => {
         if (tab.path === '/doctor') {
