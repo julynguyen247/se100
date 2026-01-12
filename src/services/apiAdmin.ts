@@ -755,6 +755,26 @@ export interface ReviewStatsDto {
 }
 
 /**
+ * Create Review Request
+ */
+export interface CreateReviewRequest {
+  appointmentId: string;
+  rating: number; // 1-5
+  comment?: string;
+}
+
+/**
+ * Review Response
+ */
+export interface ReviewDto {
+  reviewId: string;
+  appointmentId: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+}
+
+/**
  * GET /api/admin/dashboard/stats
  * Lấy thống kê tổng quan dashboard cho admin
  */
@@ -839,6 +859,17 @@ export const getAppointmentReport = async (
   }
 
   throw new Error(response.message || "Không thể tải báo cáo lịch hẹn");
+};
+
+/**
+ * POST /api/patient/reviews
+ * Tạo đánh giá cho lịch hẹn đã hoàn thành
+ */
+export const createReview = async (
+  request: CreateReviewRequest
+): Promise<IBackendRes<ReviewDto>> => {
+  const url = "/api/patient/reviews";
+  return axios.post<IBackendRes<ReviewDto>>(url, request);
 };
 
 /**

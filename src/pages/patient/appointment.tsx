@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { FiCalendar, FiClock, FiSearch, FiPlus } from "react-icons/fi";
+import { FiCalendar, FiClock, FiSearch, FiPlus, FiStar } from "react-icons/fi";
 import BookingModal from "../../components/patient/BookingModal";
 import AppointmentDetailModal from "../../components/patient/AppointmentDetailModal";
 import CancelAppointmentModal from "../../components/patient/CancelAppointmentModal";
 import { getPatientAppointments, cancelAppointment, type AppointmentDto, type AppointmentStatus } from "@/services/apiPatient";
+import { createReview, type CreateReviewRequest } from "@/services/apiAdmin";
 
 const statusMap: Record<
   AppointmentStatus,
@@ -44,6 +45,13 @@ const MyAppointmentsPage: React.FC = () => {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Review modal state
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [reviewAppointment, setReviewAppointment] = useState<AppointmentDto | null>(null);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
 
   // Fetch appointments from backend
   useEffect(() => {
@@ -120,6 +128,43 @@ const MyAppointmentsPage: React.FC = () => {
     }
   };
 
+  const handleOpenReviewModal = (appointment: AppointmentDto) => {
+    setReviewAppointment(appointment);
+    setReviewRating(5);
+    setReviewComment("");
+    setIsReviewModalOpen(true);
+  };
+
+  const handleSubmitReview = async () => {
+    if (!reviewAppointment) return;
+
+    try {
+      setReviewSubmitting(true);
+      const request: CreateReviewRequest = {
+        appointmentId: reviewAppointment.id,
+        rating: reviewRating,
+        comment: reviewComment || undefined,
+      };
+
+      const response = await createReview(request);
+      if (response && response.isSuccess) {
+        setIsReviewModalOpen(false);
+        setReviewAppointment(null);
+        alert("Đánh giá thành công! Cảm ơn bạn đã đóng góp ý kiến.");
+        // Refresh appointments to update review status
+        window.location.reload();
+      } else {
+        alert(response?.message || "Không thể gửi đánh giá");
+      }
+    } catch (err: any) {
+      console.error("Error submitting review:", err);
+      const errorMsg = err.response?.data?.message || "Đã xảy ra lỗi khi gửi đánh giá";
+      alert(errorMsg);
+    } finally {
+      setReviewSubmitting(false);
+    }
+  };
+
   return (
     <div className="min-h-[calc(100vh-64px)] bg-[#F5F7FB] px-6 py-8 sm:px-10 lg:px-20">
       <div className="max-w-5xl mx-auto space-y-6">
@@ -184,6 +229,7 @@ const MyAppointmentsPage: React.FC = () => {
                 appointment={a}
                 onViewDetail={() => handleViewDetail(a)}
                 onCancel={() => handleOpenCancelModal(a)}
+                onReview={() => handleOpenReviewModal(a)}
               />
             ))
           )}
@@ -215,6 +261,98 @@ const MyAppointmentsPage: React.FC = () => {
         onConfirm={handleConfirmCancel}
         appointmentTitle={selectedAppointment?.title}
       />
+
+      {/* Review Modal */}
+      {isReviewModalOpen && reviewAppointment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+            <h2 className="text-lg font-semibold text-slate-900 mb-4">
+              Đánh giá lịch hẹn
+            </h2>
+
+            <div className="space-y-4">
+              {/* Appointment info */}
+              <div className="bg-slate-50 rounded-lg p-3">
+                <p className="text-sm font-medium text-slate-900">{reviewAppointment.title}</p>
+                <p className="text-xs text-slate-500 mt-1">{reviewAppointment.doctor}</p>
+                <p className="text-xs text-slate-500">{reviewAppointment.date} • {reviewAppointment.time}</p>
+              </div>
+
+              {/* Star rating */}
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-2">
+                  Đánh giá của bạn *
+                </label>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setReviewRating(star)}
+                      className="transition-transform hover:scale-110"
+                    >
+                      <FiStar
+                        className={`w-8 h-8 ${star <= reviewRating
+                          ? "fill-yellow-400 text-yellow-400"
+                          : "text-slate-300"
+                          }`}
+                      />
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-slate-500 mt-1">
+                  {reviewRating === 5 ? "Tuyệt vời" :
+                    reviewRating === 4 ? "Tốt" :
+                      reviewRating === 3 ? "Bình thường" :
+                        reviewRating === 2 ? "Kém" : "Rất kém"}
+                </p>
+              </div>
+
+              {/* Comment */}
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">
+                  Nhận xét (tùy chọn)
+                </label>
+                <textarea
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#2563EB] bg-white resize-none"
+                  rows={4}
+                  value={reviewComment}
+                  onChange={(e) => setReviewComment(e.target.value)}
+                  placeholder="Chia sẻ trải nghiệm của bạn..."
+                />
+              </div>
+
+              {/* Actions */}
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!reviewSubmitting) {
+                      setIsReviewModalOpen(false);
+                      setReviewAppointment(null);
+                    }
+                  }}
+                  className="px-4 py-2.5 text-sm rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50"
+                  disabled={reviewSubmitting}
+                >
+                  Hủy
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSubmitReview}
+                  disabled={reviewSubmitting}
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#2563EB] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#1D4ED8] disabled:opacity-70 disabled:cursor-not-allowed"
+                >
+                  {reviewSubmitting && (
+                    <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  )}
+                  <span>Gửi đánh giá</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -227,18 +365,21 @@ interface AppointmentCardProps {
   appointment: AppointmentDto;
   onViewDetail: () => void;
   onCancel: () => void;
+  onReview: () => void;
 }
 
 const AppointmentCard: React.FC<AppointmentCardProps> = ({
   appointment,
   onViewDetail,
   onCancel,
+  onReview,
 }) => {
   const status = statusMap[appointment.status as AppointmentStatus] || {
     label: appointment.status,
     className: "bg-gray-100 text-gray-600",
   };
   const canCancel = appointment.status === "confirmed" || appointment.status === "pending" || appointment.status === "booked";
+  const canReview = appointment.status === "completed";
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-100 px-5 py-4 flex gap-4 items-stretch hover:shadow-md transition-shadow">
@@ -270,7 +411,7 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({
                 className="text-[#2563EB] hover:underline font-medium"
                 onClick={onViewDetail}
               >
-                {canCancel ? "Chi tiết" : "Xem chi tiết"}
+                Chi tiết
               </button>
 
               {canCancel && (
@@ -279,6 +420,16 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({
                   onClick={onCancel}
                 >
                   Huỷ lịch
+                </button>
+              )}
+
+              {canReview && (
+                <button
+                  className="text-[#F59E0B] hover:underline font-medium flex items-center gap-1"
+                  onClick={onReview}
+                >
+                  <FiStar className="w-3 h-3" />
+                  Đánh giá
                 </button>
               )}
             </div>
