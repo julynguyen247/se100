@@ -21,6 +21,7 @@ import {
 } from "@/services/apiAdmin";
 
 type StatusFilter = "ALL" | "ACTIVE" | "INACTIVE";
+type RoleFilter = "ALL" | "ADMIN" | "RECEPTIONIST" | "DOCTOR";
 
 type AddUserFormState = {
   clinicId: string;
@@ -41,6 +42,7 @@ const initialAddForm: AddUserFormState = {
 const StaffManagementPage: React.FC = () => {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
+  const [roleFilter, setRoleFilter] = useState<RoleFilter>("ALL");
 
   const [users, setUsers] = useState<StaffUserRow[]>([]);
   const [roles, setRoles] = useState<StaffRoleOption[]>([]);
@@ -102,9 +104,15 @@ const StaffManagementPage: React.FC = () => {
           (statusFilter === "ACTIVE" && u.isActive) ||
           (statusFilter === "INACTIVE" && !u.isActive);
 
-        return matchText && matchStatus;
+        const matchRole =
+          roleFilter === "ALL" ||
+          (roleFilter === "ADMIN" && u.role === "ADMIN") ||
+          (roleFilter === "RECEPTIONIST" && u.role === "RECEPTIONIST") ||
+          (roleFilter === "DOCTOR" && u.role === "DOCTOR");
+
+        return matchText && matchStatus && matchRole;
       }),
-    [users, query, statusFilter]
+    [users, query, statusFilter, roleFilter]
   );
 
   const handleAdd = () => {
@@ -270,6 +278,18 @@ const StaffManagementPage: React.FC = () => {
                 onChange={(e) => setQuery(e.target.value)}
               />
             </div>
+
+            {/* Role filter - Admin/Receptionist/Doctor */}
+            <select
+              className="w-full md:w-52 rounded-lg border border-slate-200 bg-[#F9FAFB] px-3 py-2.5 text-sm outline-none focus:border-[#2563EB]"
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value as RoleFilter)}
+            >
+              <option value="ALL">Tất cả vai trò</option>
+              <option value="ADMIN">Quản trị viên</option>
+              <option value="RECEPTIONIST">Lễ tân</option>
+              <option value="DOCTOR">Bác sĩ</option>
+            </select>
 
             {/* Status filter - Active/Inactive */}
             <select

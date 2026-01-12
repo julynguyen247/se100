@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   FiUsers,
   FiCalendar,
@@ -13,7 +12,9 @@ import {
   getPatients,
   getTodayAppointments,
   getHistoricalStats,
+  getReviewStats,
   type AdminDashboardStats,
+  type ReviewStatsDto,
 } from "@/services/apiAdmin";
 import {
   formatVND,
@@ -29,7 +30,7 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-
+  ResponsiveContainer,
 } from "recharts";
 
 const AdminDashboardPage: React.FC = () => {
@@ -52,6 +53,22 @@ const AdminDashboardPage: React.FC = () => {
     completedAppointments: number;
   }>>([]);
 
+  // Appointments modal state
+  const [showAppointmentsModal, setShowAppointmentsModal] = useState(false);
+  const [todayAppointments, setTodayAppointments] = useState<import("@/services/apiAdmin").TodayAppointmentItem[]>([]);
+  const [loadingAppointments, setLoadingAppointments] = useState(false);
+
+  // Additional stats for mini cards
+  const [additionalStats, setAdditionalStats] = useState<{
+    totalDoctors: number;
+    totalStaff: number;
+    activeClinics: number;
+  } | null>(null);
+
+  // Review stats
+  const [reviewStats, setReviewStats] = useState<ReviewStatsDto | null>(null);
+  const [loadingReviewStats, setLoadingReviewStats] = useState(false);
+
   // Fetch dashboard stats
   const fetchDashboardStats = async () => {
     try {
@@ -66,6 +83,13 @@ const AdminDashboardPage: React.FC = () => {
         todayAppointments: 0, // Will be updated by fetchTotalAppointmentsCount
         monthlyRevenue: data.totalRevenue, // Backend field name difference
         satisfactionRate: data.satisfactionRate,
+      });
+
+      // Store additional stats for mini cards
+      setAdditionalStats({
+        totalDoctors: data.totalDoctors,
+        totalStaff: data.totalStaff,
+        activeClinics: data.activeClinics,
       });
     } catch (error) {
       console.error("Error fetching dashboard stats:", error);
@@ -120,6 +144,35 @@ const AdminDashboardPage: React.FC = () => {
     }
   };
 
+  // Fetch review statistics
+  const fetchReviewStats = async () => {
+    try {
+      setLoadingReviewStats(true);
+      const data = await getReviewStats();
+      setReviewStats(data);
+    } catch (error) {
+      console.error("Error fetching review stats:", error);
+      // Don't show error to user, just log it
+    } finally {
+      setLoadingReviewStats(false);
+    }
+  };
+
+  // Fetch and show today's appointments
+  const fetchAndShowAppointments = async () => {
+    try {
+      setLoadingAppointments(true);
+      setShowAppointmentsModal(true);
+      const appointments = await getTodayAppointments(100);
+      setTodayAppointments(appointments);
+    } catch (error) {
+      console.error("Error fetching appointments:", error);
+      setTodayAppointments([]);
+    } finally {
+      setLoadingAppointments(false);
+    }
+  };
+
   // Calculate percentage change
   const calculatePercentageChange = (current: number, previous: number): string => {
     if (previous === 0) return "+100%";
@@ -146,6 +199,7 @@ const AdminDashboardPage: React.FC = () => {
     fetchTotalPatientsCount(); // Fetch total patients count for card
     fetchTotalAppointmentsCount(); // Fetch total appointments count for card
     fetchHistoricalStats(); // Fetch historical stats for percentage calculations
+    fetchReviewStats(); // Fetch review statistics
   }, []);
 
   // Prepare stats for display with dynamic percentage calculations
@@ -268,44 +322,44 @@ const AdminDashboardPage: React.FC = () => {
               </div>
               <div className="h-64">
                 {historicalStats.length > 0 ? (
-                  <LineChart
-                    width={550}
-                    height={240}
-                    data={historicalStats.slice(-6)}
-                    margin={{ top: 10, right: 10, left: -20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis
-                      dataKey="period"
-                      tick={{ fontSize: 11, fill: '#64748b' }}
-                      tickFormatter={(value) => {
-                        const [, month] = value.split('-');
-                        return `T${month}`;
-                      }}
-                    />
-                    <YAxis
-                      tick={{ fontSize: 11, fill: '#64748b' }}
-                      tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M`}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: '#fff',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: '8px',
-                        fontSize: '12px'
-                      }}
-                      formatter={(value: number | undefined) => value ? [`${formatVND(value)}`, 'Doanh thu'] : ['—', 'Doanh thu']}
-                      labelFormatter={(label) => `Tháng ${label}`}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="revenue"
-                      stroke="#10b981"
-                      strokeWidth={2}
-                      dot={{ fill: '#10b981', r: 4 }}
-                      activeDot={{ r: 6 }}
-                    />
-                  </LineChart>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={historicalStats.slice(-6)}
+                      margin={{ top: 10, right: 10, left: -20, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis
+                        dataKey="period"
+                        tick={{ fontSize: 11, fill: '#64748b' }}
+                        tickFormatter={(value) => {
+                          const [, month] = value.split('-');
+                          return `T${month}`;
+                        }}
+                      />
+                      <YAxis
+                        tick={{ fontSize: 11, fill: '#64748b' }}
+                        tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M`}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: '#fff',
+                          border: '1px solid #e2e8f0',
+                          borderRadius: '8px',
+                          fontSize: '12px'
+                        }}
+                        formatter={(value: number | undefined) => value ? [`${formatVND(value)}`, 'Doanh thu'] : ['—', 'Doanh thu']}
+                        labelFormatter={(label) => `Tháng ${label}`}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="revenue"
+                        stroke="#10b981"
+                        strokeWidth={2}
+                        dot={{ fill: '#10b981', r: 4 }}
+                        activeDot={{ r: 6 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
                 ) : (
                   <div className="h-full flex items-center justify-center text-slate-400 text-sm">
                     Đang tải dữ liệu...
@@ -322,40 +376,40 @@ const AdminDashboardPage: React.FC = () => {
               </div>
               <div className="h-64">
                 {historicalStats.length > 0 ? (
-                  <BarChart
-                    width={550}
-                    height={240}
-                    data={historicalStats.slice(-6)}
-                    margin={{ top: 10, right: 10, left: -20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis
-                      dataKey="period"
-                      tick={{ fontSize: 11, fill: '#64748b' }}
-                      tickFormatter={(value) => {
-                        const [, month] = value.split('-');
-                        return `T${month}`;
-                      }}
-                    />
-                    <YAxis
-                      tick={{ fontSize: 11, fill: '#64748b' }}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: '#fff',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: '8px',
-                        fontSize: '12px'
-                      }}
-                      formatter={(value: number | undefined) => value ? [`${value} bệnh nhân`, 'Mới'] : ['—', 'Mới']}
-                      labelFormatter={(label) => `Tháng ${label}`}
-                    />
-                    <Bar
-                      dataKey="newPatients"
-                      fill="#3b82f6"
-                      radius={[8, 8, 0, 0]}
-                    />
-                  </BarChart>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={historicalStats.slice(-6)}
+                      margin={{ top: 10, right: 10, left: -20, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis
+                        dataKey="period"
+                        tick={{ fontSize: 11, fill: '#64748b' }}
+                        tickFormatter={(value) => {
+                          const [, month] = value.split('-');
+                          return `T${month}`;
+                        }}
+                      />
+                      <YAxis
+                        tick={{ fontSize: 11, fill: '#64748b' }}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: '#fff',
+                          border: '1px solid #e2e8f0',
+                          borderRadius: '8px',
+                          fontSize: '12px'
+                        }}
+                        formatter={(value: number | undefined) => value ? [`${value} bệnh nhân`, 'Mới'] : ['—', 'Mới']}
+                        labelFormatter={(label) => `Tháng ${label}`}
+                      />
+                      <Bar
+                        dataKey="newPatients"
+                        fill="#3b82f6"
+                        radius={[8, 8, 0, 0]}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
                 ) : (
                   <div className="h-full flex items-center justify-center text-slate-400 text-sm">
                     Đang tải dữ liệu...
@@ -371,39 +425,226 @@ const AdminDashboardPage: React.FC = () => {
               <h2 className="text-sm font-semibold text-slate-900">Lịch làm việc</h2>
               <FiCalendar className="w-4 h-4 text-rose-500" />
             </div>
-            <MiniCalendar />
+            <MiniCalendar onTodayClick={fetchAndShowAppointments} />
 
             {/* Stats Mini Grid */}
             <div className="mt-6 space-y-3">
               <div className="p-3 bg-blue-50 rounded-lg">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-slate-600">Bác sĩ Online</span>
-                  <span className="text-sm font-semibold text-blue-600">—</span>
+                  <span className="text-xs text-slate-600">Bác sĩ</span>
+                  <span className="text-sm font-semibold text-blue-600">
+                    {additionalStats ? additionalStats.totalDoctors : "—"}
+                  </span>
                 </div>
               </div>
               <div className="p-3 bg-emerald-50 rounded-lg">
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-slate-600">Phòng khám</span>
-                  <span className="text-sm font-semibold text-emerald-600">—</span>
+                  <span className="text-sm font-semibold text-emerald-600">
+                    {additionalStats ? additionalStats.activeClinics : "—"}
+                  </span>
                 </div>
               </div>
               <div className="p-3 bg-purple-50 rounded-lg">
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-slate-600">Nhân viên</span>
-                  <span className="text-sm font-semibold text-purple-600">—</span>
+                  <span className="text-sm font-semibold text-purple-600">
+                    {additionalStats ? additionalStats.totalStaff : "—"}
+                  </span>
                 </div>
               </div>
             </div>
           </div>
         </div>
+
+        {/* Review Statistics - Separate Section */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-semibold text-slate-900">Đánh giá dịch vụ</h2>
+            <FiTrendingUp className="w-4 h-4 text-amber-600" />
+          </div>
+
+          {loadingReviewStats ? (
+            <div className="h-64 flex items-center justify-center text-slate-400 text-sm">
+              Đang tải dữ liệu...
+            </div>
+          ) : reviewStats && reviewStats.totalReviews > 0 ? (
+            <div className="space-y-4">
+              {/* Summary Stats */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center">
+                  <div className="flex items-center justify-center gap-1 mb-1">
+                    <span className="text-2xl font-bold text-slate-900">
+                      {reviewStats.averageRating.toFixed(1)}
+                    </span>
+                    <span className="text-lg text-yellow-400">★</span>
+                  </div>
+                  <p className="text-xs text-slate-500">Trung bình</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-slate-900">
+                    {reviewStats.totalReviews}
+                  </p>
+                  <p className="text-xs text-slate-500">Đánh giá</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-emerald-600">
+                    {reviewStats.satisfactionRate.toFixed(0)}%
+                  </p>
+                  <p className="text-xs text-slate-500">Hài lòng</p>
+                </div>
+              </div>
+
+              {/* Rating Distribution */}
+              <div className="space-y-2">
+                {[5, 4, 3, 2, 1].map((star) => {
+                  const key = `${['five', 'four', 'three', 'two', 'one'][5 - star]}Star` as keyof typeof reviewStats.ratingDistribution;
+                  const count = reviewStats.ratingDistribution[key];
+                  const percentage = reviewStats.totalReviews > 0
+                    ? (count / reviewStats.totalReviews) * 100
+                    : 0;
+
+                  return (
+                    <div key={star} className="flex items-center gap-2">
+                      <span className="text-xs text-slate-600 w-8">{star}★</span>
+                      <div className="flex-1 h-6 bg-slate-100 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full ${star === 5 ? 'bg-emerald-500' :
+                            star === 4 ? 'bg-blue-500' :
+                              star === 3 ? 'bg-yellow-500' :
+                                star === 2 ? 'bg-orange-500' : 'bg-red-500'
+                            }`}
+                          style={{ width: `${percentage}%` }}
+                        />
+                      </div>
+                      <span className="text-xs text-slate-600 w-8 text-right">{count}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="h-64 flex flex-col items-center justify-center text-slate-400 text-sm">
+              <p>Chưa có đánh giá nào</p>
+              <p className="text-xs mt-1">Khuyến khích bệnh nhân đánh giá sau khám</p>
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Appointments Modal */}
+      {showAppointmentsModal && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={() => setShowAppointmentsModal(false)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900">Lịch hẹn hôm nay</h3>
+                <p className="text-sm text-slate-500 mt-0.5">
+                  {new Date().toLocaleDateString('vi-VN', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowAppointmentsModal(false)}
+                className="w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center transition-colors"
+              >
+                <FiAlertCircle className="w-5 h-5 text-slate-400" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="overflow-y-auto max-h-[calc(80vh-80px)]">
+              {loadingAppointments ? (
+                <div className="p-12 flex flex-col items-center justify-center">
+                  <div className="w-12 h-12 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+                  <p className="text-sm text-slate-500">Đang tải...</p>
+                </div>
+              ) : todayAppointments.length === 0 ? (
+                <div className="p-12 flex flex-col items-center justify-center">
+                  <FiCalendar className="w-16 h-16 text-slate-300 mb-4" />
+                  <p className="text-sm font-medium text-slate-900">Không có lịch hẹn</p>
+                  <p className="text-xs text-slate-500 mt-1">Hôm nay chưa có lịch hẹn nào</p>
+                </div>
+              ) : (
+                <div className="p-6 space-y-3">
+                  {todayAppointments.map((apt) => (
+                    <div
+                      key={apt.id}
+                      className="p-4 rounded-xl border border-slate-200 hover:border-blue-300 hover:bg-blue-50/50 transition-all"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h4 className="font-semibold text-slate-900">{apt.patientName}</h4>
+                            <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${apt.status === 'confirmed' ? 'bg-green-100 text-green-700' :
+                              apt.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                                apt.status === 'checked-in' ? 'bg-blue-100 text-blue-700' :
+                                  'bg-red-100 text-red-700'
+                              }`}>
+                              {apt.status === 'confirmed' ? 'Đã xác nhận' :
+                                apt.status === 'pending' ? 'Chờ xác nhận' :
+                                  apt.status === 'checked-in' ? 'Đã check-in' :
+                                    'Đã hủy'}
+                            </span>
+                          </div>
+                          <div className="space-y-1 text-sm text-slate-600">
+                            <div className="flex items-center gap-2">
+                              <FiCalendar className="w-4 h-4 flex-shrink-0" />
+                              <span>{apt.time} • {apt.duration} phút</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <FiUsers className="w-4 h-4 flex-shrink-0" />
+                              <span>BS. {apt.doctor}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <FiDollarSign className="w-4 h-4 flex-shrink-0" />
+                              <span>{apt.service}</span>
+                            </div>
+                          </div>
+                          {apt.notes && (
+                            <p className="mt-2 text-xs text-slate-500 italic">{apt.notes}</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            {!loadingAppointments && todayAppointments.length > 0 && (
+              <div className="px-6 py-4 border-t border-slate-200 bg-slate-50">
+                <p className="text-sm text-slate-600">
+                  Tổng cộng: <span className="font-semibold text-slate-900">{todayAppointments.length}</span> lịch hẹn
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
 /* ====== Mini Calendar Component ====== */
 
-const MiniCalendar: React.FC = () => {
+interface MiniCalendarProps {
+  onTodayClick?: () => void;
+}
+
+const MiniCalendar: React.FC<MiniCalendarProps> = ({ onTodayClick }) => {
   const today = new Date();
   const currentMonth = today.getMonth();
   const currentYear = today.getFullYear();
@@ -427,6 +668,12 @@ const MiniCalendar: React.FC = () => {
     days.push(i);
   }
 
+  const handleDayClick = (day: number | null) => {
+    if (day === currentDate && onTodayClick) {
+      onTodayClick();
+    }
+  };
+
   return (
     <div>
       <div className="text-center mb-3">
@@ -447,10 +694,11 @@ const MiniCalendar: React.FC = () => {
         {days.map((day, index) => (
           <div
             key={index}
-            className={`aspect-square flex items-center justify-center text-xs rounded-lg ${day === null
+            onClick={() => handleDayClick(day)}
+            className={`aspect-square flex items-center justify-center text-xs rounded-lg transition-all ${day === null
               ? ""
               : day === currentDate
-                ? "bg-rose-500 text-white font-semibold"
+                ? "bg-rose-500 text-white font-semibold cursor-pointer hover:bg-rose-600 hover:scale-105"
                 : "text-slate-700 hover:bg-slate-100 cursor-pointer"
               }`}
           >
