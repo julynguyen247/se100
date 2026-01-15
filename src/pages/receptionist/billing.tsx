@@ -744,7 +744,7 @@ const ReceptionistBilling: React.FC = () => {
             }
         } catch (err) {
             console.error('Failed to fetch bill detail:', err);
-            alert('Không thể tải chi tiết hoá đơn');
+            // Could show error toast here if implemented
         }
     };
 
@@ -808,7 +808,8 @@ const ReceptionistBilling: React.FC = () => {
                     // Refetch bills and stats
                     await fetchBills();
                     await fetchStats();
-                    alert('Thanh toán thành công!');
+                    // Payment succeeded - modal will close automatically
+                    console.log('Payment successful');
                 } else {
                     throw new Error(response.message || 'Payment failed');
                 }
@@ -827,7 +828,7 @@ const ReceptionistBilling: React.FC = () => {
             }
         } catch (err) {
             console.error('Failed to fetch bill detail:', err);
-            alert('Không thể tải chi tiết hoá đơn');
+            // Could show error toast here if implemented
         }
     };
 
@@ -878,7 +879,7 @@ const ReceptionistBilling: React.FC = () => {
             }
         } catch (err) {
             console.error('Failed to fetch bill detail:', err);
-            alert('Không thể in hoá đơn');
+            // Could show error toast here if implemented
         }
     };
 

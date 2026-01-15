@@ -79,6 +79,7 @@ const MyProfilePage: React.FC = () => {
     const [isSaving, setIsSaving] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
     const [updatedInfo, setUpdatedInfo] = useState<ProfileData | null>(null);
+    const [validationError, setValidationError] = useState<string | null>(null);
 
     // Fetch patient profile and gender enum on mount
     useEffect(() => {
@@ -153,9 +154,11 @@ const MyProfilePage: React.FC = () => {
 
         // Validate required fields
         if (!editProfile.fullName || !editProfile.phone) {
-            alert('Vui lòng nhập đầy đủ họ tên và số điện thoại!');
+            setValidationError('Vui lòng nhập đầy đủ họ tên và số điện thoại!');
             return;
         }
+
+        setValidationError(null);
 
         try {
             // Show modal and start saving
@@ -223,7 +226,9 @@ const MyProfilePage: React.FC = () => {
             setShowSaveModal(false);
             setIsSaving(false);
             setSaveSuccess(false);
-            alert('Không thể lưu thông tin. Vui lòng thử lại sau.');
+            setValidationError(
+                'Không thể lưu thông tin. Vui lòng thử lại sau.'
+            );
         }
     };
 
@@ -321,6 +326,24 @@ const MyProfilePage: React.FC = () => {
                         </div>
                     )}
                 </div>
+
+                {/* Validation Error Message */}
+                {validationError && (
+                    <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
+                        <FiAlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                            <p className="text-sm text-red-800">
+                                {validationError}
+                            </p>
+                        </div>
+                        <button
+                            onClick={() => setValidationError(null)}
+                            className="text-red-500 hover:text-red-700"
+                        >
+                            <FiX className="w-4 h-4" />
+                        </button>
+                    </div>
+                )}
 
                 {/* Thông tin cơ bản */}
                 <ProfileSection title="Thông tin cơ bản">

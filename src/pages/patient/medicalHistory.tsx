@@ -531,7 +531,7 @@ const MedicalRecordDetailModal: React.FC<MedicalRecordDetailModalProps> = ({
             URL.revokeObjectURL(url);
         } catch (error) {
             console.error('Failed to download attachment:', error);
-            alert('Không thể tải file. Vui lòng thử lại.');
+            // Could show toast notification here if implemented
         }
     };
 

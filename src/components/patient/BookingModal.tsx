@@ -6,6 +6,8 @@ import {
     FiPhone,
     FiMail,
     FiMapPin,
+    FiCheck,
+    FiAlertCircle,
 } from 'react-icons/fi';
 import {
     getClinics,
@@ -39,6 +41,13 @@ const BookingModal: React.FC<BookingModalProps> = ({
 }) => {
     const [step, setStep] = useState<Step>(1);
     const [isLoading, setIsLoading] = useState(false);
+
+    // Success/Error Modal states
+    const [bookingResult, setBookingResult] = useState<{
+        show: boolean;
+        success: boolean;
+        message: string;
+    }>({ show: false, success: false, message: '' });
 
     // Data & Selection State
     const [clinics, setClinics] = useState<ClinicDto[]>([]);
@@ -233,15 +242,26 @@ const BookingModal: React.FC<BookingModalProps> = ({
             });
 
             if (response.isSuccess) {
-                alert('Đặt lịch thành công! Vui lòng kiểm tra email.');
+                setBookingResult({
+                    show: true,
+                    success: true,
+                    message: 'Đặt lịch thành công! Vui lòng kiểm tra email.',
+                });
                 onSubmit?.(response.data);
-                onClose();
             } else {
-                alert(response.message || 'Đặt lịch thất bại');
+                setBookingResult({
+                    show: true,
+                    success: false,
+                    message: response.message || 'Đặt lịch thất bại',
+                });
             }
         } catch (error: any) {
             console.error(error);
-            alert(error.response?.data?.message || 'Đã xảy ra lỗi');
+            setBookingResult({
+                show: true,
+                success: false,
+                message: error.response?.data?.message || 'Đã xảy ra lỗi',
+            });
         } finally {
             setIsLoading(false);
         }
@@ -684,6 +704,52 @@ const BookingModal: React.FC<BookingModalProps> = ({
                     </button>
                 </div>
             </div>
+
+            {/* Booking Result Modal */}
+            {bookingResult.show && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 text-center">
+                        <div
+                            className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${
+                                bookingResult.success
+                                    ? 'bg-green-100'
+                                    : 'bg-red-100'
+                            }`}
+                        >
+                            {bookingResult.success ? (
+                                <FiCheck className="w-8 h-8 text-green-600" />
+                            ) : (
+                                <FiAlertCircle className="w-8 h-8 text-red-600" />
+                            )}
+                        </div>
+                        <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                            {bookingResult.success ? 'Thành công!' : 'Lỗi'}
+                        </h3>
+                        <p className="text-sm text-slate-600 mb-4">
+                            {bookingResult.message}
+                        </p>
+                        <button
+                            onClick={() => {
+                                setBookingResult({
+                                    show: false,
+                                    success: false,
+                                    message: '',
+                                });
+                                if (bookingResult.success) {
+                                    onClose();
+                                }
+                            }}
+                            className={`w-full px-4 py-2.5 text-sm font-medium text-white rounded-xl transition ${
+                                bookingResult.success
+                                    ? 'bg-green-600 hover:bg-green-700'
+                                    : 'bg-slate-600 hover:bg-slate-700'
+                            }`}
+                        >
+                            {bookingResult.success ? 'Đóng' : 'Thử lại'}
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -37,6 +37,12 @@ const DoctorPatients: React.FC = () => {
     const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
     const [modalLoading, setModalLoading] = useState(false);
 
+    // Error modal state
+    const [errorModal, setErrorModal] = useState<{
+        show: boolean;
+        message: string;
+    }>({ show: false, message: '' });
+
     const fetchPatients = async () => {
         try {
             setLoading(true);
@@ -69,12 +75,16 @@ const DoctorPatients: React.FC = () => {
             if (response.isSuccess && response.data) {
                 setSelectedPatient(response.data);
             } else {
-                alert(response.message || 'Không thể tải thông tin bệnh nhân');
+                setErrorModal({
+                    show: true,
+                    message:
+                        response.message || 'Không thể tải thông tin bệnh nhân',
+                });
                 setIsPatientModalOpen(false);
             }
         } catch (err) {
             console.error('Error fetching patient detail:', err);
-            alert('Lỗi kết nối server');
+            setErrorModal({ show: true, message: 'Lỗi kết nối server' });
             setIsPatientModalOpen(false);
         } finally {
             setModalLoading(false);
@@ -89,12 +99,15 @@ const DoctorPatients: React.FC = () => {
             if (response.isSuccess && response.data) {
                 setSelectedRecord(response.data);
             } else {
-                alert(response.message || 'Không thể tải hồ sơ bệnh án');
+                setErrorModal({
+                    show: true,
+                    message: response.message || 'Không thể tải hồ sơ bệnh án',
+                });
                 setIsRecordModalOpen(false);
             }
         } catch (err) {
             console.error('Error fetching record detail:', err);
-            alert('Lỗi kết nối server');
+            setErrorModal({ show: true, message: 'Lỗi kết nối server' });
             setIsRecordModalOpen(false);
         } finally {
             setModalLoading(false);
@@ -787,6 +800,31 @@ const DoctorPatients: React.FC = () => {
                                 </div>
                             ) : null}
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Error Modal */}
+            {errorModal.show && (
+                <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 text-center">
+                        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
+                            <FiAlertCircle className="w-8 h-8 text-red-600" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                            Lỗi
+                        </h3>
+                        <p className="text-sm text-slate-600 mb-4">
+                            {errorModal.message}
+                        </p>
+                        <button
+                            onClick={() =>
+                                setErrorModal({ show: false, message: '' })
+                            }
+                            className="w-full px-4 py-2.5 text-sm font-medium text-white bg-slate-600 rounded-xl hover:bg-slate-700 transition"
+                        >
+                            Đóng
+                        </button>
                     </div>
                 </div>
             )}
