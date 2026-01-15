@@ -24,14 +24,16 @@ export default function UpdateAppointmentForm({
         phone: appointment.phone,
         serviceId: '', // TODO: Get from API
         doctorId: '', // TODO: Get from API
-        date: appointment.date,
-        time: appointment.time,
+        date: appointment.date || '',
+        time: appointment.time || '',
         duration: appointment.duration,
         notes: appointment.notes || '',
     });
 
     const handleChange = (
-        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+        e: React.ChangeEvent<
+            HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+        >
     ) => {
         const { name, value } = e.target;
         setFormData((prev) => ({
@@ -49,7 +51,6 @@ export default function UpdateAppointmentForm({
             const result = await updateAppointment(appointment.id, formData);
 
             if (result.isSuccess && result.data) {
-                alert('✅ Cập nhật lịch hẹn thành công!');
                 onSuccess?.();
             }
         } catch (err: any) {
@@ -61,7 +62,10 @@ export default function UpdateAppointmentForm({
     };
 
     return (
-        <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <form
+            onSubmit={handleSubmit}
+            className="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
+        >
             <h2 className="text-2xl font-bold mb-6">Cập nhật lịch hẹn</h2>
 
             {error && (

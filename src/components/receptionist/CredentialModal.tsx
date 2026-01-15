@@ -32,12 +32,10 @@ const CredentialModal: React.FC<CredentialModalProps> = ({
     const handleSendEmail = async () => {
         setSendingEmail(true);
         try {
-            
             console.log('Email would be sent to:', credentials.patientPhone);
-            alert('Tính năng gửi email đang được phát triển');
+            console.log('[TODO] Tính năng gửi email đang được phát triển');
         } catch (error) {
             console.error('Failed to send email:', error);
-            alert('Không thể gửi email');
         } finally {
             setSendingEmail(false);
         }
@@ -49,10 +47,9 @@ const CredentialModal: React.FC<CredentialModalProps> = ({
             // TODO: Implement SMS sending API call
             // await sendCredentialsSMS({ phone: credentials.patientPhone, username: credentials.username, password: credentials.password });
             console.log('SMS would be sent to:', credentials.patientPhone);
-            alert('Tính năng gửi SMS đang được phát triển');
+            console.log('[TODO] Tính năng gửi SMS đang được phát triển');
         } catch (error) {
             console.error('Failed to send SMS:', error);
-            alert('Không thể gửi SMS');
         } finally {
             setSendingSMS(false);
         }

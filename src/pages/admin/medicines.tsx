@@ -6,6 +6,7 @@ import {
     FiSearch,
     FiPackage,
     FiCheck,
+    FiAlertCircle,
 } from 'react-icons/fi';
 import { FaPills } from 'react-icons/fa';
 import Modal from '@/components/ui/Modal';
@@ -64,6 +65,18 @@ const MedicinesPage: React.FC = () => {
         change?: number;
     } | null>(null);
 
+    // Error Modal state
+    const [errorModal, setErrorModal] = useState<{
+        show: boolean;
+        message: string;
+    }>({ show: false, message: '' });
+
+    // Delete Confirmation Modal state
+    const [deleteModal, setDeleteModal] = useState<{
+        show: boolean;
+        medicine: Medicine | null;
+    }>({ show: false, medicine: null });
+
     useEffect(() => {
         fetchMedicines();
     }, []);
@@ -94,7 +107,10 @@ const MedicinesPage: React.FC = () => {
             }
         } catch (error) {
             console.error('Error fetching medicines:', error);
-            alert('Lỗi khi tải danh sách thuốc');
+            setErrorModal({
+                show: true,
+                message: 'Lỗi khi tải danh sách thuốc',
+            });
         } finally {
             setLoading(false);
         }
@@ -131,7 +147,10 @@ const MedicinesPage: React.FC = () => {
     const handleSubmit = async () => {
         // Validation
         if (!formData.code.trim() || !formData.name.trim()) {
-            alert('Vui lòng nhập mã thuốc và tên thuốc!');
+            setErrorModal({
+                show: true,
+                message: 'Vui lòng nhập mã thuốc và tên thuốc!',
+            });
             return;
         }
 
@@ -157,7 +176,10 @@ const MedicinesPage: React.FC = () => {
                     setSuccessModalOpen(true);
                     fetchMedicines();
                 } else {
-                    alert(response.message || 'Không thể thêm thuốc');
+                    setErrorModal({
+                        show: true,
+                        message: response.message || 'Không thể thêm thuốc',
+                    });
                 }
             } else {
                 if (!selectedMedicine) return;
@@ -185,19 +207,26 @@ const MedicinesPage: React.FC = () => {
                     setSuccessModalOpen(true);
                     fetchMedicines();
                 } else {
-                    alert(response.message || 'Không thể cập nhật thuốc');
+                    setErrorModal({
+                        show: true,
+                        message: response.message || 'Không thể cập nhật thuốc',
+                    });
                 }
             }
         } catch (error) {
             console.error('Error saving medicine:', error);
-            alert('Lỗi kết nối server');
+            setErrorModal({ show: true, message: 'Lỗi kết nối server' });
         }
     };
 
-    const handleDelete = async (medicine: Medicine) => {
-        if (!confirm(`Xác nhận xóa thuốc "${medicine.name}"?`)) {
-            return;
-        }
+    const handleDelete = (medicine: Medicine) => {
+        setDeleteModal({ show: true, medicine });
+    };
+
+    const confirmDelete = async () => {
+        if (!deleteModal.medicine) return;
+        const medicine = deleteModal.medicine;
+        setDeleteModal({ show: false, medicine: null });
 
         try {
             const response = await deleteMedicine(medicine.medicineId);
@@ -209,11 +238,14 @@ const MedicinesPage: React.FC = () => {
                 setSuccessModalOpen(true);
                 fetchMedicines();
             } else {
-                alert(response.message || 'Không thể xóa thuốc');
+                setErrorModal({
+                    show: true,
+                    message: response.message || 'Không thể xóa thuốc',
+                });
             }
         } catch (error) {
             console.error('Error deleting medicine:', error);
-            alert('Lỗi kết nối server');
+            setErrorModal({ show: true, message: 'Lỗi kết nối server' });
         }
     };
 
@@ -227,13 +259,13 @@ const MedicinesPage: React.FC = () => {
 
     const handleUpdateStock = async () => {
         if (!stockMedicine || !stockQuantity) {
-            alert('Vui lòng nhập số lượng!');
+            setErrorModal({ show: true, message: 'Vui lòng nhập số lượng!' });
             return;
         }
 
         const qty = parseInt(stockQuantity);
         if (isNaN(qty)) {
-            alert('Số lượng không hợp lệ!');
+            setErrorModal({ show: true, message: 'Số lượng không hợp lệ!' });
             return;
         }
 
@@ -262,11 +294,14 @@ const MedicinesPage: React.FC = () => {
                 setSuccessModalOpen(true);
                 fetchMedicines();
             } else {
-                alert(response.message || 'Không thể cập nhật tồn kho');
+                setErrorModal({
+                    show: true,
+                    message: response.message || 'Không thể cập nhật tồn kho',
+                });
             }
         } catch (error) {
             console.error('Error updating stock:', error);
-            alert('Lỗi kết nối server');
+            setErrorModal({ show: true, message: 'Lỗi kết nối server' });
         } finally {
             setStockSubmitting(false);
         }
@@ -810,6 +845,68 @@ const MedicinesPage: React.FC = () => {
                         >
                             Đóng
                         </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Error Modal */}
+            {errorModal.show && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 text-center">
+                        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
+                            <FiAlertCircle className="w-8 h-8 text-red-600" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                            Lỗi
+                        </h3>
+                        <p className="text-sm text-slate-600 mb-4">
+                            {errorModal.message}
+                        </p>
+                        <button
+                            onClick={() =>
+                                setErrorModal({ show: false, message: '' })
+                            }
+                            className="w-full px-4 py-2.5 text-sm font-medium text-white bg-slate-600 rounded-xl hover:bg-slate-700 transition"
+                        >
+                            Đóng
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {deleteModal.show && deleteModal.medicine && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 text-center">
+                        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
+                            <FiTrash2 className="w-8 h-8 text-red-600" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                            Xác nhận xóa
+                        </h3>
+                        <p className="text-sm text-slate-600 mb-4">
+                            Bạn có chắc muốn xóa thuốc "
+                            {deleteModal.medicine.name}"?
+                        </p>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() =>
+                                    setDeleteModal({
+                                        show: false,
+                                        medicine: null,
+                                    })
+                                }
+                                className="flex-1 px-4 py-2.5 text-sm font-medium text-slate-700 bg-slate-100 rounded-xl hover:bg-slate-200 transition"
+                            >
+                                Hủy
+                            </button>
+                            <button
+                                onClick={confirmDelete}
+                                className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-red-600 rounded-xl hover:bg-red-700 transition"
+                            >
+                                Xóa
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

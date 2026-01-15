@@ -59,7 +59,7 @@ export default function CreateAppointmentForm({
         } else {
             setServices([]);
             setDoctors([]);
-            setFormData(prev => ({ ...prev, serviceId: '', doctorId: '' }));
+            setFormData((prev) => ({ ...prev, serviceId: '', doctorId: '' }));
         }
     }, [formData.clinicId]);
 
@@ -75,24 +75,39 @@ export default function CreateAppointmentForm({
             setDoctors([]);
         }
         // Clear doctor selection when service changes
-        setFormData(prev => ({ ...prev, doctorId: '' }));
+        setFormData((prev) => ({ ...prev, doctorId: '' }));
     }, [formData.clinicId, formData.serviceId]);
 
     // Fetch slots when doctor, date, or service changes
     useEffect(() => {
         if (formData.clinicId && formData.doctorId && formData.date) {
-            fetchSlots(formData.clinicId, formData.doctorId, formData.date, formData.serviceId);
+            fetchSlots(
+                formData.clinicId,
+                formData.doctorId,
+                formData.date,
+                formData.serviceId
+            );
         } else {
             setSlots([]);
         }
-    }, [formData.clinicId, formData.doctorId, formData.date, formData.serviceId]);
+    }, [
+        formData.clinicId,
+        formData.doctorId,
+        formData.date,
+        formData.serviceId,
+    ]);
 
     // Auto-fill duration when service changes
     useEffect(() => {
         if (formData.serviceId) {
-            const selectedService = services.find(s => s.serviceId === formData.serviceId);
+            const selectedService = services.find(
+                (s) => s.serviceId === formData.serviceId
+            );
             if (selectedService?.defaultDurationMin) {
-                setFormData(prev => ({ ...prev, duration: selectedService.defaultDurationMin || 30 }));
+                setFormData((prev) => ({
+                    ...prev,
+                    duration: selectedService.defaultDurationMin || 30,
+                }));
             }
         }
     }, [formData.serviceId, services]);
@@ -139,7 +154,12 @@ export default function CreateAppointmentForm({
         }
     };
 
-    const fetchSlots = async (clinicId: string, doctorId: string, date: string, serviceId?: string) => {
+    const fetchSlots = async (
+        clinicId: string,
+        doctorId: string,
+        date: string,
+        serviceId?: string
+    ) => {
         try {
             setLoadingSlots(true);
             const result = await getSlots(clinicId, doctorId, date, serviceId);
@@ -154,7 +174,9 @@ export default function CreateAppointmentForm({
     };
 
     const handleChange = (
-        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+        e: React.ChangeEvent<
+            HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+        >
     ) => {
         const { name, value } = e.target;
         setFormData((prev) => ({
@@ -194,7 +216,6 @@ export default function CreateAppointmentForm({
             const result = await createAppointment(formData);
 
             if (result.isSuccess && result.data) {
-                alert('✅ Tạo lịch hẹn thành công!');
                 // Reset form
                 setFormData({
                     patientName: '',
@@ -218,7 +239,10 @@ export default function CreateAppointmentForm({
     };
 
     return (
-        <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <form
+            onSubmit={handleSubmit}
+            className="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
+        >
             <h2 className="text-2xl font-bold mb-6">Tạo lịch hẹn mới</h2>
 
             {error && (
@@ -274,10 +298,15 @@ export default function CreateAppointmentForm({
                         className="w-full border border-gray-300 rounded px-3 py-2 disabled:bg-gray-100"
                     >
                         <option value="">
-                            {loadingClinics ? 'Đang tải...' : '-- Chọn phòng khám --'}
+                            {loadingClinics
+                                ? 'Đang tải...'
+                                : '-- Chọn phòng khám --'}
                         </option>
                         {clinics.map((clinic) => (
-                            <option key={clinic.clinicId} value={clinic.clinicId}>
+                            <option
+                                key={clinic.clinicId}
+                                value={clinic.clinicId}
+                            >
                                 {clinic.name} ({clinic.code})
                             </option>
                         ))}
@@ -301,12 +330,16 @@ export default function CreateAppointmentForm({
                             {!formData.clinicId
                                 ? '-- Chọn phòng khám trước --'
                                 : loadingServices
-                                    ? 'Đang tải...'
-                                    : '-- Chọn dịch vụ --'}
+                                ? 'Đang tải...'
+                                : '-- Chọn dịch vụ --'}
                         </option>
                         {services.map((service) => (
-                            <option key={service.serviceId} value={service.serviceId}>
-                                {service.name} ({service.defaultDurationMin || 30} phút)
+                            <option
+                                key={service.serviceId}
+                                value={service.serviceId}
+                            >
+                                {service.name} (
+                                {service.defaultDurationMin || 30} phút)
                             </option>
                         ))}
                     </select>
@@ -329,16 +362,22 @@ export default function CreateAppointmentForm({
                             {!formData.clinicId
                                 ? '-- Chọn phòng khám trước --'
                                 : !formData.serviceId
-                                    ? '-- Chọn dịch vụ trước --'
-                                    : loadingDoctors
-                                        ? 'Đang tải...'
-                                        : doctors.length === 0
-                                            ? '-- Không có bác sĩ nào --'
-                                            : '-- Chọn bác sĩ --'}
+                                ? '-- Chọn dịch vụ trước --'
+                                : loadingDoctors
+                                ? 'Đang tải...'
+                                : doctors.length === 0
+                                ? '-- Không có bác sĩ nào --'
+                                : '-- Chọn bác sĩ --'}
                         </option>
                         {doctors.map((doctor) => (
-                            <option key={doctor.doctorId} value={doctor.doctorId}>
-                                {doctor.fullName} {doctor.specialty ? `- ${doctor.specialty}` : ''}
+                            <option
+                                key={doctor.doctorId}
+                                value={doctor.doctorId}
+                            >
+                                {doctor.fullName}{' '}
+                                {doctor.specialty
+                                    ? `- ${doctor.specialty}`
+                                    : ''}
                             </option>
                         ))}
                     </select>
@@ -369,28 +408,34 @@ export default function CreateAppointmentForm({
                         value={formData.time}
                         onChange={handleChange}
                         required
-                        disabled={!formData.doctorId || !formData.date || loadingSlots}
+                        disabled={
+                            !formData.doctorId || !formData.date || loadingSlots
+                        }
                         className="w-full border border-gray-300 rounded px-3 py-2 disabled:bg-gray-100"
                     >
                         <option value="">
                             {!formData.doctorId || !formData.date
                                 ? '-- Chọn bác sĩ và ngày trước --'
                                 : loadingSlots
-                                    ? 'Đang tải khung giờ...'
-                                    : slots.length === 0
-                                        ? '-- Không còn khung giờ trống --'
-                                        : '-- Chọn khung giờ --'}
+                                ? 'Đang tải khung giờ...'
+                                : slots.length === 0
+                                ? '-- Không còn khung giờ trống --'
+                                : '-- Chọn khung giờ --'}
                         </option>
                         {slots.map((slot, index) => {
-                            const startTime = new Date(slot.startAt).toLocaleTimeString('vi-VN', {
+                            const startTime = new Date(
+                                slot.startAt
+                            ).toLocaleTimeString('vi-VN', {
                                 hour: '2-digit',
                                 minute: '2-digit',
-                                hour12: false
+                                hour12: false,
                             });
-                            const endTime = new Date(slot.endAt).toLocaleTimeString('vi-VN', {
+                            const endTime = new Date(
+                                slot.endAt
+                            ).toLocaleTimeString('vi-VN', {
                                 hour: '2-digit',
                                 minute: '2-digit',
-                                hour12: false
+                                hour12: false,
                             });
                             return (
                                 <option key={index} value={startTime}>

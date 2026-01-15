@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { FiCheck, FiAlertCircle } from 'react-icons/fi';
 import {
     confirmAppointment,
     cancelAppointment,
@@ -28,6 +29,16 @@ export default function AppointmentCard({
         patientName: string;
         patientPhone: string;
     } | null>(null);
+
+    // Success/Error Modal states
+    const [successModal, setSuccessModal] = useState<{
+        show: boolean;
+        message: string;
+    }>({ show: false, message: '' });
+    const [errorModal, setErrorModal] = useState<{
+        show: boolean;
+        message: string;
+    }>({ show: false, message: '' });
 
     // Helper function to format datetime
     const formatDateTime = (isoString: string) => {
@@ -72,13 +83,19 @@ export default function AppointmentCard({
                     });
                     setShowCredentialModal(true);
                 } else {
-                    alert('✅ Xác nhận lịch hẹn thành công!');
+                    setSuccessModal({
+                        show: true,
+                        message: 'Xác nhận lịch hẹn thành công!',
+                    });
                 }
                 onUpdate();
             }
         } catch (error: any) {
             console.error('Error confirming appointment:', error);
-            alert('❌ Lỗi: ' + (error.message || 'Không thể xác nhận'));
+            setErrorModal({
+                show: true,
+                message: error.message || 'Không thể xác nhận',
+            });
         } finally {
             setLoading(false);
         }
@@ -89,12 +106,18 @@ export default function AppointmentCard({
             setLoading(true);
             const result = await checkinAppointment(appointment.id);
             if (result.isSuccess && result.data) {
-                alert('✅ Check-in thành công!');
+                setSuccessModal({
+                    show: true,
+                    message: 'Check-in thành công!',
+                });
                 onUpdate();
             }
         } catch (error: any) {
             console.error('Error checking in:', error);
-            alert('❌ Lỗi: ' + (error.message || 'Không thể check-in'));
+            setErrorModal({
+                show: true,
+                message: error.message || 'Không thể check-in',
+            });
         } finally {
             setLoading(false);
         }
@@ -108,14 +131,20 @@ export default function AppointmentCard({
                 cancelReason || undefined
             );
             if (result.isSuccess && result.data) {
-                alert('✅ Hủy lịch hẹn thành công!');
                 setShowCancelDialog(false);
                 setCancelReason('');
+                setSuccessModal({
+                    show: true,
+                    message: 'Hủy lịch hẹn thành công!',
+                });
                 onUpdate();
             }
         } catch (error: any) {
             console.error('Error cancelling appointment:', error);
-            alert('❌ Lỗi: ' + (error.message || 'Không thể hủy'));
+            setErrorModal({
+                show: true,
+                message: error.message || 'Không thể hủy',
+            });
         } finally {
             setLoading(false);
         }
@@ -286,6 +315,56 @@ export default function AppointmentCard({
                     }}
                     credentials={credentials}
                 />
+            )}
+
+            {/* Success Modal */}
+            {successModal.show && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 text-center">
+                        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-100 flex items-center justify-center">
+                            <FiCheck className="w-8 h-8 text-green-600" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                            Thành công!
+                        </h3>
+                        <p className="text-sm text-slate-600 mb-4">
+                            {successModal.message}
+                        </p>
+                        <button
+                            onClick={() =>
+                                setSuccessModal({ show: false, message: '' })
+                            }
+                            className="w-full px-4 py-2.5 text-sm font-medium text-white bg-green-600 rounded-xl hover:bg-green-700 transition"
+                        >
+                            Đóng
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Error Modal */}
+            {errorModal.show && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 text-center">
+                        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
+                            <FiAlertCircle className="w-8 h-8 text-red-600" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                            Lỗi
+                        </h3>
+                        <p className="text-sm text-slate-600 mb-4">
+                            {errorModal.message}
+                        </p>
+                        <button
+                            onClick={() =>
+                                setErrorModal({ show: false, message: '' })
+                            }
+                            className="w-full px-4 py-2.5 text-sm font-medium text-white bg-slate-600 rounded-xl hover:bg-slate-700 transition"
+                        >
+                            Đóng
+                        </button>
+                    </div>
+                </div>
             )}
         </>
     );
