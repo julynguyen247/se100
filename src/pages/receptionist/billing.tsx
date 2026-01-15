@@ -680,6 +680,13 @@ const ReceptionistBilling: React.FC = () => {
     const [invoiceModalOpen, setInvoiceModalOpen] = useState(false);
     const [selectedBill, setSelectedBill] = useState<BillDetail | null>(null);
 
+    // Cancel Modal
+    const [cancelModal, setCancelModal] = useState<{
+        show: boolean;
+        billId: string | null;
+    }>({ show: false, billId: null });
+    const [cancelLoading, setCancelLoading] = useState(false);
+
     // Print ref
     const printRef = useRef<HTMLDivElement>(null);
 
@@ -875,13 +882,19 @@ const ReceptionistBilling: React.FC = () => {
         }
     };
 
-    const handleCancelBill = async (billId: string) => {
-        if (!confirm('Bạn có chắc muốn hủy hóa đơn này?')) return;
+    const handleCancelBill = (billId: string) => {
+        setCancelModal({ show: true, billId });
+    };
 
+    const confirmCancelBill = async () => {
+        const billId = cancelModal.billId;
+        if (!billId) return;
+
+        setCancelLoading(true);
         try {
             const response = await cancelBill(billId);
             if (response.isSuccess) {
-                alert('Đã hủy hóa đơn thành công!');
+                setCancelModal({ show: false, billId: null });
                 // Refetch bills and stats
                 await fetchBills();
                 await fetchStats();
@@ -890,7 +903,8 @@ const ReceptionistBilling: React.FC = () => {
             }
         } catch (err) {
             console.error('Failed to cancel bill:', err);
-            alert('Không thể hủy hóa đơn. Vui lòng thử lại.');
+        } finally {
+            setCancelLoading(false);
         }
     };
 
@@ -1215,6 +1229,44 @@ const ReceptionistBilling: React.FC = () => {
                 bill={selectedBill}
                 onPrint={handlePrint}
             />
+
+            {/* Cancel Confirmation Modal */}
+            {cancelModal.show && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 text-center">
+                        <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
+                            <FiX className="w-7 h-7 text-red-600" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                            Xác nhận hủy hóa đơn
+                        </h3>
+                        <p className="text-sm text-slate-600 mb-4">
+                            Bạn có chắc chắn muốn hủy hóa đơn này?
+                        </p>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() =>
+                                    setCancelModal({
+                                        show: false,
+                                        billId: null,
+                                    })
+                                }
+                                disabled={cancelLoading}
+                                className="flex-1 px-4 py-2.5 border border-slate-200 text-slate-700 text-sm font-medium rounded-xl hover:bg-slate-50 transition disabled:opacity-50"
+                            >
+                                Hủy
+                            </button>
+                            <button
+                                onClick={confirmCancelBill}
+                                disabled={cancelLoading}
+                                className="flex-1 px-4 py-2.5 bg-red-600 text-white text-sm font-semibold rounded-xl hover:bg-red-700 transition disabled:opacity-50"
+                            >
+                                {cancelLoading ? 'Đang xử lý...' : 'Xác nhận'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Hidden Print Area */}
             <div id="print-area" className="hidden">

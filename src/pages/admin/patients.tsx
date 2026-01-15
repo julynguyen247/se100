@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from 'react';
 import {
     FiSearch,
     FiPlus,
@@ -6,7 +6,8 @@ import {
     FiTrash2,
     FiRefreshCw,
     FiAlertCircle,
-} from "react-icons/fi";
+    FiCheck,
+} from 'react-icons/fi';
 import {
     getPatients,
     getAdminClinics,
@@ -17,15 +18,15 @@ import {
     type AdminClinicOption,
     type CreatePatientRequest,
     type UpdatePatientRequest,
-} from "@/services/apiAdmin";
+} from '@/services/apiAdmin';
 
-type GenderFilter = "ALL" | "1" | "2"; // 1 = Male, 2 = Female
+type GenderFilter = 'ALL' | '1' | '2'; // 1 = Male, 2 = Female
 
 type PatientFormState = {
     clinicId: string;
     patientCode: string;
     fullName: string;
-    gender: number | "";
+    gender: number | '';
     dob: string;
     primaryPhone: string;
     email: string;
@@ -34,21 +35,21 @@ type PatientFormState = {
 };
 
 const initialForm: PatientFormState = {
-    clinicId: "",
-    patientCode: "",
-    fullName: "",
-    gender: "",
-    dob: "",
-    primaryPhone: "",
-    email: "",
-    addressLine1: "",
-    note: "",
+    clinicId: '',
+    patientCode: '',
+    fullName: '',
+    gender: '',
+    dob: '',
+    primaryPhone: '',
+    email: '',
+    addressLine1: '',
+    note: '',
 };
 
 const PatientManagementPage: React.FC = () => {
-    const [query, setQuery] = useState("");
-    const [genderFilter, setGenderFilter] = useState<GenderFilter>("ALL");
-    const [clinicFilter, setClinicFilter] = useState<string>("ALL");
+    const [query, setQuery] = useState('');
+    const [genderFilter, setGenderFilter] = useState<GenderFilter>('ALL');
+    const [clinicFilter, setClinicFilter] = useState<string>('ALL');
 
     const [patients, setPatients] = useState<PatientItem[]>([]);
     const [clinics, setClinics] = useState<AdminClinicOption[]>([]);
@@ -63,9 +64,25 @@ const PatientManagementPage: React.FC = () => {
 
     const [showEditModal, setShowEditModal] = useState(false);
     const [editForm, setEditForm] = useState<PatientFormState>(initialForm);
-    const [editingPatientId, setEditingPatientId] = useState<string | null>(null);
+    const [editingPatientId, setEditingPatientId] = useState<string | null>(
+        null
+    );
     const [editSubmitting, setEditSubmitting] = useState(false);
     const [editError, setEditError] = useState<string | null>(null);
+
+    // Delete Modal state
+    const [deleteModal, setDeleteModal] = useState<{
+        show: boolean;
+        patient: PatientItem | null;
+    }>({ show: false, patient: null });
+    const [deleteSubmitting, setDeleteSubmitting] = useState(false);
+
+    // Success Modal state
+    const [successModal, setSuccessModal] = useState<{
+        show: boolean;
+        type: 'create' | 'update' | 'delete';
+        name: string;
+    }>({ show: false, type: 'create', name: '' });
 
     const loadData = async () => {
         try {
@@ -80,9 +97,11 @@ const PatientManagementPage: React.FC = () => {
             setPatients(patientsRes);
             setClinics(clinicsRes);
         } catch (err) {
-            console.error("Failed to load patients:", err);
+            console.error('Failed to load patients:', err);
             setError(
-                err instanceof Error ? err.message : "Không thể tải danh sách bệnh nhân"
+                err instanceof Error
+                    ? err.message
+                    : 'Không thể tải danh sách bệnh nhân'
             );
         } finally {
             setLoading(false);
@@ -100,14 +119,17 @@ const PatientManagementPage: React.FC = () => {
                 const matchText =
                     p.fullName.toLowerCase().includes(query.toLowerCase()) ||
                     p.patientCode.toLowerCase().includes(query.toLowerCase()) ||
-                    p.primaryPhone?.toLowerCase().includes(query.toLowerCase()) ||
+                    p.primaryPhone
+                        ?.toLowerCase()
+                        .includes(query.toLowerCase()) ||
                     p.email?.toLowerCase().includes(query.toLowerCase());
 
                 const matchGender =
-                    genderFilter === "ALL" || p.gender.toString() === genderFilter;
+                    genderFilter === 'ALL' ||
+                    p.gender.toString() === genderFilter;
 
                 const matchClinic =
-                    clinicFilter === "ALL" || p.clinicId === clinicFilter;
+                    clinicFilter === 'ALL' || p.clinicId === clinicFilter;
 
                 return matchText && matchGender && matchClinic;
             }),
@@ -127,31 +149,42 @@ const PatientManagementPage: React.FC = () => {
             patientCode: patient.patientCode,
             fullName: patient.fullName,
             gender: patient.gender,
-            dob: patient.dob.split("T")[0], // Convert to YYYY-MM-DD
-            primaryPhone: patient.primaryPhone || "",
-            email: patient.email || "",
-            addressLine1: patient.addressLine1 || "",
-            note: patient.note || "",
+            dob: patient.dob.split('T')[0], // Convert to YYYY-MM-DD
+            primaryPhone: patient.primaryPhone || '',
+            email: patient.email || '',
+            addressLine1: patient.addressLine1 || '',
+            note: patient.note || '',
         });
         setEditError(null);
         setShowEditModal(true);
     };
 
-    const handleDelete = async (patient: PatientItem) => {
-        const confirmed = window.confirm(
-            `Bạn có chắc chắn muốn xóa bệnh nhân "${patient.fullName}"?`
-        );
-        if (!confirmed) return;
+    const handleDelete = (patient: PatientItem) => {
+        setDeleteModal({ show: true, patient });
+    };
 
+    const confirmDelete = async () => {
+        const patient = deleteModal.patient;
+        if (!patient) return;
+
+        setDeleteSubmitting(true);
         try {
             const res = await deletePatient(patient.patientId);
             if (!res.isSuccess) {
-                throw new Error(res.message || "Không thể xóa bệnh nhân");
+                throw new Error(res.message || 'Không thể xóa bệnh nhân');
             }
+            setDeleteModal({ show: false, patient: null });
+            setSuccessModal({
+                show: true,
+                type: 'delete',
+                name: patient.fullName,
+            });
             await loadData();
         } catch (err) {
-            console.error("Failed to delete patient:", err);
-            alert(err instanceof Error ? err.message : "Không thể xóa bệnh nhân");
+            console.error('Failed to delete patient:', err);
+            setDeleteModal({ show: false, patient: null });
+        } finally {
+            setDeleteSubmitting(false);
         }
     };
 
@@ -165,7 +198,7 @@ const PatientManagementPage: React.FC = () => {
             !addForm.fullName ||
             !addForm.gender
         ) {
-            setAddError("Vui lòng điền đầy đủ thông tin bắt buộc.");
+            setAddError('Vui lòng điền đầy đủ thông tin bắt buộc.');
             return;
         }
 
@@ -185,14 +218,16 @@ const PatientManagementPage: React.FC = () => {
 
             const res = await createPatient(payload);
             if (!res.isSuccess) {
-                throw new Error(res.message || "Không thể tạo bệnh nhân");
+                throw new Error(res.message || 'Không thể tạo bệnh nhân');
             }
 
             setShowAddModal(false);
             await loadData();
         } catch (err) {
-            console.error("Failed to create patient:", err);
-            setAddError(err instanceof Error ? err.message : "Không thể tạo bệnh nhân");
+            console.error('Failed to create patient:', err);
+            setAddError(
+                err instanceof Error ? err.message : 'Không thể tạo bệnh nhân'
+            );
         } finally {
             setAddSubmitting(false);
         }
@@ -209,7 +244,7 @@ const PatientManagementPage: React.FC = () => {
             !editForm.fullName ||
             !editForm.gender
         ) {
-            setEditError("Vui lòng điền đầy đủ thông tin bắt buộc.");
+            setEditError('Vui lòng điền đầy đủ thông tin bắt buộc.');
             return;
         }
 
@@ -229,16 +264,18 @@ const PatientManagementPage: React.FC = () => {
 
             const res = await updatePatient(editingPatientId, payload);
             if (!res.isSuccess) {
-                throw new Error(res.message || "Không thể cập nhật bệnh nhân");
+                throw new Error(res.message || 'Không thể cập nhật bệnh nhân');
             }
 
             setShowEditModal(false);
             setEditingPatientId(null);
             await loadData();
         } catch (err) {
-            console.error("Failed to update patient:", err);
+            console.error('Failed to update patient:', err);
             setEditError(
-                err instanceof Error ? err.message : "Không thể cập nhật bệnh nhân"
+                err instanceof Error
+                    ? err.message
+                    : 'Không thể cập nhật bệnh nhân'
             );
         } finally {
             setEditSubmitting(false);
@@ -246,16 +283,16 @@ const PatientManagementPage: React.FC = () => {
     };
 
     const formatGender = (gender: number) => {
-        return gender === 1 ? "Nam" : gender === 2 ? "Nữ" : "—";
+        return gender === 1 ? 'Nam' : gender === 2 ? 'Nữ' : '—';
     };
 
     const formatDate = (dateStr: string) => {
-        if (!dateStr) return "—";
+        if (!dateStr) return '—';
         try {
             const date = new Date(dateStr);
-            return date.toLocaleDateString("vi-VN");
+            return date.toLocaleDateString('vi-VN');
         } catch {
-            return "—";
+            return '—';
         }
     };
 
@@ -305,7 +342,9 @@ const PatientManagementPage: React.FC = () => {
                         <select
                             className="w-full md:w-36 rounded-lg border border-slate-200 bg-[#F9FAFB] px-3 py-2.5 text-sm outline-none focus:border-[#2563EB]"
                             value={genderFilter}
-                            onChange={(e) => setGenderFilter(e.target.value as GenderFilter)}
+                            onChange={(e) =>
+                                setGenderFilter(e.target.value as GenderFilter)
+                            }
                         >
                             <option value="ALL">Tất cả giới tính</option>
                             <option value="1">Nam</option>
@@ -331,8 +370,9 @@ const PatientManagementPage: React.FC = () => {
                                 className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 px-3 py-2.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
                             >
                                 <FiRefreshCw
-                                    className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin" : ""
-                                        }`}
+                                    className={`w-3.5 h-3.5 ${
+                                        isRefreshing ? 'animate-spin' : ''
+                                    }`}
                                 />
                                 <span>Làm mới</span>
                             </button>
@@ -365,7 +405,11 @@ const PatientManagementPage: React.FC = () => {
                 {!loading && !error && (
                     <div className="bg-white border-x border-slate-100 px-5 py-2">
                         <p className="text-xs text-slate-600">
-                            Hiển thị <span className="font-semibold text-slate-900">{filteredPatients.length}</span> / {patients.length} bệnh nhân
+                            Hiển thị{' '}
+                            <span className="font-semibold text-slate-900">
+                                {filteredPatients.length}
+                            </span>{' '}
+                            / {patients.length} bệnh nhân
                         </p>
                     </div>
                 )}
@@ -375,104 +419,132 @@ const PatientManagementPage: React.FC = () => {
                     <table className="w-full text-sm">
                         <thead>
                             <tr className="bg-[#F9FAFB] text-xs text-slate-500">
-                                <th className="text-center font-medium px-3 py-3 w-16">STT</th>
-                                <th className="text-left font-medium px-5 py-3">Mã BN</th>
-                                <th className="text-left font-medium px-5 py-3">Họ tên</th>
-                                <th className="text-left font-medium px-5 py-3">Giới tính</th>
-                                <th className="text-left font-medium px-5 py-3">Ngày sinh</th>
-                                <th className="text-left font-medium px-5 py-3">Điện thoại</th>
-                                <th className="text-left font-medium px-5 py-3">Email</th>
-                                <th className="text-center font-medium px-5 py-3">Thao tác</th>
+                                <th className="text-center font-medium px-3 py-3 w-16">
+                                    STT
+                                </th>
+                                <th className="text-left font-medium px-5 py-3">
+                                    Mã BN
+                                </th>
+                                <th className="text-left font-medium px-5 py-3">
+                                    Họ tên
+                                </th>
+                                <th className="text-left font-medium px-5 py-3">
+                                    Giới tính
+                                </th>
+                                <th className="text-left font-medium px-5 py-3">
+                                    Ngày sinh
+                                </th>
+                                <th className="text-left font-medium px-5 py-3">
+                                    Điện thoại
+                                </th>
+                                <th className="text-left font-medium px-5 py-3">
+                                    Email
+                                </th>
+                                <th className="text-center font-medium px-5 py-3">
+                                    Thao tác
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
                             {loading
                                 ? Array.from({ length: 5 }).map((_, idx) => (
-                                    <tr key={idx} className="border-t border-slate-100">
-                                        <td className="px-3 py-3 text-center text-slate-400">
-                                            <div className="h-4 w-8 bg-slate-200 rounded animate-pulse mx-auto" />
-                                        </td>
-                                        <td className="px-5 py-3">
-                                            <div className="h-4 w-20 bg-slate-200 rounded animate-pulse" />
-                                        </td>
-                                        <td className="px-5 py-3">
-                                            <div className="h-4 w-36 bg-slate-200 rounded animate-pulse" />
-                                        </td>
-                                        <td className="px-5 py-3">
-                                            <div className="h-4 w-16 bg-slate-200 rounded animate-pulse" />
-                                        </td>
-                                        <td className="px-5 py-3">
-                                            <div className="h-4 w-24 bg-slate-200 rounded animate-pulse" />
-                                        </td>
-                                        <td className="px-5 py-3">
-                                            <div className="h-4 w-28 bg-slate-200 rounded animate-pulse" />
-                                        </td>
-                                        <td className="px-5 py-3">
-                                            <div className="h-4 w-32 bg-slate-200 rounded animate-pulse" />
-                                        </td>
-                                        <td className="px-5 py-3">
-                                            <div className="h-4 w-16 bg-slate-200 rounded animate-pulse mx-auto" />
-                                        </td>
-                                    </tr>
-                                ))
+                                      <tr
+                                          key={idx}
+                                          className="border-t border-slate-100"
+                                      >
+                                          <td className="px-3 py-3 text-center text-slate-400">
+                                              <div className="h-4 w-8 bg-slate-200 rounded animate-pulse mx-auto" />
+                                          </td>
+                                          <td className="px-5 py-3">
+                                              <div className="h-4 w-20 bg-slate-200 rounded animate-pulse" />
+                                          </td>
+                                          <td className="px-5 py-3">
+                                              <div className="h-4 w-36 bg-slate-200 rounded animate-pulse" />
+                                          </td>
+                                          <td className="px-5 py-3">
+                                              <div className="h-4 w-16 bg-slate-200 rounded animate-pulse" />
+                                          </td>
+                                          <td className="px-5 py-3">
+                                              <div className="h-4 w-24 bg-slate-200 rounded animate-pulse" />
+                                          </td>
+                                          <td className="px-5 py-3">
+                                              <div className="h-4 w-28 bg-slate-200 rounded animate-pulse" />
+                                          </td>
+                                          <td className="px-5 py-3">
+                                              <div className="h-4 w-32 bg-slate-200 rounded animate-pulse" />
+                                          </td>
+                                          <td className="px-5 py-3">
+                                              <div className="h-4 w-16 bg-slate-200 rounded animate-pulse mx-auto" />
+                                          </td>
+                                      </tr>
+                                  ))
                                 : filteredPatients.map((patient, idx) => (
-                                    <tr
-                                        key={patient.patientId}
-                                        className={`border-t border-slate-100 ${idx % 2 === 1 ? "bg-[#FCFCFD]" : "bg-white"
-                                            }`}
-                                    >
-                                        <td className="px-3 py-3 text-center text-slate-500 font-medium">
-                                            {idx + 1}
-                                        </td>
-                                        <td className="px-5 py-3 text-slate-800 font-medium">
-                                            {patient.patientCode}
-                                        </td>
-                                        <td className="px-5 py-3 text-slate-800">
-                                            {patient.fullName}
-                                        </td>
-                                        <td className="px-5 py-3 text-slate-600">
-                                            {formatGender(patient.gender)}
-                                        </td>
-                                        <td className="px-5 py-3 text-slate-600">
-                                            {formatDate(patient.dob)}
-                                        </td>
-                                        <td className="px-5 py-3 text-slate-600">
-                                            {patient.primaryPhone || "—"}
-                                        </td>
-                                        <td className="px-5 py-3 text-slate-600">
-                                            {patient.email || "—"}
-                                        </td>
-                                        <td className="px-5 py-3">
-                                            <div className="flex items-center justify-center gap-3 text-[15px]">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleEdit(patient)}
-                                                    className="text-[#2563EB] hover:text-[#1D4ED8]"
-                                                >
-                                                    <FiEdit2 />
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleDelete(patient)}
-                                                    className="text-[#EF4444] hover:text-[#DC2626]"
-                                                >
-                                                    <FiTrash2 />
-                                                </button>
-                                            </div>
+                                      <tr
+                                          key={patient.patientId}
+                                          className={`border-t border-slate-100 ${
+                                              idx % 2 === 1
+                                                  ? 'bg-[#FCFCFD]'
+                                                  : 'bg-white'
+                                          }`}
+                                      >
+                                          <td className="px-3 py-3 text-center text-slate-500 font-medium">
+                                              {idx + 1}
+                                          </td>
+                                          <td className="px-5 py-3 text-slate-800 font-medium">
+                                              {patient.patientCode}
+                                          </td>
+                                          <td className="px-5 py-3 text-slate-800">
+                                              {patient.fullName}
+                                          </td>
+                                          <td className="px-5 py-3 text-slate-600">
+                                              {formatGender(patient.gender)}
+                                          </td>
+                                          <td className="px-5 py-3 text-slate-600">
+                                              {formatDate(patient.dob)}
+                                          </td>
+                                          <td className="px-5 py-3 text-slate-600">
+                                              {patient.primaryPhone || '—'}
+                                          </td>
+                                          <td className="px-5 py-3 text-slate-600">
+                                              {patient.email || '—'}
+                                          </td>
+                                          <td className="px-5 py-3">
+                                              <div className="flex items-center justify-center gap-3 text-[15px]">
+                                                  <button
+                                                      type="button"
+                                                      onClick={() =>
+                                                          handleEdit(patient)
+                                                      }
+                                                      className="text-[#2563EB] hover:text-[#1D4ED8]"
+                                                  >
+                                                      <FiEdit2 />
+                                                  </button>
+                                                  <button
+                                                      type="button"
+                                                      onClick={() =>
+                                                          handleDelete(patient)
+                                                      }
+                                                      className="text-[#EF4444] hover:text-[#DC2626]"
+                                                  >
+                                                      <FiTrash2 />
+                                                  </button>
+                                              </div>
+                                          </td>
+                                      </tr>
+                                  ))}
+
+                            {!loading &&
+                                filteredPatients.length === 0 &&
+                                !error && (
+                                    <tr>
+                                        <td
+                                            colSpan={7}
+                                            className="px-5 py-6 text-center text-sm text-slate-400"
+                                        >
+                                            Không tìm thấy bệnh nhân phù hợp.
                                         </td>
                                     </tr>
-                                ))}
-
-                            {!loading && filteredPatients.length === 0 && !error && (
-                                <tr>
-                                    <td
-                                        colSpan={7}
-                                        className="px-5 py-6 text-center text-sm text-slate-400"
-                                    >
-                                        Không tìm thấy bệnh nhân phù hợp.
-                                    </td>
-                                </tr>
-                            )}
+                                )}
                         </tbody>
                     </table>
                 </div>
@@ -507,6 +579,129 @@ const PatientManagementPage: React.FC = () => {
                         }}
                     />
                 )}
+
+                {/* Delete Confirmation Modal */}
+                {deleteModal.show && deleteModal.patient && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                        <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+                            <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
+                                <FiTrash2 className="w-7 h-7 text-red-600" />
+                            </div>
+
+                            <h3 className="text-lg font-semibold text-slate-900 text-center mb-2">
+                                Xác nhận xóa bệnh nhân
+                            </h3>
+
+                            <p className="text-sm text-slate-600 text-center mb-4">
+                                Bạn có chắc chắn muốn xóa bệnh nhân{' '}
+                                <span className="font-medium">
+                                    "{deleteModal.patient.fullName}"
+                                </span>
+                                ?
+                            </p>
+
+                            <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-4">
+                                <p className="text-xs text-red-700 text-center">
+                                    ⚠️ Hành động này không thể hoàn tác!
+                                </p>
+                            </div>
+
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() =>
+                                        setDeleteModal({
+                                            show: false,
+                                            patient: null,
+                                        })
+                                    }
+                                    disabled={deleteSubmitting}
+                                    className="flex-1 px-4 py-2.5 border border-slate-200 text-slate-700 text-sm font-medium rounded-xl hover:bg-slate-50 transition disabled:opacity-50"
+                                >
+                                    Hủy
+                                </button>
+                                <button
+                                    onClick={confirmDelete}
+                                    disabled={deleteSubmitting}
+                                    className="flex-1 px-4 py-2.5 bg-red-600 text-white text-sm font-semibold rounded-xl hover:bg-red-700 transition disabled:opacity-50"
+                                >
+                                    {deleteSubmitting ? 'Đang xóa...' : 'Xóa'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Success Modal */}
+                {successModal.show && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                        <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 text-center">
+                            <div
+                                className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${
+                                    successModal.type === 'delete'
+                                        ? 'bg-red-100'
+                                        : 'bg-green-100'
+                                }`}
+                            >
+                                <FiCheck
+                                    className={`w-8 h-8 ${
+                                        successModal.type === 'delete'
+                                            ? 'text-red-600'
+                                            : 'text-green-600'
+                                    }`}
+                                />
+                            </div>
+
+                            <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                                {successModal.type === 'delete' &&
+                                    'Đã xóa bệnh nhân!'}
+                                {successModal.type === 'create' &&
+                                    'Thêm thành công!'}
+                                {successModal.type === 'update' &&
+                                    'Cập nhật thành công!'}
+                            </h3>
+
+                            <p className="text-sm text-slate-600 mb-4">
+                                {successModal.type === 'delete' && (
+                                    <>
+                                        Đã xóa bệnh nhân{' '}
+                                        <span className="font-medium">
+                                            {successModal.name}
+                                        </span>
+                                    </>
+                                )}
+                                {successModal.type === 'create' && (
+                                    <>
+                                        Đã thêm bệnh nhân{' '}
+                                        <span className="font-medium">
+                                            {successModal.name}
+                                        </span>
+                                    </>
+                                )}
+                                {successModal.type === 'update' && (
+                                    <>
+                                        Đã cập nhật thông tin bệnh nhân{' '}
+                                        <span className="font-medium">
+                                            {successModal.name}
+                                        </span>
+                                    </>
+                                )}
+                            </p>
+
+                            <button
+                                onClick={() =>
+                                    setSuccessModal({
+                                        show: false,
+                                        type: 'create',
+                                        name: '',
+                                    })
+                                }
+                                className="w-full px-4 py-2.5 text-sm font-medium text-white bg-[#2563EB] rounded-xl hover:bg-[#1D4ED8] transition"
+                            >
+                                Đóng
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -540,7 +735,9 @@ const PatientFormModal: React.FC<PatientFormModalProps> = ({
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
-                <h2 className="text-lg font-semibold text-slate-900 mb-4">{title}</h2>
+                <h2 className="text-lg font-semibold text-slate-900 mb-4">
+                    {title}
+                </h2>
 
                 <form onSubmit={onSubmit} className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
@@ -553,7 +750,10 @@ const PatientFormModal: React.FC<PatientFormModalProps> = ({
                                 className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#2563EB] bg-white"
                                 value={form.clinicId}
                                 onChange={(e) =>
-                                    setForm((prev) => ({ ...prev, clinicId: e.target.value }))
+                                    setForm((prev) => ({
+                                        ...prev,
+                                        clinicId: e.target.value,
+                                    }))
                                 }
                             >
                                 <option value="">Chọn phòng khám</option>
@@ -575,7 +775,10 @@ const PatientFormModal: React.FC<PatientFormModalProps> = ({
                                 className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#2563EB] bg-white"
                                 value={form.patientCode}
                                 onChange={(e) =>
-                                    setForm((prev) => ({ ...prev, patientCode: e.target.value }))
+                                    setForm((prev) => ({
+                                        ...prev,
+                                        patientCode: e.target.value,
+                                    }))
                                 }
                                 placeholder="VD: BN001"
                             />
@@ -591,7 +794,10 @@ const PatientFormModal: React.FC<PatientFormModalProps> = ({
                                 className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#2563EB] bg-white"
                                 value={form.fullName}
                                 onChange={(e) =>
-                                    setForm((prev) => ({ ...prev, fullName: e.target.value }))
+                                    setForm((prev) => ({
+                                        ...prev,
+                                        fullName: e.target.value,
+                                    }))
                                 }
                                 placeholder="VD: Nguyễn Văn A"
                             />
@@ -608,7 +814,9 @@ const PatientFormModal: React.FC<PatientFormModalProps> = ({
                                 onChange={(e) =>
                                     setForm((prev) => ({
                                         ...prev,
-                                        gender: e.target.value ? parseInt(e.target.value) : "",
+                                        gender: e.target.value
+                                            ? parseInt(e.target.value)
+                                            : '',
                                     }))
                                 }
                             >
@@ -628,7 +836,10 @@ const PatientFormModal: React.FC<PatientFormModalProps> = ({
                                 className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#2563EB] bg-white"
                                 value={form.dob}
                                 onChange={(e) =>
-                                    setForm((prev) => ({ ...prev, dob: e.target.value }))
+                                    setForm((prev) => ({
+                                        ...prev,
+                                        dob: e.target.value,
+                                    }))
                                 }
                             />
                         </div>
@@ -662,7 +873,10 @@ const PatientFormModal: React.FC<PatientFormModalProps> = ({
                                 className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#2563EB] bg-white"
                                 value={form.email}
                                 onChange={(e) =>
-                                    setForm((prev) => ({ ...prev, email: e.target.value }))
+                                    setForm((prev) => ({
+                                        ...prev,
+                                        email: e.target.value,
+                                    }))
                                 }
                                 placeholder="VD: example@email.com"
                             />
@@ -678,7 +892,10 @@ const PatientFormModal: React.FC<PatientFormModalProps> = ({
                                 className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#2563EB] bg-white"
                                 value={form.addressLine1}
                                 onChange={(e) =>
-                                    setForm((prev) => ({ ...prev, addressLine1: e.target.value }))
+                                    setForm((prev) => ({
+                                        ...prev,
+                                        addressLine1: e.target.value,
+                                    }))
                                 }
                                 placeholder="VD: 123 Đường ABC, Quận 1, TP.HCM"
                             />
@@ -693,7 +910,10 @@ const PatientFormModal: React.FC<PatientFormModalProps> = ({
                                 className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#2563EB] bg-white"
                                 value={form.note}
                                 onChange={(e) =>
-                                    setForm((prev) => ({ ...prev, note: e.target.value }))
+                                    setForm((prev) => ({
+                                        ...prev,
+                                        note: e.target.value,
+                                    }))
                                 }
                                 placeholder="Ghi chú thêm về bệnh nhân..."
                                 rows={3}

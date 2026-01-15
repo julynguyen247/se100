@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { FiPlus, FiTrash2, FiArrowLeft, FiFileText } from 'react-icons/fi';
+import {
+    FiPlus,
+    FiTrash2,
+    FiArrowLeft,
+    FiFileText,
+    FiCheck,
+    FiAlertCircle,
+} from 'react-icons/fi';
 import { FaPills } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -46,6 +53,16 @@ const DoctorPrescription: React.FC = () => {
     // Save Template Modal
     const [showSaveModal, setShowSaveModal] = useState(false);
     const [newTemplateName, setNewTemplateName] = useState('');
+
+    // Alert Modals
+    const [errorModal, setErrorModal] = useState<{
+        show: boolean;
+        message: string;
+    }>({ show: false, message: '' });
+    const [successModal, setSuccessModal] = useState<{
+        show: boolean;
+        message: string;
+    }>({ show: false, message: '' });
 
     useEffect(() => {
         fetchData();
@@ -154,13 +171,19 @@ const DoctorPrescription: React.FC = () => {
 
     const handleSaveTemplate = async () => {
         if (!newTemplateName.trim()) {
-            alert('Vui lòng nhập tên mẫu đơn thuốc');
+            setErrorModal({
+                show: true,
+                message: 'Vui lòng nhập tên mẫu đơn thuốc',
+            });
             return;
         }
 
         const validMedicines = medicines.filter((m) => m.name.trim() !== '');
         if (validMedicines.length === 0) {
-            alert('Vui lòng thêm ít nhất 1 thuốc!');
+            setErrorModal({
+                show: true,
+                message: 'Vui lòng thêm ít nhất 1 thuốc!',
+            });
             return;
         }
 
@@ -170,14 +193,12 @@ const DoctorPrescription: React.FC = () => {
         );
 
         if (freeTextMedicines.length > 0) {
-            alert(
-                `⚠️ Không thể lưu template!\n\n` +
-                    `Các thuốc sau chưa có trong danh mục:\n` +
-                    `${freeTextMedicines
-                        .map((m) => `• ${m.name}`)
-                        .join('\n')}\n\n` +
-                    `Vui lòng chọn thuốc từ danh mục (autocomplete) để lưu template.`
-            );
+            setErrorModal({
+                show: true,
+                message: `Không thể lưu template! Các thuốc sau chưa có trong danh mục: ${freeTextMedicines
+                    .map((m) => m.name)
+                    .join(', ')}. Vui lòng chọn thuốc từ danh mục.`,
+            });
             return;
         }
 
@@ -196,16 +217,22 @@ const DoctorPrescription: React.FC = () => {
             });
 
             if (response.isSuccess) {
-                alert('Đã lưu mẫu đơn thuốc!');
                 setShowSaveModal(false);
                 setNewTemplateName('');
+                setSuccessModal({
+                    show: true,
+                    message: 'Đã lưu mẫu đơn thuốc thành công!',
+                });
                 fetchData(); // Refresh list
             } else {
-                alert(response.message || 'Không thể lưu mẫu');
+                setErrorModal({
+                    show: true,
+                    message: response.message || 'Không thể lưu mẫu',
+                });
             }
         } catch (error) {
             console.error('Error saving template:', error);
-            alert('Lỗi kết nối server');
+            setErrorModal({ show: true, message: 'Lỗi kết nối server' });
         }
     };
 
@@ -534,6 +561,56 @@ const DoctorPrescription: React.FC = () => {
                                 </button>
                             </div>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Error Modal */}
+            {errorModal.show && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 text-center">
+                        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
+                            <FiAlertCircle className="w-8 h-8 text-red-600" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                            Lỗi
+                        </h3>
+                        <p className="text-sm text-slate-600 mb-4">
+                            {errorModal.message}
+                        </p>
+                        <button
+                            onClick={() =>
+                                setErrorModal({ show: false, message: '' })
+                            }
+                            className="w-full px-4 py-2.5 text-sm font-medium text-white bg-slate-600 rounded-xl hover:bg-slate-700 transition"
+                        >
+                            Đóng
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Success Modal */}
+            {successModal.show && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 text-center">
+                        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-100 flex items-center justify-center">
+                            <FiCheck className="w-8 h-8 text-green-600" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                            Thành công!
+                        </h3>
+                        <p className="text-sm text-slate-600 mb-4">
+                            {successModal.message}
+                        </p>
+                        <button
+                            onClick={() =>
+                                setSuccessModal({ show: false, message: '' })
+                            }
+                            className="w-full px-4 py-2.5 text-sm font-medium text-white bg-[#2563EB] rounded-xl hover:bg-[#1D4ED8] transition"
+                        >
+                            Đóng
+                        </button>
                     </div>
                 </div>
             )}

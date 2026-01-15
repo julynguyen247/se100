@@ -10,6 +10,8 @@ import {
     FiDollarSign,
     FiTrash2,
     FiRefreshCw,
+    FiAlertCircle,
+    FiCheck,
 } from 'react-icons/fi';
 import { FaPills } from 'react-icons/fa';
 import Modal from '../../components/ui/Modal';
@@ -435,6 +437,16 @@ const DoctorTreatment: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [actionLoading, setActionLoading] = useState(false);
 
+    // Modal states
+    const [errorModal, setErrorModal] = useState<{
+        show: boolean;
+        message: string;
+    }>({ show: false, message: '' });
+    const [successModal, setSuccessModal] = useState<{
+        show: boolean;
+        message: string;
+    }>({ show: false, message: '' });
+
     // Prescription Templates & Medicine Catalog from API
     const [templates, setTemplates] = useState<ApiPrescriptionTemplate[]>([]);
     const [medicineCatalog, setMedicineCatalog] = useState<
@@ -549,11 +561,14 @@ const DoctorTreatment: React.FC = () => {
                 });
                 setMedicines([]);
             } else {
-                alert(response.message || 'Không thể bắt đầu khám');
+                setErrorModal({
+                    show: true,
+                    message: response.message || 'Không thể bắt đầu khám',
+                });
             }
         } catch (err) {
             console.error('Error starting exam:', err);
-            alert('Lỗi kết nối server');
+            setErrorModal({ show: true, message: 'Lỗi kết nối server' });
         } finally {
             setActionLoading(false);
         }
@@ -574,12 +589,18 @@ const DoctorTreatment: React.FC = () => {
 
     const handleSave = async (createBill: boolean = false) => {
         if (!formData.diagnosis || !formData.treatment) {
-            alert('Vui lòng nhập chẩn đoán và phương pháp điều trị!');
+            setErrorModal({
+                show: true,
+                message: 'Vui lòng nhập chẩn đoán và phương pháp điều trị!',
+            });
             return;
         }
 
         if (!selectedPatient?.patientId) {
-            alert('Không tìm thấy thông tin bệnh nhân!');
+            setErrorModal({
+                show: true,
+                message: 'Không tìm thấy thông tin bệnh nhân!',
+            });
             return;
         }
 
@@ -619,19 +640,23 @@ const DoctorTreatment: React.FC = () => {
 
             const response = await createExamination(request);
             if (response.isSuccess) {
-                alert(
-                    createBill
-                        ? 'Đã lưu phiếu khám và tạo hóa đơn!'
-                        : 'Đã lưu phiếu khám thành công!'
-                );
                 setSelectedPatient(null);
+                setSuccessModal({
+                    show: true,
+                    message: createBill
+                        ? 'Đã lưu phiếu khám và tạo hóa đơn!'
+                        : 'Đã lưu phiếu khám thành công!',
+                });
                 fetchQueue();
             } else {
-                alert(response.message || 'Không thể lưu phiếu khám');
+                setErrorModal({
+                    show: true,
+                    message: response.message || 'Không thể lưu phiếu khám',
+                });
             }
         } catch (err) {
             console.error('Error saving examination:', err);
-            alert('Lỗi kết nối server');
+            setErrorModal({ show: true, message: 'Lỗi kết nối server' });
         } finally {
             setActionLoading(false);
         }
@@ -1035,6 +1060,56 @@ const DoctorTreatment: React.FC = () => {
                 templates={templates}
                 medicineCatalog={medicineCatalog}
             />
+
+            {/* Error Modal */}
+            {errorModal.show && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 text-center">
+                        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
+                            <FiAlertCircle className="w-8 h-8 text-red-600" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                            Lỗi
+                        </h3>
+                        <p className="text-sm text-slate-600 mb-4">
+                            {errorModal.message}
+                        </p>
+                        <button
+                            onClick={() =>
+                                setErrorModal({ show: false, message: '' })
+                            }
+                            className="w-full px-4 py-2.5 text-sm font-medium text-white bg-slate-600 rounded-xl hover:bg-slate-700 transition"
+                        >
+                            Đóng
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Success Modal */}
+            {successModal.show && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 text-center">
+                        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-100 flex items-center justify-center">
+                            <FiCheck className="w-8 h-8 text-green-600" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                            Thành công!
+                        </h3>
+                        <p className="text-sm text-slate-600 mb-4">
+                            {successModal.message}
+                        </p>
+                        <button
+                            onClick={() =>
+                                setSuccessModal({ show: false, message: '' })
+                            }
+                            className="w-full px-4 py-2.5 text-sm font-medium text-white bg-[#2563EB] rounded-xl hover:bg-[#1D4ED8] transition"
+                        >
+                            Đóng
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

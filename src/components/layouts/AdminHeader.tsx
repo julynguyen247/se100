@@ -10,6 +10,7 @@ import {
     FiX,
     FiFileText,
 } from 'react-icons/fi';
+import { FaPills } from 'react-icons/fa';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 type AdminTabId =
@@ -51,7 +52,12 @@ const ADMIN_TABS: AdminTab[] = [
         icon: FiBarChart2,
     },
     { id: 'audit', label: 'Nhật ký', path: '/admin/audit', icon: FiFileText },
-    //  { id: "medicines", label: "Quản lý thuốc", path: "/admin/medicines", icon: FaPills },
+    {
+        id: 'medicines',
+        label: 'Quản lý thuốc',
+        path: '/admin/medicines',
+        icon: FaPills,
+    },
     {
         id: 'settings',
         label: 'Cài đặt hệ thống',
