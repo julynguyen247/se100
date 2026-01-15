@@ -10,9 +10,12 @@ import {
     FiDollarSign,
     FiTrash2,
     FiRefreshCw,
+    FiAlertCircle,
+    FiCheck,
 } from 'react-icons/fi';
 import { FaPills } from 'react-icons/fa';
 import Modal from '../../components/ui/Modal';
+import DentalChart from '@/components/DentalChart';
 import {
     getQueue,
     startExam,
@@ -38,63 +41,6 @@ type Patient = {
 
 // No more mock data - will be fetched from API
 
-// Tooth status types
-type ToothStatus =
-    | 'normal'
-    | 'cavity'
-    | 'missing'
-    | 'treated'
-    | 'crown'
-    | 'nextTreatment';
-
-const toothStatusConfig: Record<
-    ToothStatus,
-    { label: string; color: string; border: string }
-> = {
-    normal: {
-        label: 'Bình thường',
-        color: 'bg-emerald-400',
-        border: 'border-emerald-500',
-    },
-    cavity: {
-        label: 'Sâu răng',
-        color: 'bg-red-400',
-        border: 'border-red-500',
-    },
-    missing: {
-        label: 'Mất răng',
-        color: 'bg-blue-400',
-        border: 'border-blue-500',
-    },
-    treated: {
-        label: 'Điều trị',
-        color: 'bg-amber-400',
-        border: 'border-amber-500',
-    },
-    crown: {
-        label: 'Răng sứ',
-        color: 'bg-slate-400',
-        border: 'border-slate-500',
-    },
-    nextTreatment: {
-        label: 'Điều trị kế tiếp',
-        color: 'bg-purple-400',
-        border: 'border-purple-500',
-    },
-};
-
-// Adult teeth numbers
-const adultUpperTeeth = [
-    18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28,
-];
-const adultLowerTeeth = [
-    48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38,
-];
-
-// Child teeth numbers
-const childUpperTeeth = [55, 54, 53, 52, 51, 61, 62, 63, 64, 65];
-const childLowerTeeth = [85, 84, 83, 82, 81, 71, 72, 73, 74, 75];
-
 // Medicine type
 type Medicine = {
     id: number;
@@ -103,61 +49,6 @@ type Medicine = {
     dosage: string;
     quantity: string;
     instructions: string;
-};
-
-// Tooth component
-const ToothButton: React.FC<{
-    number: number;
-    status?: ToothStatus;
-    onClick: () => void;
-    isUpper: boolean;
-}> = ({ number, status, onClick, isUpper }) => {
-    const config = status ? toothStatusConfig[status] : null;
-
-    return (
-        <button
-            onClick={onClick}
-            className="group flex flex-col items-center"
-            title={`Răng số ${number}${
-                status ? ` - ${toothStatusConfig[status].label}` : ''
-            }`}
-        >
-            {isUpper && (
-                <span className="text-[9px] text-slate-500 mb-0.5">
-                    {number}
-                </span>
-            )}
-            <div
-                className={`
-                    w-6 h-7 relative flex items-center justify-center
-                    transition-all duration-150 group-hover:scale-110
-                    ${
-                        isUpper
-                            ? 'rounded-t-lg rounded-b-md'
-                            : 'rounded-b-lg rounded-t-md'
-                    }
-                    ${
-                        config
-                            ? `${config.color} border-2 ${config.border}`
-                            : 'bg-white border-2 border-slate-300 group-hover:border-slate-400'
-                    }
-                `}
-            >
-                <div
-                    className={`absolute ${
-                        isUpper ? 'bottom-0' : 'top-0'
-                    } left-1/2 -translate-x-1/2 w-0.5 h-1.5 ${
-                        config ? 'bg-white/50' : 'bg-slate-200'
-                    }`}
-                />
-            </div>
-            {!isUpper && (
-                <span className="text-[9px] text-slate-500 mt-0.5">
-                    {number}
-                </span>
-            )}
-        </button>
-    );
 };
 
 // Prescription Modal Props
@@ -546,6 +437,16 @@ const DoctorTreatment: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [actionLoading, setActionLoading] = useState(false);
 
+    // Modal states
+    const [errorModal, setErrorModal] = useState<{
+        show: boolean;
+        message: string;
+    }>({ show: false, message: '' });
+    const [successModal, setSuccessModal] = useState<{
+        show: boolean;
+        message: string;
+    }>({ show: false, message: '' });
+
     // Prescription Templates & Medicine Catalog from API
     const [templates, setTemplates] = useState<ApiPrescriptionTemplate[]>([]);
     const [medicineCatalog, setMedicineCatalog] = useState<
@@ -555,10 +456,6 @@ const DoctorTreatment: React.FC = () => {
     const [selectedPatient, setSelectedPatient] = useState<Patient | null>(
         null
     );
-    const [teethType, setTeethType] = useState<'adult' | 'child'>('adult');
-    const [selectedTeeth, setSelectedTeeth] = useState<
-        Record<number, ToothStatus>
-    >({});
     const [prescriptionModalOpen, setPrescriptionModalOpen] = useState(false);
     const [medicines, setMedicines] = useState<Medicine[]>([]);
     const [formData, setFormData] = useState({
@@ -644,7 +541,6 @@ const DoctorTreatment: React.FC = () => {
                 notes: '',
                 followUpDate: '',
             });
-            setSelectedTeeth({});
             setMedicines([]);
             return;
         }
@@ -663,14 +559,16 @@ const DoctorTreatment: React.FC = () => {
                     notes: '',
                     followUpDate: '',
                 });
-                setSelectedTeeth({});
                 setMedicines([]);
             } else {
-                alert(response.message || 'Không thể bắt đầu khám');
+                setErrorModal({
+                    show: true,
+                    message: response.message || 'Không thể bắt đầu khám',
+                });
             }
         } catch (err) {
             console.error('Error starting exam:', err);
-            alert('Lỗi kết nối server');
+            setErrorModal({ show: true, message: 'Lỗi kết nối server' });
         } finally {
             setActionLoading(false);
         }
@@ -679,33 +577,6 @@ const DoctorTreatment: React.FC = () => {
     const handleBack = () => {
         setSelectedPatient(null);
         fetchQueue(); // Refresh queue when going back
-    };
-
-    const handleToothClick = (toothNumber: number) => {
-        const currentStatus = selectedTeeth[toothNumber];
-        const statuses: ToothStatus[] = [
-            'normal',
-            'cavity',
-            'missing',
-            'treated',
-            'crown',
-            'nextTreatment',
-        ];
-        const currentIndex = currentStatus
-            ? statuses.indexOf(currentStatus)
-            : -1;
-        const nextIndex = (currentIndex + 1) % statuses.length;
-
-        if (currentIndex === statuses.length - 1) {
-            const newTeeth = { ...selectedTeeth };
-            delete newTeeth[toothNumber];
-            setSelectedTeeth(newTeeth);
-        } else {
-            setSelectedTeeth({
-                ...selectedTeeth,
-                [toothNumber]: statuses[nextIndex],
-            });
-        }
     };
 
     const handleSavePrescription = (
@@ -718,23 +589,26 @@ const DoctorTreatment: React.FC = () => {
 
     const handleSave = async (createBill: boolean = false) => {
         if (!formData.diagnosis || !formData.treatment) {
-            alert('Vui lòng nhập chẩn đoán và phương pháp điều trị!');
+            setErrorModal({
+                show: true,
+                message: 'Vui lòng nhập chẩn đoán và phương pháp điều trị!',
+            });
             return;
         }
 
         if (!selectedPatient?.patientId) {
-            alert('Không tìm thấy thông tin bệnh nhân!');
+            setErrorModal({
+                show: true,
+                message: 'Không tìm thấy thông tin bệnh nhân!',
+            });
             return;
         }
 
         try {
             setActionLoading(true);
 
-            // Convert tooth status for API
-            const toothStatusForApi: Record<string, string> = {};
-            Object.entries(selectedTeeth).forEach(([tooth, status]) => {
-                toothStatusForApi[`T${tooth}`] = status;
-            });
+            // Note: Tooth status is now saved separately via DentalChart component
+            // No need to convert local tooth status to API format
 
             const request: CreateExaminationRequest = {
                 appointmentId: selectedPatient.appointmentId,
@@ -742,15 +616,12 @@ const DoctorTreatment: React.FC = () => {
                 title: selectedPatient.service,
                 diagnosis: formData.diagnosis,
                 treatment: formData.treatment,
-                toothStatus:
-                    Object.keys(toothStatusForApi).length > 0
-                        ? toothStatusForApi
-                        : undefined,
+                toothStatus: undefined, // Now managed by DentalChart component
                 prescription:
                     medicines.length > 0
                         ? {
                               medicines: medicines.map((m) => ({
-                                  medicineId: m.medicineId, // Now uses actual ID from catalog or empty GUID for free-text
+                                  medicineId: m.medicineId,
                                   name: m.name,
                                   dosage: m.dosage,
                                   quantity: m.quantity,
@@ -769,19 +640,23 @@ const DoctorTreatment: React.FC = () => {
 
             const response = await createExamination(request);
             if (response.isSuccess) {
-                alert(
-                    createBill
-                        ? 'Đã lưu phiếu khám và tạo hóa đơn!'
-                        : 'Đã lưu phiếu khám thành công!'
-                );
                 setSelectedPatient(null);
+                setSuccessModal({
+                    show: true,
+                    message: createBill
+                        ? 'Đã lưu phiếu khám và tạo hóa đơn!'
+                        : 'Đã lưu phiếu khám thành công!',
+                });
                 fetchQueue();
             } else {
-                alert(response.message || 'Không thể lưu phiếu khám');
+                setErrorModal({
+                    show: true,
+                    message: response.message || 'Không thể lưu phiếu khám',
+                });
             }
         } catch (err) {
             console.error('Error saving examination:', err);
-            alert('Lỗi kết nối server');
+            setErrorModal({ show: true, message: 'Lỗi kết nối server' });
         } finally {
             setActionLoading(false);
         }
@@ -935,12 +810,6 @@ const DoctorTreatment: React.FC = () => {
         );
     }
 
-    // Get teeth arrays based on type
-    const upperTeeth =
-        teethType === 'adult' ? adultUpperTeeth : childUpperTeeth;
-    const lowerTeeth =
-        teethType === 'adult' ? adultLowerTeeth : childLowerTeeth;
-
     return (
         <div className="px-6 py-8 lg:px-10">
             <div className="max-w-[1200px] mx-auto space-y-5">
@@ -985,144 +854,29 @@ const DoctorTreatment: React.FC = () => {
                 {/* Main Content - Two Columns */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                     {/* Left: Dental Chart */}
-                    <div className="bg-white rounded-xl shadow-sm p-5">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-sm font-semibold text-slate-900">
+                    {/* Left: Dental Chart - Backend Synced */}
+                    {selectedPatient.patientId ? (
+                        <DentalChart
+                            patientId={selectedPatient.patientId}
+                            patientName={selectedPatient.name}
+                            editable={true}
+                            onSave={(updates) => {
+                                console.log('Đã lưu sơ đồ răng:', updates);
+                            }}
+                        />
+                    ) : (
+                        <div className="bg-white rounded-xl shadow-sm p-5">
+                            <h3 className="text-sm font-semibold text-slate-900 mb-4">
                                 Sơ đồ răng miệng
                             </h3>
-                            <div className="flex gap-1">
-                                <button
-                                    onClick={() => setTeethType('adult')}
-                                    className={`px-3 py-1.5 text-xs font-medium rounded-lg transition ${
-                                        teethType === 'adult'
-                                            ? 'bg-[#2563EB] text-white'
-                                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                                    }`}
-                                >
-                                    Người lớn (32)
-                                </button>
-                                <button
-                                    onClick={() => setTeethType('child')}
-                                    className={`px-3 py-1.5 text-xs font-medium rounded-lg transition ${
-                                        teethType === 'child'
-                                            ? 'bg-[#2563EB] text-white'
-                                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                                    }`}
-                                >
-                                    Trẻ em (20)
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Legend */}
-                        <div className="mb-5 p-3 bg-slate-50 rounded-lg">
-                            <p className="text-[10px] font-medium text-slate-600 mb-2">
-                                Chú thích: (Click vào răng để thay đổi trạng
-                                thái)
-                            </p>
-                            <div className="grid grid-cols-3 gap-2">
-                                {Object.entries(toothStatusConfig).map(
-                                    ([key, config]) => (
-                                        <div
-                                            key={key}
-                                            className="flex items-center gap-1.5"
-                                        >
-                                            <div
-                                                className={`w-3 h-3 rounded ${config.color}`}
-                                            />
-                                            <span className="text-[10px] text-slate-600">
-                                                {config.label}
-                                            </span>
-                                        </div>
-                                    )
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Teeth Diagram */}
-                        <div className="bg-gradient-to-b from-pink-50 to-white rounded-xl p-4 border border-pink-100">
-                            {/* Upper Teeth */}
-                            <div className="mb-2">
-                                <p className="text-[10px] text-slate-500 mb-2 text-center font-medium">
-                                    Hàm trên
-                                </p>
-                                <div className="flex justify-center gap-0.5 flex-wrap">
-                                    {upperTeeth
-                                        .slice(0, upperTeeth.length / 2)
-                                        .map((tooth) => (
-                                            <ToothButton
-                                                key={tooth}
-                                                number={tooth}
-                                                status={selectedTeeth[tooth]}
-                                                onClick={() =>
-                                                    handleToothClick(tooth)
-                                                }
-                                                isUpper={true}
-                                            />
-                                        ))}
-                                    <div className="w-2" />
-                                    {upperTeeth
-                                        .slice(upperTeeth.length / 2)
-                                        .map((tooth) => (
-                                            <ToothButton
-                                                key={tooth}
-                                                number={tooth}
-                                                status={selectedTeeth[tooth]}
-                                                onClick={() =>
-                                                    handleToothClick(tooth)
-                                                }
-                                                isUpper={true}
-                                            />
-                                        ))}
-                                </div>
-                            </div>
-
-                            {/* Divider line */}
-                            <div className="flex items-center gap-2 my-3">
-                                <div className="flex-1 h-px bg-pink-200" />
-                                <span className="text-[9px] text-pink-400 font-medium">
-                                    đường viền nướu
-                                </span>
-                                <div className="flex-1 h-px bg-pink-200" />
-                            </div>
-
-                            {/* Lower Teeth */}
-                            <div>
-                                <div className="flex justify-center gap-0.5 flex-wrap">
-                                    {lowerTeeth
-                                        .slice(0, lowerTeeth.length / 2)
-                                        .map((tooth) => (
-                                            <ToothButton
-                                                key={tooth}
-                                                number={tooth}
-                                                status={selectedTeeth[tooth]}
-                                                onClick={() =>
-                                                    handleToothClick(tooth)
-                                                }
-                                                isUpper={false}
-                                            />
-                                        ))}
-                                    <div className="w-2" />
-                                    {lowerTeeth
-                                        .slice(lowerTeeth.length / 2)
-                                        .map((tooth) => (
-                                            <ToothButton
-                                                key={tooth}
-                                                number={tooth}
-                                                status={selectedTeeth[tooth]}
-                                                onClick={() =>
-                                                    handleToothClick(tooth)
-                                                }
-                                                isUpper={false}
-                                            />
-                                        ))}
-                                </div>
-                                <p className="text-[10px] text-slate-500 mt-2 text-center font-medium">
-                                    Hàm dưới
+                            <div className="flex items-center justify-center py-8 text-slate-400">
+                                <p className="text-sm">
+                                    Không có thông tin bệnh nhân để tải sơ đồ
+                                    răng
                                 </p>
                             </div>
                         </div>
-                    </div>
+                    )}
 
                     {/* Right: Treatment Form */}
                     <div className="bg-white rounded-xl shadow-sm p-5">
@@ -1306,6 +1060,56 @@ const DoctorTreatment: React.FC = () => {
                 templates={templates}
                 medicineCatalog={medicineCatalog}
             />
+
+            {/* Error Modal */}
+            {errorModal.show && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 text-center">
+                        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
+                            <FiAlertCircle className="w-8 h-8 text-red-600" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                            Lỗi
+                        </h3>
+                        <p className="text-sm text-slate-600 mb-4">
+                            {errorModal.message}
+                        </p>
+                        <button
+                            onClick={() =>
+                                setErrorModal({ show: false, message: '' })
+                            }
+                            className="w-full px-4 py-2.5 text-sm font-medium text-white bg-slate-600 rounded-xl hover:bg-slate-700 transition"
+                        >
+                            Đóng
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Success Modal */}
+            {successModal.show && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 text-center">
+                        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-100 flex items-center justify-center">
+                            <FiCheck className="w-8 h-8 text-green-600" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                            Thành công!
+                        </h3>
+                        <p className="text-sm text-slate-600 mb-4">
+                            {successModal.message}
+                        </p>
+                        <button
+                            onClick={() =>
+                                setSuccessModal({ show: false, message: '' })
+                            }
+                            className="w-full px-4 py-2.5 text-sm font-medium text-white bg-[#2563EB] rounded-xl hover:bg-[#1D4ED8] transition"
+                        >
+                            Đóng
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -11,21 +11,20 @@ const AppointmentCancel: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
 
-    const handleCancel = async () => {
+    const handleCancel = () => {
         if (!token) {
             setError('Token không hợp lệ');
             return;
         }
+        setShowConfirmModal(true);
+    };
 
-        if (
-            !confirm(
-                'Bạn có chắc chắn muốn hủy lịch hẹn này?\n\nLưu ý: Không thể hủy lịch hẹn trong vòng 2 giờ trước giờ khám.'
-            )
-        ) {
-            return;
-        }
+    const confirmCancel = async () => {
+        if (!token) return;
 
+        setShowConfirmModal(false);
         setLoading(true);
         setError(null);
 
@@ -141,6 +140,43 @@ const AppointmentCancel: React.FC = () => {
                     </p>
                 </div>
             </div>
+
+            {/* Confirm Modal */}
+            {showConfirmModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 text-center">
+                        <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
+                            <FiAlertCircle className="w-7 h-7 text-red-600" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                            Xác nhận hủy lịch hẹn
+                        </h3>
+                        <p className="text-sm text-slate-600 mb-4">
+                            Bạn có chắc chắn muốn hủy lịch hẹn này?
+                        </p>
+                        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+                            <p className="text-xs text-amber-800">
+                                ⚠️ Không thể hủy lịch hẹn trong vòng 2 giờ trước
+                                giờ khám.
+                            </p>
+                        </div>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setShowConfirmModal(false)}
+                                className="flex-1 px-4 py-2.5 border border-slate-200 text-slate-700 text-sm font-medium rounded-xl hover:bg-slate-50 transition"
+                            >
+                                Hủy
+                            </button>
+                            <button
+                                onClick={confirmCancel}
+                                className="flex-1 px-4 py-2.5 bg-red-600 text-white text-sm font-semibold rounded-xl hover:bg-red-700 transition"
+                            >
+                                Xác nhận
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

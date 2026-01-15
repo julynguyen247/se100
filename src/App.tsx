@@ -26,6 +26,7 @@ import PatientManagementPage from './pages/admin/patients';
 import AdminReportsPage from './pages/admin/report';
 import AdminSettingsPage from './pages/admin/setting';
 import MedicinesPage from './pages/admin/medicines';
+import AdminAuditPage from './pages/admin/audit';
 
 // Doctor Pages
 import DoctorDashboard from './pages/doctor/dashboard';
@@ -56,7 +57,6 @@ const router = createBrowserRouter([
                 path: 'appointment/reschedule',
                 Component: AppointmentReschedule,
             },
-
         ],
     },
     {
@@ -108,6 +108,10 @@ const router = createBrowserRouter([
             {
                 path: 'medicines',
                 element: <MedicinesPage />,
+            },
+            {
+                path: 'audit',
+                element: <AdminAuditPage />,
             },
         ],
     },
