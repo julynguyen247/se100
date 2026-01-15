@@ -29,16 +29,10 @@ import {
 } from '@/services/apiReceptionist';
 
 // =============== TYPES ===============
-type PaymentMethod = 'Cash' | 'Card' | 'Transfer' | 'VNPay';
+type PaymentMethod = 'Cash' | 'VNPay';
 
 const paymentMethods = [
     { id: 'Cash' as PaymentMethod, label: 'Tiền mặt', icon: FiDollarSign },
-    { id: 'Card' as PaymentMethod, label: 'Thẻ tín dụng', icon: FiCreditCard },
-    {
-        id: 'Transfer' as PaymentMethod,
-        label: 'Chuyển khoản',
-        icon: FiDollarSign,
-    },
     { id: 'VNPay' as PaymentMethod, label: 'VNPay', icon: FiCreditCard },
 ];
 
