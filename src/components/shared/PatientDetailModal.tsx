@@ -10,6 +10,22 @@ interface PatientDetailModalProps {
     onUpdate?: () => void;
 }
 
+// Helper to format ISO datetime to readable format
+const formatDateTime = (isoString: string | null | undefined): string => {
+    if (!isoString) return 'Chưa có';
+    try {
+        const date = new Date(isoString);
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${day}/${month}/${year} • ${hours}:${minutes}`;
+    } catch {
+        return 'Chưa có';
+    }
+};
+
 const PatientDetailModal: React.FC<PatientDetailModalProps> = ({
     isOpen,
     onClose,
@@ -148,7 +164,7 @@ const PatientDetailModal: React.FC<PatientDetailModalProps> = ({
                                     <span className="text-xs font-medium">Lần khám cuối</span>
                                 </div>
                                 <p className="text-sm font-semibold text-slate-900">
-                                    {patient.lastVisit || 'Chưa có'}
+                                    {formatDateTime(patient.lastVisit)}
                                 </p>
                             </div>
                             <div className="bg-emerald-50 rounded-xl p-4">
@@ -214,13 +230,26 @@ const PatientDetailModal: React.FC<PatientDetailModalProps> = ({
                                                 <p className="text-xs text-slate-500">{apt.doctor}</p>
                                             </div>
                                             <div className="text-right">
-                                                <p className="text-xs text-slate-600">{apt.date} - {apt.time}</p>
-                                                <span className={`text-xs px-2 py-0.5 rounded-full ${apt.status === 'completed' ? 'bg-emerald-100 text-emerald-700' :
-                                                        apt.status === 'confirmed' ? 'bg-blue-100 text-blue-700' :
-                                                            apt.status === 'cancelled' ? 'bg-red-100 text-red-700' :
-                                                                'bg-slate-100 text-slate-700'
+                                                <p className="text-xs text-slate-600 mb-1">{apt.date} • {apt.time}</p>
+                                                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${apt.status === 'completed' ? 'bg-[#DCFCE7] text-[#15803D]' :
+                                                    apt.status === 'confirmed' ? 'bg-[#E0ECFF] text-[#2563EB]' :
+                                                        apt.status === 'pending' ? 'bg-[#FEF3C7] text-[#92400E]' :
+                                                            apt.status === 'checkedin' ? 'bg-[#DBEAFE] text-[#1E40AF]' :
+                                                                apt.status === 'inprogress' ? 'bg-[#E0E7FF] text-[#4338CA]' :
+                                                                    apt.status === 'cancelled' ? 'bg-[#FEE2E2] text-[#B91C1C]' :
+                                                                        apt.status === 'noshow' ? 'bg-[#FEE2E2] text-[#DC2626]' :
+                                                                            apt.status === 'rescheduling' ? 'bg-[#FEF3C7] text-[#92400E]' :
+                                                                                'bg-slate-100 text-slate-600'
                                                     }`}>
-                                                    {apt.status}
+                                                    {apt.status === 'completed' ? 'Hoàn thành' :
+                                                        apt.status === 'confirmed' ? 'Đã xác nhận' :
+                                                            apt.status === 'pending' ? 'Chờ xác nhận' :
+                                                                apt.status === 'checkedin' ? 'Đã check-in' :
+                                                                    apt.status === 'inprogress' ? 'Đang khám' :
+                                                                        apt.status === 'cancelled' ? 'Đã huỷ' :
+                                                                            apt.status === 'noshow' ? 'Không đến' :
+                                                                                apt.status === 'rescheduling' ? 'Đang dời lịch' :
+                                                                                    apt.status}
                                                 </span>
                                             </div>
                                         </div>

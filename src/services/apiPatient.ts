@@ -54,12 +54,14 @@ export type EnumDto = {
 };
 
 export type AppointmentStatus =
-    | 'booked'
-    | 'confirmed'
     | 'pending'
+    | 'confirmed'
+    | 'checkedin'
+    | 'inprogress'
     | 'completed'
     | 'cancelled'
-    | 'noshow';
+    | 'noshow'
+    | 'rescheduling';
 
 // Raw response from API
 export type AppointmentApiDto = {

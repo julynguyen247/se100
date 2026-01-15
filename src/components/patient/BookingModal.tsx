@@ -9,6 +9,7 @@ import {
     FiCheck,
     FiAlertCircle,
 } from 'react-icons/fi';
+import AlertModal, { type AlertType } from '../common/AlertModal';
 import {
     getClinics,
     getServices,
@@ -73,6 +74,13 @@ const BookingModal: React.FC<BookingModalProps> = ({
         email: '',
         note: '',
     });
+
+    // Alert modal state
+    const [alertModal, setAlertModal] = useState<{
+        isOpen: boolean;
+        type: AlertType;
+        message: string;
+    }>({ isOpen: false, type: 'info', message: '' });
 
     const { isAuth } = useAuth();
     const [patientProfile, setPatientProfile] = useState<ProfileData | null>(
@@ -282,41 +290,37 @@ const BookingModal: React.FC<BookingModalProps> = ({
                         </h2>
                         <div className="flex items-center gap-2 mt-1">
                             <span
-                                className={`text-xs px-2 py-0.5 rounded-full ${
-                                    step >= 1
-                                        ? 'bg-blue-100 text-blue-700 font-medium'
-                                        : 'bg-slate-100 text-slate-500'
-                                }`}
+                                className={`text-xs px-2 py-0.5 rounded-full ${step >= 1
+                                    ? 'bg-blue-100 text-blue-700 font-medium'
+                                    : 'bg-slate-100 text-slate-500'
+                                    }`}
                             >
                                 1. Cơ sở
                             </span>
                             <span className="text-slate-300">/</span>
                             <span
-                                className={`text-xs px-2 py-0.5 rounded-full ${
-                                    step >= 2
-                                        ? 'bg-blue-100 text-blue-700 font-medium'
-                                        : 'bg-slate-100 text-slate-500'
-                                }`}
+                                className={`text-xs px-2 py-0.5 rounded-full ${step >= 2
+                                    ? 'bg-blue-100 text-blue-700 font-medium'
+                                    : 'bg-slate-100 text-slate-500'
+                                    }`}
                             >
                                 2. Dịch vụ
                             </span>
                             <span className="text-slate-300">/</span>
                             <span
-                                className={`text-xs px-2 py-0.5 rounded-full ${
-                                    step >= 3
-                                        ? 'bg-blue-100 text-blue-700 font-medium'
-                                        : 'bg-slate-100 text-slate-500'
-                                }`}
+                                className={`text-xs px-2 py-0.5 rounded-full ${step >= 3
+                                    ? 'bg-blue-100 text-blue-700 font-medium'
+                                    : 'bg-slate-100 text-slate-500'
+                                    }`}
                             >
                                 3. Thời gian
                             </span>
                             <span className="text-slate-300">/</span>
                             <span
-                                className={`text-xs px-2 py-0.5 rounded-full ${
-                                    step >= 4
-                                        ? 'bg-blue-100 text-blue-700 font-medium'
-                                        : 'bg-slate-100 text-slate-500'
-                                }`}
+                                className={`text-xs px-2 py-0.5 rounded-full ${step >= 4
+                                    ? 'bg-blue-100 text-blue-700 font-medium'
+                                    : 'bg-slate-100 text-slate-500'
+                                    }`}
                             >
                                 4. Thông tin
                             </span>
@@ -345,12 +349,11 @@ const BookingModal: React.FC<BookingModalProps> = ({
                                         onClick={() =>
                                             setSelectedClinic(clinic)
                                         }
-                                        className={`p-4 rounded-xl border text-left cursor-pointer transition-all hover:shadow-md ${
-                                            selectedClinic?.clinicId ===
+                                        className={`p-4 rounded-xl border text-left cursor-pointer transition-all hover:shadow-md ${selectedClinic?.clinicId ===
                                             clinic.clinicId
-                                                ? 'border-blue-500 bg-blue-50/50 ring-1 ring-blue-500'
-                                                : 'border-slate-200 hover:border-blue-300'
-                                        }`}
+                                            ? 'border-blue-500 bg-blue-50/50 ring-1 ring-blue-500'
+                                            : 'border-slate-200 hover:border-blue-300'
+                                            }`}
                                     >
                                         <div className="font-medium text-slate-900">
                                             {clinic.name}
@@ -380,12 +383,11 @@ const BookingModal: React.FC<BookingModalProps> = ({
                                             onClick={() =>
                                                 setSelectedService(svc)
                                             }
-                                            className={`p-3 rounded-xl border text-left cursor-pointer transition-all ${
-                                                selectedService?.serviceId ===
+                                            className={`p-3 rounded-xl border text-left cursor-pointer transition-all ${selectedService?.serviceId ===
                                                 svc.serviceId
-                                                    ? 'border-blue-500 bg-blue-50/50 ring-1 ring-blue-500'
-                                                    : 'border-slate-200 hover:border-blue-300'
-                                            }`}
+                                                ? 'border-blue-500 bg-blue-50/50 ring-1 ring-blue-500'
+                                                : 'border-slate-200 hover:border-blue-300'
+                                                }`}
                                         >
                                             <div className="text-sm font-medium text-slate-900">
                                                 {svc.name}
@@ -432,12 +434,11 @@ const BookingModal: React.FC<BookingModalProps> = ({
                                                 onClick={() =>
                                                     setSelectedDoctor(doc)
                                                 }
-                                                className={`p-3 rounded-xl border text-left cursor-pointer transition-all ${
-                                                    selectedDoctor?.doctorId ===
+                                                className={`p-3 rounded-xl border text-left cursor-pointer transition-all ${selectedDoctor?.doctorId ===
                                                     doc.doctorId
-                                                        ? 'border-blue-500 bg-blue-50/50 ring-1 ring-blue-500'
-                                                        : 'border-slate-200 hover:border-blue-300'
-                                                }`}
+                                                    ? 'border-blue-500 bg-blue-50/50 ring-1 ring-blue-500'
+                                                    : 'border-slate-200 hover:border-blue-300'
+                                                    }`}
                                             >
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
@@ -519,11 +520,10 @@ const BookingModal: React.FC<BookingModalProps> = ({
                                                                 slot
                                                             )
                                                         }
-                                                        className={`py-2 text-sm rounded-lg border transition-all ${
-                                                            isSelected
-                                                                ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                                                                : 'bg-white text-slate-700 border-slate-200 hover:border-blue-400'
-                                                        }`}
+                                                        className={`py-2 text-sm rounded-lg border transition-all ${isSelected
+                                                            ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                                                            : 'bg-white text-slate-700 border-slate-200 hover:border-blue-400'
+                                                            }`}
                                                     >
                                                         {timeLabel}
                                                     </button>
@@ -710,11 +710,10 @@ const BookingModal: React.FC<BookingModalProps> = ({
                 <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
                     <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 text-center">
                         <div
-                            className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${
-                                bookingResult.success
+                            className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${bookingResult.success
                                     ? 'bg-green-100'
                                     : 'bg-red-100'
-                            }`}
+                                }`}
                         >
                             {bookingResult.success ? (
                                 <FiCheck className="w-8 h-8 text-green-600" />
@@ -739,11 +738,10 @@ const BookingModal: React.FC<BookingModalProps> = ({
                                     onClose();
                                 }
                             }}
-                            className={`w-full px-4 py-2.5 text-sm font-medium text-white rounded-xl transition ${
-                                bookingResult.success
+                            className={`w-full px-4 py-2.5 text-sm font-medium text-white rounded-xl transition ${bookingResult.success
                                     ? 'bg-green-600 hover:bg-green-700'
                                     : 'bg-slate-600 hover:bg-slate-700'
-                            }`}
+                                }`}
                         >
                             {bookingResult.success ? 'Đóng' : 'Thử lại'}
                         </button>

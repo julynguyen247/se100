@@ -45,8 +45,6 @@ const PaymentResult: React.FC = () => {
     const transactionNo = searchParams.get('transactionNo');
     const amountParam = searchParams.get('amount');
     const bankCode = searchParams.get('bankCode');
-    const payDate = searchParams.get('payDate');
-    const orderInfo = searchParams.get('orderInfo');
     const errorCode = searchParams.get('code');
     const errorMessage = searchParams.get('message');
     const signatureError = searchParams.get('error');
@@ -129,11 +127,10 @@ const PaymentResult: React.FC = () => {
                 <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
                     {/* Header Section */}
                     <div
-                        className={`p-8 text-center ${
-                            isSuccess
+                        className={`p-8 text-center ${isSuccess
                                 ? 'bg-gradient-to-br from-emerald-500 to-green-600'
                                 : 'bg-gradient-to-br from-red-500 to-rose-600'
-                        }`}
+                            }`}
                     >
                         <div className="flex justify-center mb-4">
                             {isSuccess ? (

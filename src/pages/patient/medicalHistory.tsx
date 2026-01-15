@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     FiSearch,
     FiCalendar,
@@ -15,7 +15,6 @@ import {
     downloadMedicalRecordAttachment,
     type MedicalRecordDto,
     type MedicalRecordDetailDto,
-    type AttachmentDto,
 } from '../../services/apiPatient';
 
 const MedicalHistoryPage: React.FC = () => {
@@ -389,11 +388,10 @@ const MedicalRecordCard: React.FC<MedicalRecordCardProps> = ({
                                                                         key={
                                                                             idx
                                                                         }
-                                                                        className={`text-xs px-2 py-1 rounded ${
-                                                                            isNormal
+                                                                        className={`text-xs px-2 py-1 rounded ${isNormal
                                                                                 ? 'bg-green-50 text-green-700'
                                                                                 : 'bg-red-50 text-red-700'
-                                                                        }`}
+                                                                            }`}
                                                                     >
                                                                         #
                                                                         {
@@ -481,13 +479,8 @@ const MedicalRecordDetailModal: React.FC<MedicalRecordDetailModalProps> = ({
     const [record, setRecord] = useState<MedicalRecordDetailDto | null>(null);
     const [loading, setLoading] = useState(false);
 
-    useEffect(() => {
-        if (isOpen && recordId) {
-            fetchRecordDetail();
-        }
-    }, [isOpen, recordId]);
-
-    const fetchRecordDetail = async () => {
+    // Wrapped in useCallback to satisfy useEffect deps
+    const fetchRecordDetail = useCallback(async () => {
         if (!recordId) return;
 
         try {
@@ -505,7 +498,13 @@ const MedicalRecordDetailModal: React.FC<MedicalRecordDetailModalProps> = ({
         } finally {
             setLoading(false);
         }
-    };
+    }, [recordId]);
+
+    useEffect(() => {
+        if (isOpen && recordId) {
+            fetchRecordDetail();
+        }
+    }, [isOpen, recordId, fetchRecordDetail]);
 
     const handleDownloadAttachment = async (
         attachmentId: string,
@@ -622,10 +621,10 @@ const MedicalRecordDetailModal: React.FC<MedicalRecordDetailModalProps> = ({
                                     try {
                                         const prescription =
                                             typeof record.prescription ===
-                                            'string'
+                                                'string'
                                                 ? JSON.parse(
-                                                      record.prescription
-                                                  )
+                                                    record.prescription
+                                                )
                                                 : record.prescription;
 
                                         const medicines =
@@ -681,15 +680,15 @@ const MedicalRecordDetailModal: React.FC<MedicalRecordDetailModalProps> = ({
                                                                         </div>
                                                                         {(med.Instructions ||
                                                                             med.instructions) && (
-                                                                            <p className="text-xs text-slate-600 mt-2">
-                                                                                <span className="font-medium">
-                                                                                    Cách
-                                                                                    dùng:
-                                                                                </span>{' '}
-                                                                                {med.Instructions ||
-                                                                                    med.instructions}
-                                                                            </p>
-                                                                        )}
+                                                                                <p className="text-xs text-slate-600 mt-2">
+                                                                                    <span className="font-medium">
+                                                                                        Cách
+                                                                                        dùng:
+                                                                                    </span>{' '}
+                                                                                    {med.Instructions ||
+                                                                                        med.instructions}
+                                                                                </p>
+                                                                            )}
                                                                     </div>
                                                                 )
                                                             )}
@@ -771,7 +770,7 @@ const MedicalRecordDetailModal: React.FC<MedicalRecordDetailModalProps> = ({
                                                                         )[0];
                                                                     const status =
                                                                         tooth[
-                                                                            toothNum
+                                                                        toothNum
                                                                         ];
                                                                     return (
                                                                         <div
@@ -789,7 +788,7 @@ const MedicalRecordDetailModal: React.FC<MedicalRecordDetailModalProps> = ({
                                                                                 :
                                                                             </span>{' '}
                                                                             {status ===
-                                                                            'normal'
+                                                                                'normal'
                                                                                 ? '✓'
                                                                                 : status}
                                                                         </div>
@@ -834,7 +833,7 @@ const MedicalRecordDetailModal: React.FC<MedicalRecordDetailModalProps> = ({
                                                                             (
                                                                                 parsed as any
                                                                             )[
-                                                                                toothNum
+                                                                            toothNum
                                                                             ];
                                                                         return (
                                                                             <div
@@ -852,7 +851,7 @@ const MedicalRecordDetailModal: React.FC<MedicalRecordDetailModalProps> = ({
                                                                                     :
                                                                                 </span>{' '}
                                                                                 {status ===
-                                                                                'normal'
+                                                                                    'normal'
                                                                                     ? '✓'
                                                                                     : status}
                                                                             </div>
@@ -903,11 +902,11 @@ const MedicalRecordDetailModal: React.FC<MedicalRecordDetailModalProps> = ({
                                                                         </span>{' '}
                                                                         {tooth.T26 ===
                                                                             'normal' ||
-                                                                        tooth.t26 ===
+                                                                            tooth.t26 ===
                                                                             'normal'
                                                                             ? '✓'
                                                                             : tooth.T26 ||
-                                                                              tooth.t26}
+                                                                            tooth.t26}
                                                                     </div>
                                                                 )
                                                             )}

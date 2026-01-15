@@ -323,7 +323,7 @@ const StaffManagementPage: React.FC = () => {
                             }
                         >
                             <option value="ALL">Tất cả vai trò</option>
-                            <option value="ADMIN">Quản trị viên</option>
+                            <option value="ADMIN">Admin</option>
                             <option value="RECEPTIONIST">Lễ tân</option>
                             <option value="DOCTOR">Bác sĩ</option>
                         </select>
@@ -360,9 +360,8 @@ const StaffManagementPage: React.FC = () => {
                                 className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 px-3 py-2.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
                             >
                                 <FiRefreshCw
-                                    className={`w-3.5 h-3.5 ${
-                                        isRefreshing ? 'animate-spin' : ''
-                                    }`}
+                                    className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''
+                                        }`}
                                 />
                                 <span>Làm mới</span>
                             </button>
@@ -435,94 +434,92 @@ const StaffManagementPage: React.FC = () => {
                         <tbody>
                             {loading
                                 ? Array.from({ length: 5 }).map((_, idx) => (
-                                      <tr
-                                          key={idx}
-                                          className="border-t border-slate-100"
-                                      >
-                                          <td className="px-3 py-3 text-center text-slate-400">
-                                              <div className="h-4 w-8 bg-slate-200 rounded animate-pulse mx-auto" />
-                                          </td>
-                                          <td className="px-5 py-3">
-                                              <div className="h-4 w-32 bg-slate-200 rounded animate-pulse" />
-                                          </td>
-                                          <td className="px-5 py-3">
-                                              <div className="h-4 w-40 bg-slate-200 rounded animate-pulse" />
-                                          </td>
-                                          <td className="px-5 py-3">
-                                              <div className="h-4 w-44 bg-slate-200 rounded animate-pulse" />
-                                          </td>
-                                          <td className="px-5 py-3">
-                                              <div className="h-4 w-24 bg-slate-200 rounded animate-pulse" />
-                                          </td>
-                                          <td className="px-5 py-3">
-                                              <div className="h-4 w-20 bg-slate-200 rounded animate-pulse" />
-                                          </td>
-                                          <td className="px-5 py-3">
-                                              <div className="h-4 w-16 bg-slate-200 rounded animate-pulse mx-auto" />
-                                          </td>
-                                      </tr>
-                                  ))
+                                    <tr
+                                        key={idx}
+                                        className="border-t border-slate-100"
+                                    >
+                                        <td className="px-3 py-3 text-center text-slate-400">
+                                            <div className="h-4 w-8 bg-slate-200 rounded animate-pulse mx-auto" />
+                                        </td>
+                                        <td className="px-5 py-3">
+                                            <div className="h-4 w-32 bg-slate-200 rounded animate-pulse" />
+                                        </td>
+                                        <td className="px-5 py-3">
+                                            <div className="h-4 w-40 bg-slate-200 rounded animate-pulse" />
+                                        </td>
+                                        <td className="px-5 py-3">
+                                            <div className="h-4 w-44 bg-slate-200 rounded animate-pulse" />
+                                        </td>
+                                        <td className="px-5 py-3">
+                                            <div className="h-4 w-24 bg-slate-200 rounded animate-pulse" />
+                                        </td>
+                                        <td className="px-5 py-3">
+                                            <div className="h-4 w-20 bg-slate-200 rounded animate-pulse" />
+                                        </td>
+                                        <td className="px-5 py-3">
+                                            <div className="h-4 w-16 bg-slate-200 rounded animate-pulse mx-auto" />
+                                        </td>
+                                    </tr>
+                                ))
                                 : filteredUsers.map((user, idx) => (
-                                      <tr
-                                          key={user.userId}
-                                          className={`border-t border-slate-100 ${
-                                              idx % 2 === 1
-                                                  ? 'bg-[#FCFCFD]'
-                                                  : 'bg-white'
-                                          }`}
-                                      >
-                                          <td className="px-3 py-3 text-center text-slate-500 font-medium">
-                                              {idx + 1}
-                                          </td>
-                                          <td className="px-5 py-3 text-slate-800">
-                                              {user.fullName || '—'}
-                                          </td>
-                                          <td className="px-5 py-3 text-slate-600">
-                                              {user.username}
-                                          </td>
-                                          <td className="px-5 py-3 text-slate-600">
-                                              {user.clinic?.name || '—'}
-                                          </td>
-                                          <td className="px-5 py-3">
-                                              <RoleBadge role={user.role} />
-                                          </td>
-                                          <td className="px-5 py-3">
-                                              <span
-                                                  className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold ${
-                                                      user.isActive
-                                                          ? 'bg-[#DCFCE7] text-[#15803D]'
-                                                          : 'bg-[#F3F4F6] text-[#4B5563]'
-                                                  }`}
-                                              >
-                                                  {user.isActive
-                                                      ? 'Hoạt động'
-                                                      : 'Không hoạt động'}
-                                              </span>
-                                          </td>
-                                          <td className="px-5 py-3">
-                                              <div className="flex items-center justify-center gap-3 text-[15px]">
-                                                  <button
-                                                      type="button"
-                                                      onClick={() =>
-                                                          handleEdit(user)
-                                                      }
-                                                      className="text-[#2563EB] hover:text-[#1D4ED8]"
-                                                  >
-                                                      <FiEdit2 />
-                                                  </button>
-                                                  <button
-                                                      type="button"
-                                                      onClick={() =>
-                                                          handleDelete(user)
-                                                      }
-                                                      className="text-[#EF4444] hover:text-[#DC2626]"
-                                                  >
-                                                      <FiTrash2 />
-                                                  </button>
-                                              </div>
-                                          </td>
-                                      </tr>
-                                  ))}
+                                    <tr
+                                        key={user.userId}
+                                        className={`border-t border-slate-100 ${idx % 2 === 1
+                                                ? 'bg-[#FCFCFD]'
+                                                : 'bg-white'
+                                            }`}
+                                    >
+                                        <td className="px-3 py-3 text-center text-slate-500 font-medium">
+                                            {idx + 1}
+                                        </td>
+                                        <td className="px-5 py-3 text-slate-800">
+                                            {user.fullName || '—'}
+                                        </td>
+                                        <td className="px-5 py-3 text-slate-600">
+                                            {user.username}
+                                        </td>
+                                        <td className="px-5 py-3 text-slate-600">
+                                            {user.clinic?.name || '—'}
+                                        </td>
+                                        <td className="px-5 py-3">
+                                            <RoleBadge role={user.role} />
+                                        </td>
+                                        <td className="px-5 py-3">
+                                            <span
+                                                className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold ${user.isActive
+                                                        ? 'bg-[#DCFCE7] text-[#15803D]'
+                                                        : 'bg-[#F3F4F6] text-[#4B5563]'
+                                                    }`}
+                                            >
+                                                {user.isActive
+                                                    ? 'Hoạt động'
+                                                    : 'Không hoạt động'}
+                                            </span>
+                                        </td>
+                                        <td className="px-5 py-3">
+                                            <div className="flex items-center justify-center gap-3 text-[15px]">
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        handleEdit(user)
+                                                    }
+                                                    className="text-[#2563EB] hover:text-[#1D4ED8]"
+                                                >
+                                                    <FiEdit2 />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        handleDelete(user)
+                                                    }
+                                                    className="text-[#EF4444] hover:text-[#DC2626]"
+                                                >
+                                                    <FiTrash2 />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
 
                             {!loading &&
                                 filteredUsers.length === 0 &&
@@ -674,11 +671,10 @@ const StaffManagementPage: React.FC = () => {
                                                 isActive: !prev.isActive,
                                             }))
                                         }
-                                        className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold ${
-                                            addForm.isActive
+                                        className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold ${addForm.isActive
                                                 ? 'bg-[#DCFCE7] text-[#15803D]'
                                                 : 'bg-[#F3F4F6] text-[#4B5563]'
-                                        }`}
+                                            }`}
                                     >
                                         {addForm.isActive
                                             ? 'Hoạt động'
@@ -854,11 +850,10 @@ const StaffManagementPage: React.FC = () => {
                                                 isActive: !prev.isActive,
                                             }))
                                         }
-                                        className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold ${
-                                            editForm.isActive
+                                        className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold ${editForm.isActive
                                                 ? 'bg-[#DCFCE7] text-[#15803D]'
                                                 : 'bg-[#F3F4F6] text-[#4B5563]'
-                                        }`}
+                                            }`}
                                     >
                                         {editForm.isActive
                                             ? 'Hoạt động'
@@ -960,18 +955,16 @@ const StaffManagementPage: React.FC = () => {
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
                         <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 text-center">
                             <div
-                                className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${
-                                    successModal.type === 'delete'
+                                className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${successModal.type === 'delete'
                                         ? 'bg-red-100'
                                         : 'bg-green-100'
-                                }`}
+                                    }`}
                             >
                                 <FiCheck
-                                    className={`w-8 h-8 ${
-                                        successModal.type === 'delete'
+                                    className={`w-8 h-8 ${successModal.type === 'delete'
                                             ? 'text-red-600'
                                             : 'text-green-600'
-                                    }`}
+                                        }`}
                                 />
                             </div>
 
@@ -1053,7 +1046,7 @@ const RoleBadge: React.FC<{ role: StaffRoleValue }> = ({ role }) => {
     if (role === 'ADMIN') {
         return (
             <span className="inline-flex rounded-full bg-[#FEE2E2] text-[#B91C1C] px-3 py-1 text-[11px] font-semibold">
-                Quản trị viên
+                Admin
             </span>
         );
     }

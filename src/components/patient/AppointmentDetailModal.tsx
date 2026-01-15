@@ -10,12 +10,14 @@ interface AppointmentDetailModalProps {
 }
 
 const statusMap: Record<AppointmentStatus, { label: string; className: string }> = {
-    booked: { label: "Đã đặt lịch", className: "bg-[#FEF3C7] text-[#92400E]" },
-    confirmed: { label: "Đã xác nhận", className: "bg-[#E0ECFF] text-[#2563EB]" },
     pending: { label: "Chờ xác nhận", className: "bg-[#FEF3C7] text-[#92400E]" },
+    confirmed: { label: "Đã xác nhận", className: "bg-[#E0ECFF] text-[#2563EB]" },
+    checkedin: { label: "Đã check-in", className: "bg-[#DBEAFE] text-[#1E40AF]" },
+    inprogress: { label: "Đang khám", className: "bg-[#E0E7FF] text-[#4338CA]" },
     completed: { label: "Hoàn thành", className: "bg-[#DCFCE7] text-[#15803D]" },
     cancelled: { label: "Đã huỷ", className: "bg-[#FEE2E2] text-[#B91C1C]" },
     noshow: { label: "Không đến", className: "bg-[#FEE2E2] text-[#DC2626]" },
+    rescheduling: { label: "Đang dời lịch", className: "bg-[#FEF3C7] text-[#92400E]" },
 };
 
 const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
@@ -30,7 +32,7 @@ const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
         label: appointment.status,
         className: "bg-gray-100 text-gray-600",
     };
-    const canCancel = appointment.status === "confirmed" || appointment.status === "pending" || appointment.status === "booked";
+    const canCancel = appointment.status === "pending" || appointment.status === "confirmed";
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
