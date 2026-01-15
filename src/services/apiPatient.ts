@@ -56,6 +56,7 @@ export type EnumDto = {
 export type AppointmentStatus =
     | 'pending'
     | 'confirmed'
+    | 'booked'
     | 'checkedin'
     | 'inprogress'
     | 'completed'
@@ -124,6 +125,16 @@ export const getPatientProfile = () => {
 
 export const getGenderEnum = () => {
     const urlBackend = '/api/enums/genders';
+    return axios.get<IBackendRes<EnumDto[]>>(urlBackend);
+};
+
+export const getAppointmentStatuses = () => {
+    const urlBackend = '/api/enums/appointment-statuses';
+    return axios.get<IBackendRes<EnumDto[]>>(urlBackend);
+};
+
+export const getAppointmentSources = () => {
+    const urlBackend = '/api/enums/appointment-sources';
     return axios.get<IBackendRes<EnumDto[]>>(urlBackend);
 };
 
@@ -387,3 +398,32 @@ export const getAppointmentByToken = (appointmentId: string) => {
         IBackendRes<any>
     >;
 };
+
+// --- Patient Reviews APIs ---
+
+export type CreateReviewRequest = {
+    appointmentId: string;
+    rating: number; // 1-5
+    comment?: string;
+};
+
+export type ReviewDto = {
+    reviewId: string;
+    appointmentId: string;
+    rating: number;
+    comment: string | null;
+    createdAt: string;
+};
+
+/**
+ * Create a review for a completed appointment
+ * POST /api/patient/reviews
+ * @param data Review data with appointmentId, rating (1-5), and optional comment
+ */
+export const createReview = (data: CreateReviewRequest) => {
+    return axios.post<IBackendRes<ReviewDto>>(
+        '/api/patient/reviews',
+        data
+    ) as unknown as Promise<IBackendRes<ReviewDto>>;
+};
+
