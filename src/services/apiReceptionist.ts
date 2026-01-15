@@ -423,7 +423,7 @@ export interface CreateBillRequest {
 }
 
 export interface PayBillRequest {
-    paymentMethod: 'Cash' | 'Card' | 'Transfer';
+    paymentMethod: 'Cash';
     amount: number;
     discount: number | null;
     notes: string | null;
