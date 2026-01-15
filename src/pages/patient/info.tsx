@@ -11,6 +11,7 @@ import {
     FiMapPin,
     FiHeart,
 } from 'react-icons/fi';
+import AlertModal, { type AlertType } from '../../components/common/AlertModal';
 import {
     getPatientProfile,
     getGenderEnum,
@@ -80,6 +81,13 @@ const MyProfilePage: React.FC = () => {
     const [saveSuccess, setSaveSuccess] = useState(false);
     const [updatedInfo, setUpdatedInfo] = useState<ProfileData | null>(null);
     const [validationError, setValidationError] = useState<string | null>(null);
+
+    // Alert modal state
+    const [alertModal, setAlertModal] = useState<{
+        isOpen: boolean;
+        type: AlertType;
+        message: string;
+    }>({ isOpen: false, type: 'info', message: '' });
 
     // Fetch patient profile and gender enum on mount
     useEffect(() => {
@@ -479,6 +487,14 @@ const MyProfilePage: React.FC = () => {
                     }}
                 />
             </div>
+
+            {/* Alert Modal */}
+            <AlertModal
+                isOpen={alertModal.isOpen}
+                onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+                type={alertModal.type}
+                message={alertModal.message}
+            />
         </div>
     );
 };
@@ -537,13 +553,11 @@ const Field: React.FC<FieldProps> = ({
                     value={value}
                     placeholder={placeholder}
                     onChange={(e) => onChange?.(e.target.value)}
-                    className={`w-full rounded-xl border ${
-                        icon ? 'pl-10' : 'pl-4'
-                    } pr-4 py-3 text-sm outline-none transition-all duration-200 ${
-                        isEditing
+                    className={`w-full rounded-xl border ${icon ? 'pl-10' : 'pl-4'
+                        } pr-4 py-3 text-sm outline-none transition-all duration-200 ${isEditing
                             ? 'border-slate-300 bg-white text-slate-900 shadow-sm hover:border-slate-400 focus:border-[#2563EB] focus:ring-4 focus:ring-[#2563EB]/10'
                             : 'border-slate-200 bg-slate-50 text-slate-700 cursor-default'
-                    }`}
+                        }`}
                 />
             </div>
         </div>
@@ -583,9 +597,8 @@ const SelectField: React.FC<SelectFieldProps> = ({
                         type="text"
                         readOnly
                         value={value}
-                        className={`w-full rounded-xl border border-slate-200 bg-slate-50 ${
-                            icon ? 'pl-10' : 'pl-4'
-                        } pr-4 py-3 text-sm text-slate-700 outline-none cursor-default`}
+                        className={`w-full rounded-xl border border-slate-200 bg-slate-50 ${icon ? 'pl-10' : 'pl-4'
+                            } pr-4 py-3 text-sm text-slate-700 outline-none cursor-default`}
                     />
                 </div>
             </div>
@@ -606,9 +619,8 @@ const SelectField: React.FC<SelectFieldProps> = ({
                 <select
                     value={value}
                     onChange={(e) => onChange?.(e.target.value)}
-                    className={`w-full rounded-xl border border-slate-300 bg-white ${
-                        icon ? 'pl-10' : 'pl-4'
-                    } pr-10 py-3 text-sm text-slate-900 outline-none shadow-sm hover:border-slate-400 focus:border-[#2563EB] focus:ring-4 focus:ring-[#2563EB]/10 transition-all duration-200 appearance-none cursor-pointer`}
+                    className={`w-full rounded-xl border border-slate-300 bg-white ${icon ? 'pl-10' : 'pl-4'
+                        } pr-10 py-3 text-sm text-slate-900 outline-none shadow-sm hover:border-slate-400 focus:border-[#2563EB] focus:ring-4 focus:ring-[#2563EB]/10 transition-all duration-200 appearance-none cursor-pointer`}
                     style={{
                         backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23cbd5e1'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
                         backgroundPosition: 'right 0.75rem center',
@@ -664,13 +676,11 @@ const TextareaField: React.FC<TextareaFieldProps> = ({
                     placeholder={placeholder}
                     rows={rows}
                     onChange={(e) => onChange?.(e.target.value)}
-                    className={`w-full rounded-xl border ${
-                        icon ? 'pl-10' : 'pl-4'
-                    } pr-4 py-3 text-sm outline-none transition-all duration-200 resize-none ${
-                        isEditing
+                    className={`w-full rounded-xl border ${icon ? 'pl-10' : 'pl-4'
+                        } pr-4 py-3 text-sm outline-none transition-all duration-200 resize-none ${isEditing
                             ? 'border-slate-300 bg-white text-slate-900 shadow-sm hover:border-slate-400 focus:border-[#2563EB] focus:ring-4 focus:ring-[#2563EB]/10'
                             : 'border-slate-200 bg-slate-50 text-slate-700 cursor-default'
-                    }`}
+                        }`}
                 />
             </div>
         </div>

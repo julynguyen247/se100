@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
     FiSearch,
     FiUser,
@@ -190,11 +190,10 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                                 <button
                                     key={method.id}
                                     onClick={() => setSelectedMethod(method.id)}
-                                    className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${
-                                        isSelected
+                                    className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${isSelected
                                             ? 'border-blue-500 bg-blue-50 text-blue-700'
                                             : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
-                                    }`}
+                                        }`}
                                 >
                                     <Icon className="w-5 h-5" />
                                     <span className="text-xs font-medium">
@@ -349,9 +348,8 @@ const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
                                     Trạng thái:{' '}
                                 </span>
                                 <span
-                                    className={`inline-flex px-1.5 py-0.5 rounded-full text-[10px] font-medium ${
-                                        statusConfig[bill.status].bg
-                                    } ${statusConfig[bill.status].text}`}
+                                    className={`inline-flex px-1.5 py-0.5 rounded-full text-[10px] font-medium ${statusConfig[bill.status].bg
+                                        } ${statusConfig[bill.status].text}`}
                                 >
                                     {statusConfig[bill.status].label}
                                 </span>
@@ -690,13 +688,8 @@ const ReceptionistBilling: React.FC = () => {
     // Print ref
     const printRef = useRef<HTMLDivElement>(null);
 
-    // Fetch bills and stats on mount
-    useEffect(() => {
-        fetchBills();
-        fetchStats();
-    }, [filter]);
-
-    const fetchBills = async () => {
+    // Fetch bills - wrapped in useCallback to satisfy useEffect deps
+    const fetchBills = useCallback(async () => {
         try {
             setLoading(true);
             setError(null);
@@ -714,7 +707,15 @@ const ReceptionistBilling: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [filter]);
+
+    // Fetch bills and stats on mount/filter change
+    useEffect(() => {
+        fetchBills();
+        fetchStats();
+    }, [fetchBills]);
+
+
 
     const fetchStats = async () => {
         try {
@@ -796,25 +797,21 @@ const ReceptionistBilling: React.FC = () => {
             }
         } else {
             // Handle cash/card/transfer payment
-            try {
-                const paymentData: PayBillRequest = {
-                    paymentMethod: method,
-                    amount: selectedBill!.totalAmount,
-                    discount: null,
-                    notes: null,
-                };
-                const response = await payBill(billId, paymentData);
-                if (response.isSuccess) {
-                    // Refetch bills and stats
-                    await fetchBills();
-                    await fetchStats();
-                    // Payment succeeded - modal will close automatically
-                    console.log('Payment successful');
-                } else {
-                    throw new Error(response.message || 'Payment failed');
-                }
-            } catch (err) {
-                throw err;
+            const paymentData: PayBillRequest = {
+                paymentMethod: method,
+                amount: selectedBill!.totalAmount,
+                discount: null,
+                notes: null,
+            };
+            const response = await payBill(billId, paymentData);
+            if (response.isSuccess) {
+                // Refetch bills and stats
+                await fetchBills();
+                await fetchStats();
+                // Payment succeeded - modal will close automatically
+                console.log('Payment successful');
+            } else {
+                throw new Error(response.message || 'Payment failed');
             }
         }
     };
@@ -1045,11 +1042,10 @@ const ReceptionistBilling: React.FC = () => {
                             <button
                                 key={status}
                                 onClick={() => setFilter(status)}
-                                className={`px-3 py-2 text-xs font-medium rounded-lg transition ${
-                                    filter === status
+                                className={`px-3 py-2 text-xs font-medium rounded-lg transition ${filter === status
                                         ? 'bg-[#2563EB] text-white'
                                         : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-                                }`}
+                                    }`}
                             >
                                 {status === 'all'
                                     ? 'Tất cả'
@@ -1131,12 +1127,12 @@ const ReceptionistBilling: React.FC = () => {
                                                         ))}
                                                     {bill.services.length >
                                                         2 && (
-                                                        <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-xs rounded">
-                                                            +
-                                                            {bill.services
-                                                                .length - 2}
-                                                        </span>
-                                                    )}
+                                                            <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-xs rounded">
+                                                                +
+                                                                {bill.services
+                                                                    .length - 2}
+                                                            </span>
+                                                        )}
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 text-sm text-slate-600">
@@ -1158,31 +1154,31 @@ const ReceptionistBilling: React.FC = () => {
                                                 <div className="flex gap-2">
                                                     {bill.status ===
                                                         BillStatus.Pending && (
-                                                        <>
-                                                            <button
-                                                                onClick={() =>
-                                                                    handlePayment(
-                                                                        bill
-                                                                    )
-                                                                }
-                                                                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#2563EB] text-white text-xs font-medium rounded-lg hover:bg-[#1D4ED8]"
-                                                            >
-                                                                <FiCheck className="w-3.5 h-3.5" />
-                                                                Thanh toán
-                                                            </button>
-                                                            <button
-                                                                onClick={() =>
-                                                                    handleCancelBill(
-                                                                        bill.id
-                                                                    )
-                                                                }
-                                                                className="p-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"
-                                                                title="Hủy hóa đơn"
-                                                            >
-                                                                <FiX className="w-4 h-4" />
-                                                            </button>
-                                                        </>
-                                                    )}
+                                                            <>
+                                                                <button
+                                                                    onClick={() =>
+                                                                        handlePayment(
+                                                                            bill
+                                                                        )
+                                                                    }
+                                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[#2563EB] text-white text-xs font-medium rounded-lg hover:bg-[#1D4ED8]"
+                                                                >
+                                                                    <FiCheck className="w-3.5 h-3.5" />
+                                                                    Thanh toán
+                                                                </button>
+                                                                <button
+                                                                    onClick={() =>
+                                                                        handleCancelBill(
+                                                                            bill.id
+                                                                        )
+                                                                    }
+                                                                    className="p-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"
+                                                                    title="Hủy hóa đơn"
+                                                                >
+                                                                    <FiX className="w-4 h-4" />
+                                                                </button>
+                                                            </>
+                                                        )}
                                                     <button
                                                         onClick={() =>
                                                             handleDirectPrint(

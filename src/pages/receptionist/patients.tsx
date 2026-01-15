@@ -3,7 +3,22 @@ import { FiSearch, FiUser, FiCalendar, FiFileText, FiEye, FiPlus } from "react-i
 import { getPatients, type PatientListItem } from "@/services/apiReceptionist";
 import PatientDetailModal from "../../components/shared/PatientDetailModal";
 import CreatePatientModal from "../../components/receptionist/CreatePatientModal";
-import { toast } from "sonner";
+
+// Helper to format ISO datetime to readable format
+const formatDateTime = (isoString: string | null | undefined): string => {
+    if (!isoString) return 'Chưa có';
+    try {
+        const date = new Date(isoString);
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${day}/${month}/${year} • ${hours}:${minutes}`;
+    } catch {
+        return 'Chưa có';
+    }
+};
 
 const ReceptionistPatients: React.FC = () => {
     const [search, setSearch] = useState("");
@@ -165,14 +180,10 @@ const ReceptionistPatients: React.FC = () => {
                                         <td className="px-6 py-4 text-sm text-slate-600">{patient.phone}</td>
                                         <td className="px-6 py-4 text-sm text-slate-600">{patient.email || '-'}</td>
                                         <td className="px-6 py-4">
-                                            {patient.lastVisit ? (
-                                                <div className="flex items-center gap-1.5 text-sm text-slate-600">
-                                                    <FiCalendar className="w-3.5 h-3.5" />
-                                                    {patient.lastVisit}
-                                                </div>
-                                            ) : (
-                                                <span className="text-sm text-slate-400">Chưa có</span>
-                                            )}
+                                            <div className="flex items-center gap-1.5 text-sm text-slate-600">
+                                                <FiCalendar className="w-3.5 h-3.5" />
+                                                {formatDateTime(patient.lastVisit)}
+                                            </div>
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-1.5 text-sm text-slate-600">
