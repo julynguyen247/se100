@@ -1,4 +1,5 @@
 import axios from '@/services/api.customize';
+import { IBackendRes } from './apiGuest';
 
 export type ProfileData = {
     id: string;
@@ -17,16 +18,45 @@ export type ProfileData = {
     insuranceNumber: string | null;
 };
 
-export type MedicalRecordDto = {
+// Backend response type (actual format from API)
+export type MedicalRecordApiDto = {
     id: string;
     title: string;
     doctor: string;
-    date: string;
+    recordDate: string; // Backend returns 'recordDate' (camelCase from RecordDate)
     diagnosis: string | null;
     treatment: string | null;
     prescription: string | null;
     notes: string | null;
     attachments: string[];
+};
+
+// Transformed for UI (normalized to 'date')
+export type MedicalRecordDto = {
+    id: string;
+    title: string;
+    doctor: string;
+    date: string; // Normalized from recordDate
+    diagnosis: string | null;
+    treatment: string | null;
+    prescription: string | null;
+    notes: string | null;
+    attachments: string[];
+};
+
+// Helper to transform API response to UI format
+const transformMedicalRecord = (apiData: MedicalRecordApiDto): MedicalRecordDto => {
+    return {
+        id: apiData.id,
+        title: apiData.title,
+        doctor: apiData.doctor,
+        date: apiData.recordDate, // Map recordDate to date
+        diagnosis: apiData.diagnosis,
+        treatment: apiData.treatment,
+        prescription: apiData.prescription,
+        notes: apiData.notes,
+        attachments: apiData.attachments,
+    };
 };
 
 export type AttachmentDto = {
@@ -139,9 +169,19 @@ export const getAppointmentSources = () => {
     return axios.get<IBackendRes<EnumDto[]>>(urlBackend);
 };
 
-export const getMedicalRecords = () => {
+export const getMedicalRecords = async () => {
     const urlBackend = '/api/patient/medical-records';
-    return axios.get<IBackendRes<MedicalRecordDto[]>>(urlBackend);
+    const response = await axios.get<IBackendRes<MedicalRecordApiDto[]>>(urlBackend);
+    
+    // Transform data if successful
+    if (response?.isSuccess && response.data) {
+        return {
+            ...response,
+            data: response.data.map(transformMedicalRecord),
+        };
+    }
+    
+    return response as unknown as IBackendRes<MedicalRecordDto[]>;
 };
 
 export const getMedicalRecordDetail = (id: string) => {
@@ -426,5 +466,92 @@ export const createReview = (data: CreateReviewRequest) => {
         '/api/patient/reviews',
         data
     ) as unknown as Promise<IBackendRes<ReviewDto>>;
+};
+
+// ==================== DASHBOARD APIs ====================
+
+/**
+ * Get current authenticated user info
+ * GET /api/auth/me
+ * Returns: { userId, role, patientId }
+ */
+export type AuthMeResponse = {
+    userId: string;
+    role: string;
+    patientId: string;
+};
+
+export const getAuthMe = () => {
+    const urlBackend = '/api/auth/me';
+    return axios.get<IBackendRes<AuthMeResponse>>(urlBackend);
+};
+
+/**
+ * Get patient profile by patientId
+ * GET /api/patients/{patientId}
+ * Returns: { id, fullName, dob, phone, email }
+ */
+export type PatientProfileResponse = {
+    id: string;
+    fullName: string;
+    dob: string;
+    phone: string;
+    email: string;
+};
+
+export const getPatientProfileById = (patientId: string) => {
+    const urlBackend = `/api/patients/${patientId}`;
+    return axios.get<IBackendRes<PatientProfileResponse>>(urlBackend);
+};
+
+/**
+ * Get dashboard summary for patient
+ * GET /api/patients/{patientId}/dashboard-summary
+ * Returns: { upcomingAppointments, completedTreatments, lastVisit }
+ */
+export type DashboardSummaryResponse = {
+    upcomingAppointments: number;
+    completedTreatments: number;
+    lastVisit: string; // ISO date format: "2024-12-10"
+};
+
+export const getDashboardSummary = (patientId: string) => {
+    const urlBackend = `/api/patients/${patientId}/dashboard-summary`;
+    return axios.get<IBackendRes<DashboardSummaryResponse>>(urlBackend);
+};
+
+/**
+ * Get upcoming appointments
+ * GET /api/appointments?patientId=xxx&status=UPCOMING&limit=2
+ * Returns: Array of appointments
+ */
+export type UpcomingAppointmentResponse = {
+    id: string;
+    serviceName: string;
+    doctorName: string;
+    time: string; // ISO DateTime: "2024-12-28T10:00"
+    status: string; // "CONFIRMED", "PENDING", etc.
+};
+
+export const getUpcomingAppointments = (patientId: string, limit: number = 2) => {
+    const urlBackend = `/api/appointments?patientId=${patientId}&status=UPCOMING&limit=${limit}`;
+    return axios.get<IBackendRes<UpcomingAppointmentResponse[]>>(urlBackend);
+};
+
+/**
+ * Get treatment history
+ * GET /api/treatments?patientId=xxx&limit=3
+ * Returns: Array of treatments
+ */
+export type TreatmentHistoryResponse = {
+    id: string;
+    serviceName: string;
+    doctorName: string;
+    date: string; // ISO date format: "2024-12-10"
+};
+
+export const getTreatmentHistory = (patientId: string, limit: number = 3) => {
+    const urlBackend = `/api/treatments?patientId=${patientId}&limit=${limit}`;
+    return axios.get<IBackendRes<TreatmentHistoryResponse[]>>(urlBackend);
 };
 
