@@ -14,10 +14,11 @@ import CancelAppointmentModal from '../../components/patient/CancelAppointmentMo
 import {
   getPatientAppointments,
   cancelAppointment,
+  createReview,
   type AppointmentDto,
   type AppointmentStatus,
+  type CreateReviewRequest,
 } from '@/services/apiPatient';
-import { createReview, type CreateReviewRequest } from '@/services/apiAdmin';
 
 const statusMap: Record<
   AppointmentStatus,
@@ -35,6 +36,14 @@ const statusMap: Record<
     label: 'Chờ xác nhận',
     className: 'bg-[#FEF3C7] text-[#92400E]',
   },
+  checkedin: {
+    label: 'Đã checkin',
+    className: 'bg-[#D1FAE5] text-[#065F46]',
+  },
+  inprogress: {
+    label: 'Đang khám',
+    className: 'bg-[#DBEAFE] text-[#1E40AF]',
+  },
   completed: {
     label: 'Hoàn thành',
     className: 'bg-[#DCFCE7] text-[#15803D]',
@@ -46,6 +55,10 @@ const statusMap: Record<
   noshow: {
     label: 'Không đến',
     className: 'bg-[#FEE2E2] text-[#DC2626]',
+  },
+  rescheduling: {
+    label: 'Đang dời lịch',
+    className: 'bg-[#FEF9C3] text-[#854D0E]',
   },
 };
 
@@ -356,8 +369,8 @@ const MyAppointmentsPage: React.FC = () => {
                     >
                       <FiStar
                         className={`w-8 h-8 ${star <= reviewRating
-                            ? 'fill-yellow-400 text-yellow-400'
-                            : 'text-slate-300'
+                          ? 'fill-yellow-400 text-yellow-400'
+                          : 'text-slate-300'
                           }`}
                       />
                     </button>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     FiUser,
     FiSave,
@@ -12,6 +12,9 @@ import {
     FiRefreshCw,
     FiAlertCircle,
     FiCheck,
+    FiUpload,
+    FiImage,
+    FiX,
 } from 'react-icons/fi';
 import { FaPills } from 'react-icons/fa';
 import Modal from '../../components/ui/Modal';
@@ -22,9 +25,11 @@ import {
     createExamination,
     getPrescriptionTemplates,
     getMedicines,
+    uploadAttachment,
     CreateExaminationRequest,
     MedicineCatalogItem,
     PrescriptionTemplate as ApiPrescriptionTemplate,
+    UploadAttachmentResponse,
 } from '@/services/apiDoctor';
 
 type Patient = {
@@ -77,15 +82,15 @@ const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
         initialMedicines.length > 0
             ? initialMedicines
             : [
-                  {
-                      id: 1,
-                      medicineId: '00000000-0000-0000-0000-000000000000',
-                      name: '',
-                      dosage: '',
-                      quantity: '',
-                      instructions: '',
-                  },
-              ]
+                {
+                    id: 1,
+                    medicineId: '00000000-0000-0000-0000-000000000000',
+                    name: '',
+                    dosage: '',
+                    quantity: '',
+                    instructions: '',
+                },
+            ]
     );
     const [prescriptionNotes, setPrescriptionNotes] = useState('');
     const [selectedTemplate, setSelectedTemplate] = useState('');
@@ -211,11 +216,10 @@ const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
                                 <button
                                     key={template.id}
                                     onClick={() => applyTemplate(template.id)}
-                                    className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition ${
-                                        selectedTemplate === template.id
-                                            ? 'bg-amber-500 text-white border-amber-500'
-                                            : 'bg-white text-amber-700 border-amber-200 hover:border-amber-400'
-                                    }`}
+                                    className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition ${selectedTemplate === template.id
+                                        ? 'bg-amber-500 text-white border-amber-500'
+                                        : 'bg-white text-amber-700 border-amber-200 hover:border-amber-400'
+                                        }`}
                                 >
                                     {template.name}
                                 </button>
@@ -309,10 +313,10 @@ const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
                                                 </datalist>
                                                 {medicine.medicineId !==
                                                     '00000000-0000-0000-0000-000000000000' && (
-                                                    <span className="absolute right-2 top-2 text-[10px] text-green-600 bg-green-50 px-1 rounded">
-                                                        Catalog
-                                                    </span>
-                                                )}
+                                                        <span className="absolute right-2 top-2 text-[10px] text-green-600 bg-green-50 px-1 rounded">
+                                                            Catalog
+                                                        </span>
+                                                    )}
                                             </td>
                                             <td className="px-1 py-1">
                                                 <input
@@ -467,6 +471,12 @@ const DoctorTreatment: React.FC = () => {
         followUpDate: '',
     });
 
+    // Attachment states
+    const [attachments, setAttachments] = useState<File[]>([]);
+    const [uploadedAttachments, setUploadedAttachments] = useState<UploadAttachmentResponse[]>([]);
+    const [uploadingAttachment, setUploadingAttachment] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
     const fetchQueue = async () => {
         try {
             setLoading(true);
@@ -620,15 +630,15 @@ const DoctorTreatment: React.FC = () => {
                 prescription:
                     medicines.length > 0
                         ? {
-                              medicines: medicines.map((m) => ({
-                                  medicineId: m.medicineId,
-                                  name: m.name,
-                                  dosage: m.dosage,
-                                  quantity: m.quantity,
-                                  instructions: m.instructions,
-                              })),
-                              notes: formData.prescriptionNotes,
-                          }
+                            medicines: medicines.map((m) => ({
+                                medicineId: m.medicineId,
+                                name: m.name,
+                                dosage: m.dosage,
+                                quantity: m.quantity,
+                                instructions: m.instructions,
+                            })),
+                            notes: formData.prescriptionNotes,
+                        }
                         : undefined,
                 notes: formData.notes || undefined,
                 createBill: createBill,
@@ -639,13 +649,36 @@ const DoctorTreatment: React.FC = () => {
             };
 
             const response = await createExamination(request);
-            if (response.isSuccess) {
+            if (response.isSuccess && response.data) {
+                // Upload attachments if any
+                if (attachments.length > 0 && response.data.medicalRecordId) {
+                    setUploadingAttachment(true);
+                    const uploadResults: UploadAttachmentResponse[] = [];
+
+                    for (const file of attachments) {
+                        try {
+                            const uploadRes = await uploadAttachment(response.data.medicalRecordId, file);
+                            if (uploadRes.isSuccess && uploadRes.data) {
+                                uploadResults.push(uploadRes.data);
+                            }
+                        } catch (uploadErr) {
+                            console.error('Error uploading attachment:', uploadErr);
+                        }
+                    }
+
+                    setUploadedAttachments(uploadResults);
+                    setAttachments([]);
+                    setUploadingAttachment(false);
+                }
+
                 setSelectedPatient(null);
                 setSuccessModal({
                     show: true,
                     message: createBill
                         ? 'Đã lưu phiếu khám và tạo hóa đơn!'
-                        : 'Đã lưu phiếu khám thành công!',
+                        : attachments.length > 0
+                            ? `Đã lưu phiếu khám và ${attachments.length} file đính kèm!`
+                            : 'Đã lưu phiếu khám thành công!',
                 });
                 fetchQueue();
             } else {
@@ -769,20 +802,19 @@ const DoctorTreatment: React.FC = () => {
                                             <span>{patient.time}</span>
                                         </div>
                                         <span
-                                            className={`px-3 py-1 rounded-full text-[10px] font-semibold ${
-                                                patient.status === 'inprogress'
-                                                    ? 'bg-purple-100 text-purple-700'
-                                                    : patient.status ===
-                                                      'checkedin'
+                                            className={`px-3 py-1 rounded-full text-[10px] font-semibold ${patient.status === 'inprogress'
+                                                ? 'bg-purple-100 text-purple-700'
+                                                : patient.status ===
+                                                    'checkedin'
                                                     ? 'bg-amber-100 text-amber-700'
                                                     : 'bg-blue-100 text-blue-700'
-                                            }`}
+                                                }`}
                                         >
                                             {patient.status === 'inprogress'
                                                 ? 'Đang khám'
                                                 : patient.status === 'checkedin'
-                                                ? 'Đã check-in'
-                                                : 'Đã xác nhận'}
+                                                    ? 'Đã check-in'
+                                                    : 'Đã xác nhận'}
                                         </span>
                                         <button
                                             onClick={() =>
@@ -1020,6 +1052,93 @@ const DoctorTreatment: React.FC = () => {
                                         })
                                     }
                                 />
+                            </div>
+
+                            {/* X-Ray / Attachments Section */}
+                            <div>
+                                <div className="flex items-center justify-between mb-1.5">
+                                    <label className="text-xs font-medium text-slate-700">
+                                        Hình ảnh X-Ray / Tài liệu đính kèm
+                                    </label>
+                                    <button
+                                        onClick={() => fileInputRef.current?.click()}
+                                        disabled={uploadingAttachment}
+                                        className="flex items-center gap-1 text-xs text-[#2563EB] hover:underline disabled:opacity-50"
+                                    >
+                                        <FiUpload className="w-3 h-3" />
+                                        Tải lên
+                                    </button>
+                                </div>
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept="image/*,.pdf,.dcm"
+                                    multiple
+                                    className="hidden"
+                                    onChange={(e) => {
+                                        const files = Array.from(e.target.files || []);
+                                        if (files.length > 0) {
+                                            setAttachments([...attachments, ...files]);
+                                        }
+                                        e.target.value = ''; // Reset input
+                                    }}
+                                />
+                                <div className="border border-slate-200 rounded-lg p-3 min-h-[80px]">
+                                    {attachments.length === 0 && uploadedAttachments.length === 0 ? (
+                                        <div
+                                            onClick={() => fileInputRef.current?.click()}
+                                            className="flex flex-col items-center justify-center py-4 cursor-pointer text-slate-400 hover:text-slate-500"
+                                        >
+                                            <FiImage className="w-8 h-8 mb-2" />
+                                            <p className="text-xs">Click để chọn ảnh X-Ray hoặc kéo thả file</p>
+                                            <p className="text-[10px] mt-1">Hỗ trợ: JPG, PNG, PDF, DICOM (max 20MB)</p>
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-wrap gap-2">
+                                            {/* Pending uploads */}
+                                            {attachments.map((file, idx) => (
+                                                <div
+                                                    key={`pending-${idx}`}
+                                                    className="relative group bg-slate-100 rounded-lg p-2 flex items-center gap-2"
+                                                >
+                                                    <FiImage className="w-4 h-4 text-slate-500" />
+                                                    <span className="text-xs text-slate-600 max-w-[100px] truncate">
+                                                        {file.name}
+                                                    </span>
+                                                    <span className="text-[10px] px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded">
+                                                        Chờ lưu
+                                                    </span>
+                                                    <button
+                                                        onClick={() => setAttachments(attachments.filter((_, i) => i !== idx))}
+                                                        className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded"
+                                                    >
+                                                        <FiX className="w-3 h-3" />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                            {/* Already uploaded */}
+                                            {uploadedAttachments.map((att) => (
+                                                <div
+                                                    key={att.attachmentId}
+                                                    className="relative group bg-green-50 rounded-lg p-2 flex items-center gap-2"
+                                                >
+                                                    <FiImage className="w-4 h-4 text-green-600" />
+                                                    <span className="text-xs text-green-700 max-w-[100px] truncate">
+                                                        {att.fileName}
+                                                    </span>
+                                                    <span className="text-[10px] px-1.5 py-0.5 bg-green-100 text-green-700 rounded">
+                                                        Đã lưu
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                                {attachments.length > 0 && (
+                                    <p className="text-[10px] text-amber-600 mt-1">
+                                        💡 File sẽ được upload khi bạn nhấn "Hoàn thành khám"
+                                    </p>
+                                )}
                             </div>
                         </div>
                     </div>

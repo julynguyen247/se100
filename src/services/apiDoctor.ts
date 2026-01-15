@@ -338,6 +338,69 @@ export const createExamination = (data: CreateExaminationRequest) => {
     ) as unknown as Promise<IBackendRes<CreateExaminationResponse>>;
 };
 
+// ============ ATTACHMENTS APIs ============
+
+export interface AttachmentDto {
+    attachmentId: string;
+    fileName: string;
+    contentType: string;
+    fileSize: number;
+    uploadedAt: string;
+    uploadedBy: string | null;
+}
+
+export interface UploadAttachmentResponse {
+    attachmentId: string;
+    fileName: string;
+    fileSize: number;
+    uploadedAt: string;
+}
+
+/**
+ * Get attachments for a medical record
+ * GET /api/doctor/medical-records/{recordId}/attachments
+ * @param recordId Medical record GUID
+ */
+export const getAttachments = (recordId: string) => {
+    return axios.get<IBackendRes<AttachmentDto[]>>(
+        `/api/doctor/medical-records/${recordId}/attachments`
+    ) as unknown as Promise<IBackendRes<AttachmentDto[]>>;
+};
+
+/**
+ * Upload attachment to a medical record (X-Ray, images, documents)
+ * POST /api/doctor/medical-records/{recordId}/attachments
+ * Max file size: 20MB, Allowed types: jpg, png, pdf, dicom
+ * @param recordId Medical record GUID
+ * @param file File to upload
+ */
+export const uploadAttachment = (recordId: string, file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    return axios.post<IBackendRes<UploadAttachmentResponse>>(
+        `/api/doctor/medical-records/${recordId}/attachments`,
+        formData,
+        {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        }
+    ) as unknown as Promise<IBackendRes<UploadAttachmentResponse>>;
+};
+
+/**
+ * Delete an attachment from a medical record
+ * DELETE /api/doctor/medical-records/{recordId}/attachments/{attachmentId}
+ * @param recordId Medical record GUID
+ * @param attachmentId Attachment GUID
+ */
+export const deleteAttachment = (recordId: string, attachmentId: string) => {
+    return axios.delete<IBackendRes<{ success: boolean }>>(
+        `/api/doctor/medical-records/${recordId}/attachments/${attachmentId}`
+    ) as unknown as Promise<IBackendRes<{ success: boolean }>>;
+};
+
 // ============ MEDICINE APIs ============
 
 /**
