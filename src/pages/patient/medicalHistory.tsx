@@ -389,8 +389,8 @@ const MedicalRecordCard: React.FC<MedicalRecordCardProps> = ({
                                                                             idx
                                                                         }
                                                                         className={`text-xs px-2 py-1 rounded ${isNormal
-                                                                                ? 'bg-green-50 text-green-700'
-                                                                                : 'bg-red-50 text-red-700'
+                                                                            ? 'bg-green-50 text-green-700'
+                                                                            : 'bg-red-50 text-red-700'
                                                                             }`}
                                                                     >
                                                                         #
@@ -518,8 +518,9 @@ const MedicalRecordDetailModal: React.FC<MedicalRecordDetailModalProps> = ({
                 attachmentId
             );
 
-            // Create blob and download
-            const blob = new Blob([response.data]);
+            // Note: axios interceptor returns response.data directly
+            // So 'response' here IS the blob data already
+            const blob = new Blob([response as unknown as BlobPart]);
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;

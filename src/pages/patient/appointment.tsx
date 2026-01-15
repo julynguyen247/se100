@@ -60,6 +60,10 @@ const statusMap: Record<
     label: 'Đang dời lịch',
     className: 'bg-[#FEF9C3] text-[#854D0E]',
   },
+  reviewed: {
+    label: 'Đã đánh giá',
+    className: 'bg-[#F0FDF4] text-[#166534]',
+  },
 };
 
 const MyAppointmentsPage: React.FC = () => {
