@@ -62,7 +62,8 @@ export type AppointmentStatus =
     | 'completed'
     | 'cancelled'
     | 'noshow'
-    | 'rescheduling';
+    | 'rescheduling'
+    | 'reviewed';
 
 // Raw response from API
 export type AppointmentApiDto = {
