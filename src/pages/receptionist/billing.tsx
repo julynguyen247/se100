@@ -22,6 +22,7 @@ import {
     getBillingStats,
     createVNPayUrl,
     BillStatus,
+    PaymentMethod,
     type BillListItem,
     type BillDetail,
     type BillingStats,
@@ -29,11 +30,10 @@ import {
 } from '@/services/apiReceptionist';
 
 // =============== TYPES ===============
-type PaymentMethod = 'Cash' | 'VNPay';
 
 const paymentMethods = [
-    { id: 'Cash' as PaymentMethod, label: 'Tiền mặt', icon: FiDollarSign },
-    { id: 'VNPay' as PaymentMethod, label: 'VNPay', icon: FiCreditCard },
+    { id: PaymentMethod.Cash, label: 'Tiền mặt', icon: FiDollarSign },
+    { id: PaymentMethod.VnPay, label: 'VNPay', icon: FiCreditCard },
 ];
 
 const statusConfig: Record<
@@ -88,7 +88,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
     bill,
     onConfirmPayment,
 }) => {
-    const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('Cash');
+    const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>(PaymentMethod.Cash);
     const [isProcessing, setIsProcessing] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -185,8 +185,8 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                                     key={method.id}
                                     onClick={() => setSelectedMethod(method.id)}
                                     className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${isSelected
-                                            ? 'border-blue-500 bg-blue-50 text-blue-700'
-                                            : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                                        ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
                                         }`}
                                 >
                                     <Icon className="w-5 h-5" />
@@ -747,7 +747,7 @@ const ReceptionistBilling: React.FC = () => {
         billId: string,
         method: PaymentMethod
     ) => {
-        if (method === 'VNPay') {
+        if (method === PaymentMethod.VnPay) {
             // Handle VNPay payment
             console.log('[VNPAY] Starting VNPay payment flow...', {
                 billId,
@@ -1037,8 +1037,8 @@ const ReceptionistBilling: React.FC = () => {
                                 key={status}
                                 onClick={() => setFilter(status)}
                                 className={`px-3 py-2 text-xs font-medium rounded-lg transition ${filter === status
-                                        ? 'bg-[#2563EB] text-white'
-                                        : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                                    ? 'bg-[#2563EB] text-white'
+                                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
                                     }`}
                             >
                                 {status === 'all'

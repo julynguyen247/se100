@@ -422,8 +422,18 @@ export interface CreateBillRequest {
     notes: string | null;
 }
 
+// PaymentMethod enum matching backend
+export enum PaymentMethod {
+    Cash = 1,
+    Card = 2,
+    Transfer = 3,
+    Insurance = 4,
+    Momo = 5,
+    VnPay = 6,
+}
+
 export interface PayBillRequest {
-    paymentMethod: 'Cash';
+    paymentMethod: PaymentMethod;
     amount: number;
     discount: number | null;
     notes: string | null;
